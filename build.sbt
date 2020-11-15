@@ -22,7 +22,7 @@ lazy val root = (project in file("."))
     dockerExposedPorts in Docker := Seq(8080),
     organization := "com.schuwalow",
     name := "workflow-generator-backend",
-    maintainer := "maxim.schuwalow@gmail.com",
+    maintainer := "mschuwalow@uos.de",
     scalaVersion := "2.13.1",
     testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
     scalacOptions := Seq(
@@ -63,22 +63,14 @@ lazy val root = (project in file("."))
       "dev.zio"                  %% "zio-logging"         % "0.2.9",
       "dev.zio"                  %% "zio-logging-slf4j"   % "0.2.9",
       "org.flywaydb"             % "flyway-core"          % "6.5.5",
-      "com.h2database"           % "h2"                   % "1.4.200",
       "org.apache.logging.log4j" % "log4j-api"            % "2.13.3",
       "org.apache.logging.log4j" % "log4j-core"           % "2.13.3",
       "org.apache.logging.log4j" % "log4j-slf4j-impl"     % "2.13.3",
       "com.github.pureconfig"    %% "pureconfig"          % "0.12.3",
-      "com.lihaoyi"              %% "sourcecode"          % "0.1.9",
-      ("com.github.ghik" % "silencer-lib" % "1.6.0" % "provided")
-        .cross(CrossVersion.full),
       // plugins
       compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
       compilerPlugin(
         ("org.typelevel" % "kind-projector" % "0.11.0").cross(CrossVersion.full)
-      ),
-      compilerPlugin(
-        ("com.github.ghik" % "silencer-plugin" % "1.6.0")
-          .cross(CrossVersion.full)
       ),
       compilerPlugin(scalafixSemanticdb)
     )
