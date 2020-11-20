@@ -67,6 +67,8 @@ lazy val root = (project in file("."))
       "org.apache.logging.log4j" % "log4j-core"           % "2.13.3",
       "org.apache.logging.log4j" % "log4j-slf4j-impl"     % "2.13.3",
       "com.github.pureconfig"    %% "pureconfig"          % "0.12.3",
+      "org.fomkin"               %% "korolev"             % "0.16.1",
+      "org.fomkin"               %% "korolev-zio"         % "0.16.1",
       // plugins
       compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
       compilerPlugin(
