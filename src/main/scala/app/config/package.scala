@@ -1,4 +1,4 @@
-package workflow
+package app
 
 import zio._
 

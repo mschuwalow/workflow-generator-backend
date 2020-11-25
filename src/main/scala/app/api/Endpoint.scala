@@ -1,4 +1,4 @@
-package workflow.api
+package app.api
 
 import io.circe.{ Decoder, Encoder }
 import org.http4s._

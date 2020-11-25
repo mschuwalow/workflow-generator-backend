@@ -23,7 +23,7 @@ lazy val root = (project in file("."))
     organization := "com.schuwalow",
     name := "workflow-generator-backend",
     maintainer := "mschuwalow@uos.de",
-    scalaVersion := "2.13.1",
+    scalaVersion := "2.13.3",
     testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
     scalacOptions := Seq(
       "-feature",
@@ -35,7 +35,7 @@ lazy val root = (project in file("."))
       "-language:higherKinds",
       "-language:existentials",
       "-Xfatal-warnings",
-      "-Xlint:-infer-any,_",
+      "-Xlint:-infer-any,-byname-implicit,_",
       "-Ywarn-value-discard",
       "-Ywarn-numeric-widen",
       "-Ywarn-extra-implicit",

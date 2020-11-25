@@ -1,5 +1,7 @@
-package workflow
+package app
 
+import app.api.routes.makeRoutes
+import app.config._
 import cats.effect._
 import fs2.Stream.Compiler._
 import org.http4s.HttpApp
@@ -8,9 +10,6 @@ import org.http4s.server.middleware.CORS
 import zio.clock.Clock
 import zio.interop.catz._
 import zio.{ ExitCode => ZExitCode, _ }
-
-import workflow.config._
-import workflow.api.makeRoutes
 
 object Main extends App {
   type Env        = layers.AppEnv with Clock

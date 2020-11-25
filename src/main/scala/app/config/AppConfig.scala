@@ -1,4 +1,4 @@
-package workflow.config
+package app.config
 
 import pureconfig._
 import pureconfig.generic.semiauto._
