@@ -1,51 +1,64 @@
 package app.backend.nodes
 
-import io.circe._
 import app.backend.Type
 import app.backend.Type._
-import app.backend.nodes.typed.Sink
-import app.backend.nodes.typed.Transformer1
-import app.backend.nodes.typed.Transformer2
 
 object typed {
+  final case class Flow(streams: List[Sink])
 
-  sealed trait Component { self =>
-    val ctype: Type
-
-    def isSink: Boolean = self match {
-      case Source(_, _) =>
-        false
-      case Sink(_, _) =>
-        true
-      case Transformer1(_, _, _) =>
-        false
-      case Transformer2(_, _, _, _) =>
-        false
-    }
+  sealed trait Sink {
+    def id: ComponentId
   }
 
-  final case class Source(
-    sourceOp: SourceOp,
-    ctype: Type)
-      extends Component
+  final case class Void(
+    id: ComponentId,
+    source: Stream)
+      extends Sink
 
-  final case class Sink(
-    stream: ComponentId,
-    sinkOp: SinkOp)
-      extends Component {
-    val ctype: Type = Type.TBottom
+  sealed trait Stream {
+    def id: ComponentId
+    def elementType: Type
   }
 
-  final case class Transformer1(
-    stream: ComponentId,
-    op: TransformerOp1,
-    ctype: Type)
-      extends Component {}
+  final case class Never(
+    id: ComponentId,
+    elementType: Type)
+      extends Stream
 
-  final case class Transformer2(
-    stream1: ComponentId,
-    stream2: ComponentId,
-    op: TransformerOp2,
-    ctype: Type)
-      extends Component {}
+  final case class InnerJoin(
+    id: ComponentId,
+    stream1: Stream,
+    stream2: Stream)
+      extends Stream {
+    val elementType = tTuple(stream1.elementType, stream2.elementType)
+  }
+
+  final case class LeftJoin(
+    id: ComponentId,
+    stream1: Stream,
+    stream2: Stream)
+      extends Stream {
+    val elementType = tTuple(stream1.elementType, tOption(stream2.elementType))
+  }
+
+  final case class Merge(
+    id: ComponentId,
+    stream1: Stream,
+    stream2: Stream)
+      extends Stream {
+    val elementType = tEither(stream1.elementType, stream2.elementType)
+  }
+
+  final case class UDF1(
+    id: ComponentId,
+    stream: Stream,
+    elementType: Type)
+      extends Stream
+
+  final case class UDF2(
+    id: ComponentId,
+    stream1: Stream,
+    stream2: Stream,
+    elementType: Type)
+      extends Stream
 }

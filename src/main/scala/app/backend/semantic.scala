@@ -3,35 +3,44 @@ package app.backend
 import app.backend.nodes._
 import app.backend.Type._
 import cats.Monad
-import cats.syntax.functor._
+import cats.syntax.apply._
+import cats.syntax.flatMap._
 import cats.syntax.traverse._
 import cats.instances.list._
-import app.backend.nodes.TransformerOp1.Identity
-import app.backend.nodes.TransformerOp1.UDF
 
 object semantic {
 
   def typecheck(
     in: Map[ComponentId, raw.Component]
-  ): Either[String, Map[ComponentId, typed.Component]] = {
+  ): Either[String, typed.Flow] = {
+    val checkResult = Transform.context.flatMap { ctx =>
+      // we don't rewrite graphs in this phase
+      Transform.require(
+        ctx.in.keys.size == ctx.out.keys.size,
+        "Not all components were connected to sinks."
+      )
+    }
     // all starting points to traverse the graph
     val sinks = in.collect {
-      case (id, raw.Sink(_, _)) => id
+      case (id, _: raw.Sink) => id
     }.toList
-    sinks
-      .traverse(typeCheckComponentId(_, None))
+    (sinks.traverse(typeCheckSink(_)) <* checkResult)
       .run(Context.initial(in))
-      .map(_._1.out)
+      .map {
+        case (_, sinks) =>
+          typed.Flow(sinks)
+      }
   }
 
   final private[backend] case class Context(
     in: Map[ComponentId, raw.Component],
-    out: Map[ComponentId, typed.Component])
+    out: Map[ComponentId, typed.Stream],
+    enclosing: Option[ComponentId])
 
   private[backend] object Context {
 
     def initial(in: Map[ComponentId, raw.Component]): Context =
-      Context(in, Map.empty)
+      Context(in, Map.empty, None)
   }
 
   // state monad with error collection
@@ -58,26 +67,49 @@ object semantic {
       Right((ctx, ()))
     }
 
-    def fail(msg: String): Transform[Nothing] = transform { _ =>
-      Left(msg)
+    val context: Transform[Context] = transform { ctx =>
+      Right((ctx, ctx))
     }
 
-    def askRaw(id: ComponentId): Transform[Option[raw.Component]] = transform {
-      ctx =>
-        Right((ctx, ctx.in.get(id)))
+    def fail(msg: String): Transform[Nothing] = transform { ctx =>
+      Left(s"${ctx.enclosing.fold("")(id => s"[$id]: ")}$msg")
     }
 
-    def askTyped(id: ComponentId): Transform[Option[typed.Component]] =
-      transform { ctx =>
-        Right((ctx, ctx.out.get(id)))
-      }
+    def require(
+      bool: Boolean,
+      msg: String
+    ): Transform[Unit] =
+      if (bool) unit else fail(msg)
+
+    def askRaw(id: ComponentId): Transform[Option[raw.Component]] =
+      context.map(_.in.get(id))
+
+    def askTyped(id: ComponentId): Transform[Option[typed.Stream]] =
+      context.map(_.out.get(id))
 
     def putTyped(
       id: ComponentId,
-      value: typed.Component
+      value: typed.Stream
     ): Transform[Unit] = transform { ctx =>
       Right((ctx.copy(out = ctx.out + (id -> value)), ()))
     }
+
+    def setEnclosing(id: Option[ComponentId]): Transform[Unit] = transform {
+      ctx =>
+        Right((ctx.copy(enclosing = id), ()))
+    }
+
+    val getEnclosing: Transform[Option[ComponentId]] = transform { ctx =>
+      Right((ctx, ctx.enclosing))
+    }
+
+    def withEnclosing[A](id: ComponentId)(nested: Transform[A]): Transform[A] =
+      for {
+        old <- getEnclosing
+        _   <- setEnclosing(Some(id))
+        a   <- nested
+        _   <- setEnclosing(old)
+      } yield a
 
     def pure[A](a: => A): Transform[A] = transform { ctx =>
       Right((ctx, a))
@@ -109,121 +141,148 @@ object semantic {
         override def pure[A](x: A): Transform[A] = pure(x)
       }
   }
-  import Transform.{ askRaw, askTyped, fail, pure, putTyped }
+  import Transform._
 
-  private[backend] def typeCheckComponentId(
-    id: ComponentId,
-    hint: Option[Type]
-  ): Transform[typed.Component] =
-    askTyped(id).flatMap {
-      case Some(component) =>
-        hint.fold(pure(component)) { hint =>
-          // unexpected type found
-          if (component.ctype != hint) {
-            fail(
-              s"TypeError: [$id] found type ${component.ctype} but expected type $hint"
-            )
-          } else {
-            pure(component)
+  private[backend] def typeCheckSink(id: ComponentId): Transform[typed.Sink] = {
+    import raw._
+    withEnclosing(id) {
+      askRaw(id).flatMap {
+        case None => fail(s"Component id not found")
+        case Some(raw) =>
+          raw match {
+            case Sink.Void(elementType, sId) =>
+              typeCheckStream(sId, Some(elementType)).map { stream =>
+                typed.Void(id, stream)
+              }
+            case _ =>
+              fail("Expected a sink")
           }
-        }
-      case None =>
-        askRaw(id).flatMap {
-          case None      => fail(s"Component id ${id.value} not found")
-          case Some(raw) => typeCheckComponent(id, raw, hint)
-        }
-    }
-
-  private[backend] def typeCheckComponent(
-    id: ComponentId,
-    comp: raw.Component,
-    hint: Option[Type]
-  ): Transform[typed.Component] =
-    comp match {
-      case raw.Source(sourceOp) =>
-        for {
-          typedComp <- typeCheckSource(sourceOp)
-          _         <- putTyped(id, typedComp)
-        } yield typedComp
-      case raw.Sink(streamId, sinkOp) =>
-        ???
-        typeCheckComponentId(streamId, Some(sinkOp.inType)).flatMap { stream =>
-          if (stream.ctype == sinkOp.inType) {
-            // well typed sink
-            val typedComp = typed.Sink(streamId, sinkOp)
-            putTyped(id, typedComp).as(typedComp)
-          } else {
-            fail(
-              s"TypeError: [$id] expected type ${sinkOp.inType} but got type ${stream.ctype}"
-            )
-          }
-        }
-      case raw.Transformer1(sId, op) =>
-        for {
-          streamHint <- inferTransformer1Hint(op, hint)
-          stream     <- typeCheckComponentId(sId, streamHint)
-          typedComp  <- typeCheckTransformer1(stream, op)
-          _          <- putTyped(id, typedComp)
-        } yield typedComp
-      case raw.Transformer2(sId1, sId2, op) =>
-        for {
-          s1      <- typeCheckComponentId(sId1, None)
-          s2      <- typeCheckComponentId(sId2, None)
-          checked <- typeCheckTransformer2(s1, s2, sId1, sId2, op)
-          _       <- putTyped(id, checked)
-        } yield checked
-      case raw.Dummy => ???
-    }
-
-  private[backend] def typeCheckSource(op: SourceOp): Transform[typed.Source] =
-    pure {
-      typed.Source(op, op.outType)
-    }
-
-  private[backend] def typeCheckTransformer1(
-    stream: typed.Component,
-    op: TransformerOp1
-  ): Transform[typed.Component] = {
-    import TransformerOp1._
-    for {
-      _ <- if (stream.isSink) fail("Sinks can only occur at the end of a graph")
-          else Transform.unit
-      result <- op match {
-                 case Identity =>
-                   // this node can be eliminated
-                   pure(stream)
-                 case UDF(_, _) => ???
-               }
-    } yield result
-  }
-
-  private[backend] def typeCheckTransformer2(
-    s1: typed.Component,
-    s2: typed.Component,
-    s1Id: ComponentId,
-    s2Id: ComponentId,
-    op: TransformerOp2
-  ): Transform[typed.Component] = {
-    import TransformerOp2._
-    for {
-      _ <- if (s1.isSink || s2.isSink)
-            fail("Sinks can only occur at the end of a graph")
-          else Transform.unit
-      outType = op match {
-        case LeftJoin                            => tTuple(s1.ctype, tOption(s2.ctype))
-        case InnerJoin                           => tTuple(s1.ctype, s2.ctype)
-        case UDF(input1TypeHint, input2TypeHint) => ???
       }
-    } yield typed.Transformer2(s1Id, s2Id, op, outType)
+    }
   }
 
-  // tries to propagate a type hint upward in order to help type inference
-  private[backend] def inferTransformer1Hint(
-    op: TransformerOp1,
-    hint: Option[Type]
-  ): Transform[Option[Type]] =
-    op match {
-      case Identity   => pure(hint)
-      case UDF(sHint) => pure(sHint)
+  private[backend] def typeCheckStream(
+    id: ComponentId,
+    hint: Option[Type] // downstream type expectation.
+  ): Transform[typed.Stream] = {
+    def check(comp: raw.Component): Transform[typed.Stream] = {
+      import raw._
+      comp match {
+        case Source.Never(elementType) =>
+          pure(typed.Never(id, elementType))
+        case Transformer1.UDF(stream, inputTypeHint, outputTypeHint) =>
+          for {
+            s <- typeCheckStream(stream, inputTypeHint)
+            // prefer provided type hint over inferred type.
+            // if they do not match typechecking will fail later.
+            myType <- outputTypeHint
+                       .orElse(hint)
+                       .fold[Transform[Type]](
+                         fail(
+                           "Type could not be determined. Try adding a type hint"
+                         )
+                       )(pure(_))
+          } yield typed.UDF1(id, s, myType)
+        case Transformer2.InnerJoin(stream1, stream2) =>
+          hint match {
+            case Some(TTuple(left, right)) =>
+              for {
+                s1 <- typeCheckStream(stream1, Some(left))
+                s2 <- typeCheckStream(stream2, Some(right))
+              } yield typed.InnerJoin(id, s1, s2)
+            case None =>
+              for {
+                s1 <- typeCheckStream(stream1, None)
+                s2 <- typeCheckStream(stream2, None)
+              } yield typed.InnerJoin(id, s1, s2)
+            case Some(t) =>
+              fail(s"Found incompatible type. Expected tuple type, got $t")
+          }
+        case Transformer2.LeftJoin(stream1, stream2) =>
+          hint match {
+            case Some(TTuple(left, TOption(right))) =>
+              for {
+                s1 <- typeCheckStream(stream1, Some(left))
+                s2 <- typeCheckStream(stream2, Some(right))
+              } yield typed.LeftJoin(id, s1, s2)
+            case None =>
+              for {
+                s1 <- typeCheckStream(stream1, None)
+                s2 <- typeCheckStream(stream2, None)
+              } yield typed.LeftJoin(id, s1, s2)
+            case Some(t) =>
+              fail(
+                s"Found incompatible type. Expected tuple type with right side being optional, got $t"
+              )
+          }
+        case Transformer2.Merge(stream1, stream2) =>
+          hint match {
+            case Some(TEither(left, right)) =>
+              for {
+                s1 <- typeCheckStream(stream1, Some(left))
+                s2 <- typeCheckStream(stream2, Some(right))
+              } yield typed.Merge(id, s1, s2)
+            case None =>
+              for {
+                s1 <- typeCheckStream(stream1, None)
+                s2 <- typeCheckStream(stream2, None)
+              } yield typed.Merge(id, s1, s2)
+            case Some(t) =>
+              fail(s"Found incompatible type. Expected either type, got $t")
+          }
+        case Transformer2.UDF(
+            stream1,
+            stream2,
+            input1TypeHint,
+            input2TypeHint,
+            outputTypeHint
+            ) =>
+          for {
+            s1 <- typeCheckStream(stream1, input1TypeHint)
+            s2 <- typeCheckStream(stream2, input2TypeHint)
+            // prefer provided type hint over inferred type.
+            // if they do not match typechecking will fail later.
+            myType <- outputTypeHint
+                       .orElse(hint)
+                       .fold[Transform[Type]](
+                         fail(
+                           "Type could not be determined. Try adding a type hint"
+                         )
+                       )(pure(_))
+          } yield typed.UDF2(id, s1, s2, myType)
+        case _: Sink =>
+          fail("Sink not expected here")
+      }
     }
+
+    withEnclosing(id) {
+      askTyped(id).flatMap {
+        case Some(stream) =>
+          hint.fold(pure(stream)) { hint =>
+            // unexpected type found
+            if (stream.elementType != hint) {
+              fail(
+                s"TypeError: found type ${stream.elementType} but expected type $hint"
+              )
+            } else {
+              pure(stream)
+            }
+          }
+        case None =>
+          askRaw(id).flatMap {
+            case None => fail(s"Component id not found")
+            case Some(raw) =>
+              check(raw).flatTap { stream =>
+                hint.fold(true)(_ == stream.elementType) match {
+                  case true => unit
+                  case false =>
+                    fail(
+                      s"TypeError: found type ${stream.elementType} but expected type $hint"
+                    )
+                }
+              }
+          }
+      }
+    }
+  }
 }

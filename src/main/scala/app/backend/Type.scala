@@ -10,6 +10,7 @@ object Type {
   case object TNumber                               extends Type
   final case class TArray(elementType: Type)        extends Type
   final case class TObject(fields: (String, Type)*) extends Type
+  final case class TOption(value: Type)             extends Type
 
   final case class TTuple(
     left: Type,
@@ -38,5 +39,5 @@ object Type {
     left: Type,
     right: Type
   ): Type                        = TEither(left, right)
-  def tOption(value: Type): Type = tEither(tNull, value)
+  def tOption(value: Type): Type = TOption(value)
 }

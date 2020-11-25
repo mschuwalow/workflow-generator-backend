@@ -2,7 +2,6 @@ package app.backend.nodes
 
 import io.circe._
 import app.backend.Type
-import app.backend.Type._
 
 object raw {
   sealed trait Component
@@ -12,10 +11,6 @@ object raw {
     implicit val decoder: Decoder[Component] =
       Decoder.instance { hCursor =>
         hCursor.get[ComponentId]("type").flatMap {
-          case Source.Id       => Right(Dummy)
-          case Sink.Id         => Right(Dummy)
-          case Transformer1.Id => Right(Dummy)
-          case Transformer2.Id => Right(Dummy)
           case id =>
             Left(
               DecodingFailure(
@@ -27,42 +22,65 @@ object raw {
       }
   }
 
-  final case class Source(sourceOp: SourceOp) extends Component
+  sealed trait Source extends Component
 
   object Source {
-    val Id = ComponentId("Source")
+    final case class Never(elementType: Type) extends Source
   }
 
-  final case class Sink(
-    stream: ComponentId,
-    sinkOp: SinkOp)
-      extends Component
+  sealed trait Sink extends Component {
+    def stream: ComponentId
+  }
 
   object Sink {
-    val Id = ComponentId("Sink")
+
+    final case class Void(
+      elementType: Type,
+      stream: ComponentId)
+        extends Sink
   }
 
-  final case class Transformer1(
-    stream: ComponentId,
-    op: TransformerOp1)
-      extends Component {}
+  sealed trait Transformer1 extends Component {
+    def stream: ComponentId
+  }
 
   object Transformer1 {
-    val Id = ComponentId("Transformer1")
+
+    final case class UDF(
+      stream: ComponentId,
+      inputTypeHint: Option[Type],
+      outputTypeHint: Option[Type])
+        extends Transformer1
   }
 
-  final case class Transformer2(
-    stream1: ComponentId,
-    stream2: ComponentId,
-    op: TransformerOp2)
-      extends Component {}
+  sealed trait Transformer2 extends Component {
+    def stream1: ComponentId
+    def stream2: ComponentId
+  }
 
   object Transformer2 {
-    val Id = ComponentId("Transformer2")
-  }
 
-  // todo: remove
-  object Dummy extends Component {
-    val ctype: Type = TBoolean
+    final case class LeftJoin(
+      stream1: ComponentId,
+      stream2: ComponentId)
+        extends Transformer2
+
+    final case class InnerJoin(
+      stream1: ComponentId,
+      stream2: ComponentId)
+        extends Transformer2
+
+    final case class Merge(
+      stream1: ComponentId,
+      stream2: ComponentId)
+        extends Transformer2
+
+    final case class UDF(
+      stream1: ComponentId,
+      stream2: ComponentId,
+      input1TypeHint: Option[Type],
+      input2TypeHint: Option[Type],
+      outputTypeHint: Option[Type])
+        extends Transformer2
   }
 }
