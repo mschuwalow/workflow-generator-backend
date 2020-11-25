@@ -8,6 +8,7 @@ import app.backend.nodes.typed.Transformer1
 import app.backend.nodes.typed.Transformer2
 
 object typed {
+
   sealed trait Component { self =>
     val ctype: Type
 
@@ -25,29 +26,26 @@ object typed {
 
   final case class Source(
     sourceOp: SourceOp,
-    ctype: Type
-  ) extends Component
+    ctype: Type)
+      extends Component
 
   final case class Sink(
     stream: ComponentId,
     sinkOp: SinkOp)
       extends Component {
-        val ctype: Type = Type.TBottom
-      }
+    val ctype: Type = Type.TBottom
+  }
 
   final case class Transformer1(
     stream: ComponentId,
     op: TransformerOp1,
     ctype: Type)
-      extends Component {
-  }
+      extends Component {}
 
   final case class Transformer2(
     stream1: ComponentId,
     stream2: ComponentId,
     op: TransformerOp2,
-    ctype: Type
-    )
-      extends Component {
-  }
+    ctype: Type)
+      extends Component {}
 }

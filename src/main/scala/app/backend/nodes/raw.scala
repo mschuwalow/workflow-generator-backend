@@ -27,9 +27,7 @@ object raw {
       }
   }
 
-  final case class Source(
-    sourceOp: SourceOp,
-  ) extends Component
+  final case class Source(sourceOp: SourceOp) extends Component
 
   object Source {
     val Id = ComponentId("Source")
@@ -47,8 +45,7 @@ object raw {
   final case class Transformer1(
     stream: ComponentId,
     op: TransformerOp1)
-      extends Component {
-  }
+      extends Component {}
 
   object Transformer1 {
     val Id = ComponentId("Transformer1")
@@ -58,8 +55,7 @@ object raw {
     stream1: ComponentId,
     stream2: ComponentId,
     op: TransformerOp2)
-      extends Component {
-  }
+      extends Component {}
 
   object Transformer2 {
     val Id = ComponentId("Transformer2")
