@@ -1,9 +1,9 @@
 package app.flows
 
-import io.circe._
-import io.circe.generic.semiauto._
 import app.backend.nodes.ComponentId
 import app.backend.nodes.raw._
+import io.circe._
+import io.circe.generic.semiauto._
 
 final case class WorkflowId(value: String) extends AnyVal
 

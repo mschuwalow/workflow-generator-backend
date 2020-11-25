@@ -1,9 +1,11 @@
 package app.backend.nodes
 
-import io.circe._
 import app.backend.Type
+import io.circe._
 
 object raw {
+  final case class Graph(nodes: Map[ComponentId, Component])
+
   sealed trait Component
 
   object Component {

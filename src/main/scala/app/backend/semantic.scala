@@ -1,18 +1,16 @@
 package app.backend
 
-import app.backend.nodes._
 import app.backend.Type._
+import app.backend.nodes._
 import cats.Monad
+import cats.instances.list._
 import cats.syntax.apply._
 import cats.syntax.flatMap._
 import cats.syntax.traverse._
-import cats.instances.list._
 
 object semantic {
 
-  def typecheck(
-    in: Map[ComponentId, raw.Component]
-  ): Either[String, typed.Flow] = {
+  def typecheck(graph: raw.Graph): Either[String, typed.Flow] = {
     val checkResult = Transform.context.flatMap { ctx =>
       // we don't rewrite graphs in this phase
       Transform.require(
@@ -21,11 +19,11 @@ object semantic {
       )
     }
     // all starting points to traverse the graph
-    val sinks = in.collect {
+    val sinks = graph.nodes.collect {
       case (id, _: raw.Sink) => id
     }.toList
     (sinks.traverse(typeCheckSink(_)) <* checkResult)
-      .run(Context.initial(in))
+      .run(Context.initial(graph.nodes))
       .map {
         case (_, sinks) =>
           typed.Flow(sinks)
@@ -138,7 +136,7 @@ object semantic {
           case Right(b) => pure(b)
         }
 
-        override def pure[A](x: A): Transform[A] = pure(x)
+        override def pure[A](x: A): Transform[A] = Transform.pure(x)
       }
   }
   import Transform._
