@@ -12,11 +12,11 @@ object raw {
 
     implicit val decoder: Decoder[Component] =
       Decoder.instance { hCursor =>
-        hCursor.get[ComponentId]("type").flatMap {
+        hCursor.get[String]("type").flatMap {
           case id =>
             Left(
               DecodingFailure(
-                s"Not a valid commponent type: ${id.value}",
+                s"Not a valid commponent type: ${id}",
                 hCursor.history
               )
             )
