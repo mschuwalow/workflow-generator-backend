@@ -17,23 +17,19 @@ object syntactic {
     }.toList
     sinks.traverse { id =>
       // every subgraph needs to be checked seperately
-      checkComponent(id).run(Context.initial(id, graph.nodes))
+      checkComponent(id).run(Context.initial(graph.nodes))
     }.as(graph)
   }
 
   final private[backend] case class Context(
     nodes: Map[ComponentId, raw.Component],
     visited: Set[ComponentId],
-    startingPoint: ComponentId
-  )
+    position: List[ComponentId])
 
   object Context {
 
-    def initial(
-      id: ComponentId,
-      nodes: Map[ComponentId, raw.Component]
-    ): Context =
-      Context(nodes, Set.empty, id)
+    def initial(nodes: Map[ComponentId, raw.Component]): Context =
+      Context(nodes, Set.empty, Nil)
   }
 
   // another state monad with error handling
@@ -61,7 +57,9 @@ object syntactic {
       getContext.flatMap { ctx =>
         ctx.nodes
           .get(id)
-          .fold[Check[raw.Component]](fail(s"Component with id $id not found"))(
+          .fold[Check[raw.Component]](
+            fail(s"Component with id ${id.value} not found")
+          )(
             pure
           )
       }
@@ -84,8 +82,17 @@ object syntactic {
         }
       }
 
+    def withPosition[A](id: ComponentId)(nested: Check[A]): Check[A] =
+      for {
+        _ <- updateContext(old => old.copy(position = id +: old.position))
+        a <- nested
+        _ <- updateContext(old => old.copy(position = old.position.tail))
+      } yield a
+
     def fail(msg: String): Check[Nothing] = check { ctx =>
-      Left(s"Failed while checking ${ctx.startingPoint}: $msg")
+      Left(
+        s"Failed while checking ${ctx.position.reverse.map(_.value).mkString("->")}: $msg"
+      )
     }
 
     def check[A](f: Context => Either[String, (Context, A)]): Check[A] =
@@ -117,19 +124,21 @@ object syntactic {
 
   private[backend] def checkComponent(id: ComponentId): Check[Unit] = {
     import raw._
-    addVisisted(id) *> getComponent(id).flatMap {
-      case Source.Never(_)                => unit
-      case Transformer1.UDF(stream, _, _) => checkComponent(stream)
-      case Transformer2.InnerJoin(stream1, stream2) =>
-        checkComponent(stream1) *> checkComponent(stream2)
-      case Transformer2.LeftJoin(stream1, stream2) =>
-        checkComponent(stream1) *> checkComponent(stream2)
-      case Transformer2.Merge(stream1, stream2) =>
-        checkComponent(stream1) *> checkComponent(stream2)
-      case Transformer2.UDF(stream1, stream2, _, _, _) =>
-        checkComponent(stream1) *> checkComponent(stream2)
-      case Sink.Void(_, stream) =>
-        checkComponent(stream)
+    withPosition(id) {
+      addVisisted(id) *> getComponent(id).flatMap {
+        case Source.Never(_)                => unit
+        case Transformer1.UDF(stream, _, _) => checkComponent(stream)
+        case Transformer2.InnerJoin(stream1, stream2) =>
+          checkComponent(stream1) *> checkComponent(stream2)
+        case Transformer2.LeftJoin(stream1, stream2) =>
+          checkComponent(stream1) *> checkComponent(stream2)
+        case Transformer2.Merge(stream1, stream2) =>
+          checkComponent(stream1) *> checkComponent(stream2)
+        case Transformer2.UDF(stream1, stream2, _, _, _) =>
+          checkComponent(stream1) *> checkComponent(stream2)
+        case Sink.Void(stream, _) =>
+          checkComponent(stream)
+      }
     }
   }
 }

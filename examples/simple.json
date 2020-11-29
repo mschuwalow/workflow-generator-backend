@@ -1,0 +1,25 @@
+{
+  "components": {
+    "1": {
+      "type": "sink:void",
+      "stream": "2",
+      "elementType": "(String, Bool?)"
+    },
+    "2": {
+      "type": "transformer2:leftJoin",
+      "stream1": "3",
+      "stream2": "4"
+    },
+    "3": {
+      "type": "source:never"
+    },
+    "4": {
+      "type": "transformer1:udf",
+      "stream": "5"
+    },
+    "5": {
+      "type": "source:never",
+      "elementType": "(String | (Bool, Number))"
+    }
+  }
+}

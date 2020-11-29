@@ -11,17 +11,19 @@ import cats.syntax.traverse._
 object semantic {
 
   def typecheck(graph: raw.Graph): Either[String, typed.Flow] = {
-    val checkResult = Transform.context.flatMap { ctx =>
-      // we don't rewrite graphs in this phase
-      Transform.require(
-        ctx.in.keys.size == ctx.out.keys.size,
-        "Not all components were connected to sinks."
-      )
-    }
     // all starting points to traverse the graph
     val sinks = graph.nodes.collect {
       case (id, _: raw.Sink) => id
     }.toList
+
+    val checkResult = Transform.context.flatMap { ctx =>
+      // we don't rewrite graphs in this phase
+      Transform.require(
+        (ctx.in.size - sinks.size) == ctx.out.size,
+        "Not all components were connected to sinks."
+      )
+    }
+
     (sinks.traverse(typeCheckSink(_)) <* checkResult)
       .run(Context.initial(graph.nodes))
       .map {
@@ -70,7 +72,7 @@ object semantic {
     }
 
     def fail(msg: String): Transform[Nothing] = transform { ctx =>
-      Left(s"${ctx.enclosing.fold("")(id => s"[$id]: ")}$msg")
+      Left(s"${ctx.enclosing.fold("")(id => s"[${id.value}]: ")}$msg")
     }
 
     def require(
@@ -148,8 +150,8 @@ object semantic {
         case None => fail(s"Component id not found")
         case Some(raw) =>
           raw match {
-            case Sink.Void(elementType, sId) =>
-              typeCheckStream(sId, Some(elementType)).map { stream =>
+            case Sink.Void(sId, hint) =>
+              typeCheckStream(sId, hint).map { stream =>
                 typed.Void(id, stream)
               }
             case _ =>
@@ -167,7 +169,11 @@ object semantic {
       import raw._
       comp match {
         case Source.Never(elementType) =>
-          pure(typed.Never(id, elementType))
+          elementType
+            .orElse(hint)
+            .fold[Transform[typed.Stream]](
+              fail("Type could not be determined. Try adding a type hint.")
+            )(t => pure(typed.Never(id, t)))
         case Transformer1.UDF(stream, inputTypeHint, outputTypeHint) =>
           for {
             s <- typeCheckStream(stream, inputTypeHint)
@@ -272,7 +278,7 @@ object semantic {
             case Some(raw) =>
               check(raw).flatTap { stream =>
                 hint.fold(true)(_ == stream.elementType) match {
-                  case true => unit
+                  case true => putTyped(id, stream)
                   case false =>
                     fail(
                       s"TypeError: found type ${stream.elementType} but expected type $hint"

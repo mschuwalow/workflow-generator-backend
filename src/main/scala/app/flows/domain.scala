@@ -1,7 +1,6 @@
 package app.flows
 
-import app.backend.nodes.ComponentId
-import app.backend.nodes.raw._
+import app.backend.nodes.raw
 import io.circe._
 import io.circe.generic.semiauto._
 
@@ -14,8 +13,7 @@ object WorkflowId {
     Decoder[String].map(WorkflowId.apply)
 }
 
-final case class WorkflowCreationRequest(
-  components: Map[ComponentId, Component])
+final case class WorkflowCreationRequest(components: raw.Graph)
 
 object WorkflowCreationRequest {
 

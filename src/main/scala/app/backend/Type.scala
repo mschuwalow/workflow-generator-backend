@@ -3,6 +3,8 @@ package app.backend
 import scala.util.parsing.combinator.PackratParsers
 import scala.util.parsing.combinator.syntactical._
 
+import io.circe.Decoder
+
 sealed abstract class Type
 
 object Type {
@@ -44,6 +46,9 @@ object Type {
 
   def fromString(s: String): Either[String, Type] =
     parsing.parse(s)
+
+  implicit val decoder: Decoder[Type] =
+    Decoder[String].emap(fromString)
 
   object parsing extends StandardTokenParsers with PackratParsers {
     lexical.reserved ++= List("Null", "Bool", "String", "Number")
