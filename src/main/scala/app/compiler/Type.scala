@@ -1,10 +1,10 @@
 package app.compiler
 
-import zio.Chunk
 import scala.util.parsing.combinator.PackratParsers
 import scala.util.parsing.combinator.syntactical._
 
 import io.circe.Decoder
+import zio.Chunk
 
 sealed abstract class Type {
   type Scala
