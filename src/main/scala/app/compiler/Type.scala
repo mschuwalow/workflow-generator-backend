@@ -1,30 +1,51 @@
-package app.backend
+package app.compiler
 
+import zio.Chunk
 import scala.util.parsing.combinator.PackratParsers
 import scala.util.parsing.combinator.syntactical._
 
 import io.circe.Decoder
 
-sealed abstract class Type
+sealed abstract class Type {
+  type Scala
+}
 
 object Type {
-  case object TNull                                 extends Type
-  case object TBool                                 extends Type
-  case object TString                               extends Type
-  case object TNumber                               extends Type
-  final case class TArray(elementType: Type)        extends Type
-  final case class TObject(fields: (String, Type)*) extends Type
-  final case class TOption(value: Type)             extends Type
+  case object TNull                                 extends Type {
+    type Scala = ()
+  }
+  case object TBool                                 extends Type {
+    type Scala = Boolean
+  }
+  case object TString                               extends Type {
+    type Scala = String
+  }
+  case object TNumber                               extends Type {
+    type Scala = Long
+  }
+  final case class TArray(elementType: Type)        extends Type {
+    type Scala = Chunk[elementType.Scala]
+  }
+  final case class TObject(fields: (String, Type)*) extends Type {
+    type Scala = Any
+  }
+  final case class TOption(value: Type)             extends Type {
+    type Scala = Option[value.Scala]
+  }
 
   final case class TTuple(
     left: Type,
     right: Type)
-      extends Type
+      extends Type {
+        type Scala = (left.Scala, right.Scala)
+      }
 
   final case class TEither(
     left: Type,
     right: Type)
-      extends Type
+      extends Type {
+        type Scala = Either[left.Scala, right.Scala]
+      }
 
   val tNull: Type                            = TNull
   val tBool: Type                            = TBool

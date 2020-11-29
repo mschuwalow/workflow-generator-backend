@@ -1,6 +1,5 @@
-package app.backend
+package app.compiler
 
-import app.backend.nodes._
 import cats.Monad
 import cats.instances.either._
 import cats.instances.list._
@@ -21,7 +20,7 @@ object syntactic {
     }.as(graph)
   }
 
-  final private[backend] case class Context(
+  final private[compiler] case class Context(
     nodes: Map[ComponentId, raw.Component],
     visited: Set[ComponentId],
     position: List[ComponentId])
@@ -33,7 +32,7 @@ object syntactic {
   }
 
   // another state monad with error handling
-  private[backend] trait Check[+A] { self =>
+  private[compiler] trait Check[+A] { self =>
     import Check._
 
     def run(ctx: Context): Either[String, (Context, A)]
@@ -50,7 +49,7 @@ object syntactic {
     }
   }
 
-  private[backend] object Check {
+  private[compiler] object Check {
     val unit: Check[Unit] = pure(())
 
     def getComponent(id: ComponentId): Check[raw.Component] =
@@ -122,7 +121,7 @@ object syntactic {
   }
   import Check._
 
-  private[backend] def checkComponent(id: ComponentId): Check[Unit] = {
+  private[compiler] def checkComponent(id: ComponentId): Check[Unit] = {
     import raw._
     withPosition(id) {
       addVisisted(id) *> getComponent(id).flatMap {

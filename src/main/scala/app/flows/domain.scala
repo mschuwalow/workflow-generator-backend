@@ -1,6 +1,6 @@
 package app.flows
 
-import app.backend.nodes.raw
+import app.compiler.raw
 import io.circe._
 import io.circe.generic.semiauto._
 

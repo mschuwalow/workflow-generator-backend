@@ -1,6 +1,6 @@
 package app
 
-import app.backend.Type
+import app.compiler.Type
 import zio.random.Random
 import zio.test.Gen
 import zio.test.Gen._

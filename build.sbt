@@ -57,6 +57,7 @@ lazy val root = (project in file("."))
       "org.tpolecat"             %% "doobie-hikari"            % "0.8.8",
       "org.typelevel"            %% "jawn-parser"              % "1.0.0" % "test",
       "dev.zio"                  %% "zio"                      % "1.0.1",
+      "dev.zio"                  %% "zio-streams"              % "1.0.1",
       "dev.zio"                  %% "zio-test"                 % "1.0.1" % "test",
       "dev.zio"                  %% "zio-test-sbt"             % "1.0.1" % "test",
       "dev.zio"                  %% "zio-interop-cats"         % "2.1.4.0",

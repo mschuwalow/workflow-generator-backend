@@ -1,4 +1,4 @@
-package app.backend.nodes
+package app.compiler
 
 import io.circe._
 

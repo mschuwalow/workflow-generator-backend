@@ -1,7 +1,6 @@
-package app.backend
+package app.compiler
 
-import app.backend.Type._
-import app.backend.nodes._
+import app.compiler.Type._
 import cats.Monad
 import cats.instances.list._
 import cats.syntax.apply._
@@ -32,19 +31,19 @@ object semantic {
       }
   }
 
-  final private[backend] case class Context(
+  final private[compiler] case class Context(
     in: Map[ComponentId, raw.Component],
     out: Map[ComponentId, typed.Stream],
     enclosing: Option[ComponentId])
 
-  private[backend] object Context {
+  private[compiler] object Context {
 
     def initial(in: Map[ComponentId, raw.Component]): Context =
       Context(in, Map.empty, None)
   }
 
   // state monad with error collection
-  private[backend] trait Transform[+A] { self =>
+  private[compiler] trait Transform[+A] { self =>
     import Transform._
     def run(ctx: Context): Either[String, (Context, A)]
 
@@ -61,7 +60,7 @@ object semantic {
     }
   }
 
-  private[backend] object Transform {
+  private[compiler] object Transform {
 
     val unit: Transform[Unit] = transform { ctx =>
       Right((ctx, ()))
@@ -143,7 +142,7 @@ object semantic {
   }
   import Transform._
 
-  private[backend] def typeCheckSink(id: ComponentId): Transform[typed.Sink] = {
+  private[compiler] def typeCheckSink(id: ComponentId): Transform[typed.Sink] = {
     import raw._
     withEnclosing(id) {
       askRaw(id).flatMap {
@@ -161,7 +160,7 @@ object semantic {
     }
   }
 
-  private[backend] def typeCheckStream(
+  private[compiler] def typeCheckStream(
     id: ComponentId,
     hint: Option[Type] // downstream type expectation.
   ): Transform[typed.Stream] = {

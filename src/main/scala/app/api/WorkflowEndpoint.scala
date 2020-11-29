@@ -1,7 +1,8 @@
 package app.api
 
-import app.backend.{ semantic, syntactic }
+import app.compiler.{ semantic, syntactic }
 import app.flows.WorkflowCreationRequest
+import app.Interpreter
 import zio.interop.catz._
 import zio.logging.Logging
 import zio.logging.log
@@ -18,7 +19,7 @@ final class WorkflowEndpoint[R <: Logging] extends Endpoint[R] {
       } yield graph
       result <- result.fold(
                  BadRequest(_),
-                 t => log.info(s"Parsed graph $t") *> Ok(())
+                 t => log.info(s"Parsed graph $t") *> Interpreter.stream.run(t)  *> Ok(())
                )
     } yield result
 }

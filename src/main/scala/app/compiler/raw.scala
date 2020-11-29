@@ -1,6 +1,6 @@
-package app.backend.nodes
+package app.compiler
 
-import app.backend.Type
+import app.compiler.Type
 import io.circe._
 import io.circe.generic.semiauto._
 

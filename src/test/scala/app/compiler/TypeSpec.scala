@@ -1,7 +1,7 @@
-package app.backend
+package app.compiler
 
 import app.BaseSpec
-import app.backend.Type._
+import app.compiler.Type._
 import app.gens.{ backend => gens }
 import zio.test.Assertion._
 import zio.test._
