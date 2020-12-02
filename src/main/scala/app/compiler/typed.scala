@@ -42,7 +42,7 @@ object typed {
     type Element = (stream1.Element, stream2.Element)
     val elementType = TTuple(stream1.elementType, stream2.elementType)
 
-    val run: ZStream[Any, Throwable, Element] = {
+    val run: ZStream[Any, Throwable, Element] =
       stream1.run
         .mergeEither(stream2.run)
         .mapAccum(
@@ -55,10 +55,9 @@ object typed {
             val result = (l, Some(r))
             (result, result)
         }
-        .collect {
-          case ((Some(l), Some(r))) => ((l, r))
+        .collect { case (Some(l), Some(r)) =>
+          ((l, r))
         }
-    }
   }
 
   final case class LeftJoin(
@@ -69,7 +68,7 @@ object typed {
     type Element = (stream1.Element, Option[stream2.Element])
     val elementType = tTuple(stream1.elementType, tOption(stream2.elementType))
 
-    val run: ZStream[Any, Throwable, Element] = {
+    val run: ZStream[Any, Throwable, Element] =
       stream1.run
         .mergeEither(stream2.run)
         .mapAccum(
@@ -82,10 +81,9 @@ object typed {
             val result = (l, Some(r))
             (result, result)
         }
-        .collect {
-          case ((Some(l), r)) => ((l, r))
+        .collect { case (Some(l), r) =>
+          ((l, r))
         }
-    }
   }
 
   final case class Merge(

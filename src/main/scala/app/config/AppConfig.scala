@@ -15,11 +15,10 @@ object AppConfig {
     val all = ZLayer.fromEffect {
       ZIO
         .fromEither(ConfigSource.default.load[Config])
-        .mapError(
-          failures =>
-            new IllegalStateException(
-              s"Error loading configuration: $failures"
-            )
+        .mapError(failures =>
+          new IllegalStateException(
+            s"Error loading configuration: $failures"
+          )
         )
     }
     all >>> (ZLayer.fromFunction((_: Has[Config]).get.http))

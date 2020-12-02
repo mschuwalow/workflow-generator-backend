@@ -18,13 +18,10 @@ object SysSpec extends BaseSpec {
       testM("extractResource should extract resources and delete them") {
         Ref.make[Option[Path]](None).flatMap { ref =>
           sys.extractResource("/testFile").use { path =>
-            ZIO.effect(Source.fromFile(path.toFile).getLines().toList).map {
-              lines =>
-                assert(lines)(equalTo(List("abc123")))
+            ZIO.effect(Source.fromFile(path.toFile).getLines().toList).map { lines =>
+              assert(lines)(equalTo(List("abc123")))
             } <* ref.set(Some(path))
-          } *> ref.get.map(
-            path => assert(path.get.toFile.exists)(isFalse)
-          )
+          } *> ref.get.map(path => assert(path.get.toFile.exists)(isFalse))
         }
       },
       suite("runFromClassPath")(

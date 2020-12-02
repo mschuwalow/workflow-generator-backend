@@ -70,49 +70,43 @@ package object sys {
 
             def run(cmd: String) =
               for {
-                proc <- blocking.effectBlocking(runtime.exec(cmd)).toManaged {
-                         p =>
-                           blocking.effectBlocking {
-                             blocking.effectBlocking(p.destroy()).ignore *>
-                               blocking
-                                 .effectBlocking(p.waitFor)
-                                 .race(Task(p.destroyForcibly).delay(5.minutes))
-                           }.catchAll(
-                             e =>
-                               log.warn(
-                                 s"Waiting for $cmd failed with ${e.toString}."
-                               )
-                           )
-                       }
+                proc <-
+                  blocking.effectBlocking(runtime.exec(cmd)).toManaged { p =>
+                    blocking.effectBlocking {
+                      blocking.effectBlocking(p.destroy()).ignore *>
+                        blocking
+                          .effectBlocking(p.waitFor)
+                          .race(Task(p.destroyForcibly).delay(5.minutes))
+                    }
+                      .catchAll(e =>
+                        log.warn(
+                          s"Waiting for $cmd failed with ${e.toString}."
+                        )
+                      )
+                  }
                 _ <- pump(proc.getInputStream(), log.info(_)).fork
-                      .toManaged(_.interrupt)
+                       .toManaged(_.interrupt)
                 _ <- pump(proc.getErrorStream(), log.warn(_)).fork
-                      .toManaged(_.interrupt)
+                       .toManaged(_.interrupt)
               } yield proc
 
             run(cmd).map { p =>
               RunningProcess(
                 (blocking.effectBlocking(p.waitFor()) *> ZIO.effect(
                   p.exitValue()
-                )).catchAll(
-                    e => log.warn(s"Command failed with ${e.toString()}").as(1)
-                  )
+                )).catchAll(e => log.warn(s"Command failed with ${e.toString()}").as(1))
                   .provide(env),
                 blocking
                   .effectBlocking(p.destroy())
                   .unit
-                  .catchAll(
-                    e =>
-                      log.warn(s"Stopping process failed with ${e.toString()}")
+                  .catchAll(e =>
+                    log.warn(s"Stopping process failed with ${e.toString()}")
                   )
                   .provide(env),
                 blocking
                   .effectBlocking(p.destroyForcibly())
                   .unit
-                  .catchAll(
-                    e =>
-                      log.warn(s"Killing process failed with ${e.toString()}")
-                  )
+                  .catchAll(e => log.warn(s"Killing process failed with ${e.toString()}"))
                   .provide(env)
               )
             }
@@ -123,26 +117,23 @@ package object sys {
               ZManaged.make(ZIO.effect(thunk)) { ac =>
                 ZIO
                   .effect(ac.close())
-                  .catchAll(
-                    e => log.warn(s"Closing closeable failed ${e.toString()}")
-                  )
+                  .catchAll(e => log.warn(s"Closing closeable failed ${e.toString()}"))
               }
 
             for {
-              dir          <- tmpDir
-              is           <- fromCloseable(getClass().getResource(name).openStream())
+              dir         <- tmpDir
+              is          <- fromCloseable(getClass().getResource(name).openStream())
               resourcePath = dir.resolve("resource")
-              os           <- fromCloseable(new FileOutputStream(resourcePath.toFile()))
+              os          <- fromCloseable(new FileOutputStream(resourcePath.toFile()))
               _ <- ZIO.effect {
-                    val buffer = new Array[Byte](2048)
-                    var length = 0
+                     val buffer = new Array[Byte](2048)
+                     var length = 0
 
-                    while ({ length = is.read(buffer); length } != -1) {
-                      os.write(buffer, 0, length);
-                    }
-                    os.close()
-                    is.close()
-                  }.toManaged_
+                     while ({ length = is.read(buffer); length } != -1)
+                       os.write(buffer, 0, length);
+                     os.close()
+                     is.close()
+                   }.toManaged_
             } yield resourcePath
           }.provide(env)
 
@@ -155,11 +146,10 @@ package object sys {
             } { path =>
               ZIO
                 .effect(new Directory(path.toFile()).deleteRecursively())
-                .catchAll(
-                  _ =>
-                    log.warn(
-                      s"Deleting ${path.toAbsolutePath().toString()} failed."
-                    )
+                .catchAll(_ =>
+                  log.warn(
+                    s"Deleting ${path.toAbsolutePath().toString()} failed."
+                  )
                 )
             }
           }.provide(env)
@@ -177,14 +167,12 @@ package object sys {
   def runCommand(cmd: Command): ZManaged[Sys, Throwable, RunningProcess] =
     ZManaged.accessManaged(_.get.runCommand(cmd))
 
-  def freePort: URIO[Sys, Port] =
-    ZIO.accessM(_.get.freePort)
+  def freePort: URIO[Sys, Port] = ZIO.accessM(_.get.freePort)
 
   def extractResource(name: String): ZManaged[Sys, Throwable, Path] =
     ZManaged.accessManaged(_.get.extractResource(name))
 
-  def tmpDir: ZManaged[Sys, Throwable, Path] =
-    ZManaged.accessManaged(_.get.tmpDir)
+  def tmpDir: ZManaged[Sys, Throwable, Path] = ZManaged.accessManaged(_.get.tmpDir)
 
   def runFromClassPath(
     name: String,

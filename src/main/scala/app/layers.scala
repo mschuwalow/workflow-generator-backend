@@ -14,10 +14,8 @@ object layers {
 
   object live {
 
-    val layer0
-      : ZLayer[ZEnv, Throwable, Layer0Env] = AppConfig.live ++ Slf4jLogger.make(
-      (_, msg) => msg
-    )
+    val layer0: ZLayer[ZEnv, Throwable, Layer0Env] =
+      AppConfig.live ++ Slf4jLogger.make((_, msg) => msg)
     val appLayer: ZLayer[ZEnv, Throwable, AppEnv] = layer0
   }
 }

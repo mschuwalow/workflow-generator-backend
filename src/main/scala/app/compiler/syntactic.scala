@@ -11,13 +11,14 @@ object syntactic {
 
   def checkCycles(graph: raw.Graph): Either[String, raw.Graph] = {
     // all starting points to traverse the graph
-    val sinks = graph.nodes.collect {
-      case (id, _: raw.Sink) => id
+    val sinks = graph.nodes.collect { case (id, _: raw.Sink) =>
+      id
     }.toList
     sinks.traverse { id =>
       // every subgraph needs to be checked seperately
       checkComponent(id).run(Context.initial(graph.nodes))
-    }.as(graph)
+    }
+      .as(graph)
   }
 
   final private[compiler] case class Context(
@@ -37,16 +38,17 @@ object syntactic {
 
     def run(ctx: Context): Either[String, (Context, A)]
 
-    def map[B](f: A => B): Check[B] = check {
-      run(_).map { case (ctx, a) => (ctx, f(a)) }
-    }
-
-    def flatMap[B](f: A => Check[B]) = check {
-      run(_).flatMap {
-        case (ctx, a) =>
-          f(a).run(ctx)
+    def map[B](f: A => B): Check[B] =
+      check {
+        run(_).map { case (ctx, a) => (ctx, f(a)) }
       }
-    }
+
+    def flatMap[B](f: A => Check[B]) =
+      check {
+        run(_).flatMap { case (ctx, a) =>
+          f(a).run(ctx)
+        }
+      }
   }
 
   private[compiler] object Check {
@@ -67,18 +69,18 @@ object syntactic {
       Right((ctx, ctx))
     }
 
-    def updateContext(f: Context => Context): Check[Context] = check { ctx =>
-      val next = f(ctx)
-      Right((next, next))
-    }
+    def updateContext(f: Context => Context): Check[Context] =
+      check { ctx =>
+        val next = f(ctx)
+        Right((next, next))
+      }
 
     def addVisisted(id: ComponentId): Check[Unit] =
       getContext.flatMap { ctx =>
-        if (ctx.visited.contains(id)) {
+        if (ctx.visited.contains(id))
           fail("Cycle detected")
-        } else {
+        else
           updateContext(ctx => ctx.copy(visited = ctx.visited + id)).void
-        }
       }
 
     def withPosition[A](id: ComponentId)(nested: Check[A]): Check[A] =
@@ -88,27 +90,27 @@ object syntactic {
         _ <- updateContext(old => old.copy(position = old.position.tail))
       } yield a
 
-    def fail(msg: String): Check[Nothing] = check { ctx =>
-      Left(
-        s"Failed while checking ${ctx.position.reverse.map(_.value).mkString("->")}: $msg"
-      )
-    }
+    def fail(msg: String): Check[Nothing] =
+      check { ctx =>
+        Left(
+          s"Failed while checking ${ctx.position.reverse.map(_.value).mkString("->")}: $msg"
+        )
+      }
 
     def check[A](f: Context => Either[String, (Context, A)]): Check[A] =
       new Check[A] {
 
-        def run(ctx: Context): Either[String, (Context, A)] =
-          f(ctx)
+        def run(ctx: Context): Either[String, (Context, A)] = f(ctx)
       }
 
-    def pure[A](a: A): Check[A] = check { ctx =>
-      Right((ctx, a))
-    }
+    def pure[A](a: A): Check[A] =
+      check { ctx =>
+        Right((ctx, a))
+      }
 
     implicit val monad: Monad[Check] = new Monad[Check] {
 
-      def flatMap[A, B](fa: Check[A])(f: A => Check[B]): Check[B] =
-        fa.flatMap(f)
+      def flatMap[A, B](fa: Check[A])(f: A => Check[B]): Check[B] = fa.flatMap(f)
 
       def tailRecM[A, B](a: A)(f: A => Check[Either[A, B]]): Check[B] =
         f(a).flatMap {

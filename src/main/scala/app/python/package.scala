@@ -12,12 +12,14 @@ import zio.duration._
 import zio.logging.Logging
 
 package object python {
-  type Python = Has[Python.Service]
+  type Python  = Has[Python.Service]
   type Command = String
-  type Port = Int
+  type Port    = Int
 
   object Python extends Serializable {
+
     trait Service extends Serializable {
+
       def runAs[A: ClassTag](
         startCommand: Port => Command,
         startDelay: Duration = Duration.Zero,
@@ -29,57 +31,65 @@ package object python {
       ZLayer.fromFunction { env =>
         new Service {
           def retry[R <: Clock, E, A] =
-            (zio: ZIO[R, E, A]) => zio.retry(Schedule.recurs(5) && Schedule.spaced(200.milliseconds))
+            (zio: ZIO[R, E, A]) =>
+              zio.retry(Schedule.recurs(5) && Schedule.spaced(200.milliseconds))
 
-        def runAs[A: ClassTag](startCommand: Port => Command, startDelay: Duration, shutdown: Option[A => UIO[Unit]]): Managed[Throwable,A] = {
-          val retrySchedule = Schedule.recurs(5) && Schedule.spaced(200.milliseconds)
+          def runAs[A: ClassTag](
+            startCommand: Port => Command,
+            startDelay: Duration,
+            shutdown: Option[A => UIO[Unit]]
+          ): Managed[Throwable, A] = {
+            val retrySchedule =
+              Schedule.recurs(5) && Schedule.spaced(200.milliseconds)
 
-          val startPythonServer = {
-            val startTask = for {
-              pythonPort <- sys.freePort.toManaged_
-              _          <- sys.runCommand(startCommand(pythonPort))
-              _          <- clock.sleep(startDelay).toManaged_
-            } yield pythonPort
+            val startPythonServer = {
+              val startTask = for {
+                pythonPort <- sys.freePort.toManaged_
+                _          <- sys.runCommand(startCommand(pythonPort))
+                _          <- clock.sleep(startDelay).toManaged_
+              } yield pythonPort
 
-            startTask.retry(retrySchedule)
-          }
+              startTask.retry(retrySchedule)
+            }
 
-          def startClientServer(pythonPort: Port) = {
-            val startTask = sys.freePort.flatMap { jvmPort =>
-              blocking.effectBlocking {
-                new ClientServerBuilder()
-                  .pythonPort(pythonPort)
-                  .javaPort(jvmPort)
-                  .build()
+            def startClientServer(pythonPort: Port) = {
+              val startTask = sys.freePort.flatMap { jvmPort =>
+                blocking.effectBlocking {
+                  new ClientServerBuilder()
+                    .pythonPort(pythonPort)
+                    .javaPort(jvmPort)
+                    .build()
+                }
+              }
+
+              ZManaged.make {
+                retry(startTask)
+              } { client =>
+                ZIO.effect(client.shutdown()).either
               }
             }
 
-            ZManaged.make {
-              retry(startTask)
-            } { client =>
-              ZIO.effect(client.shutdown()).either
-            }
-          }
+            def cast(client: ClientServer): Managed[Throwable, A] =
+              ZManaged.make {
+                ZIO.effect {
+                  client
+                    .getPythonServerEntryPoint(
+                      Array(implicitly[ClassTag[A]].runtimeClass)
+                    )
+                    .asInstanceOf[A]
+                }
+              } { a =>
+                shutdown.map(_(a)).getOrElse(ZIO.unit)
+              }
 
-        def cast(client: ClientServer): Managed[Throwable, A] =
-          ZManaged.make {
-            ZIO.effect {
-              client
-                .getPythonServerEntryPoint(Array(implicitly[ClassTag[A]].runtimeClass))
-                .asInstanceOf[A]
-            }
-          } { a =>
-            shutdown.map(_(a)).getOrElse(ZIO.unit)
-          }
-
-          for {
-            pythonPort <- startPythonServer
-            client     <- startClientServer(pythonPort)
-            instance   <- cast(client)
-          } yield instance
-        }.provide(env)
+            for {
+              pythonPort <- startPythonServer
+              client     <- startClientServer(pythonPort)
+              instance   <- cast(client)
+            } yield instance
+          }.provide(env)
+        }
       }
-    }
   }
 
   def runAs[A: ClassTag](

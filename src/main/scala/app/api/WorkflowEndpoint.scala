@@ -13,12 +13,12 @@ final class WorkflowEndpoint[R <: Logging] extends Endpoint[R] {
     for {
       _ <- log.info(s"Got workflow creation request: $workFlow")
       result = for {
-        graph <- syntactic.checkCycles(workFlow.components)
-        graph <- semantic.typecheck(graph)
-      } yield graph
+                 graph <- syntactic.checkCycles(workFlow.components)
+                 graph <- semantic.typecheck(graph)
+               } yield graph
       result <- result.fold(
-                 BadRequest(_),
-                 t => log.info(s"Parsed graph $t") *> Ok(())
-               )
+                  BadRequest(_),
+                  t => log.info(s"Parsed graph $t") *> Ok(())
+                )
     } yield result
 }

@@ -15,15 +15,16 @@ object raw {
 
   sealed trait Component { self =>
 
-    def isSink: Boolean = self match {
-      case Source.Never(_)                 => false
-      case Sink.Void(_, _)                 => true
-      case Transformer1.UDF(_, _, _)       => false
-      case Transformer2.LeftJoin(_, _)     => false
-      case Transformer2.InnerJoin(_, _)    => false
-      case Transformer2.Merge(_, _)        => false
-      case Transformer2.UDF(_, _, _, _, _) => false
-    }
+    def isSink: Boolean =
+      self match {
+        case Source.Never(_)                 => false
+        case Sink.Void(_, _)                 => true
+        case Transformer1.UDF(_, _, _)       => false
+        case Transformer2.LeftJoin(_, _)     => false
+        case Transformer2.InnerJoin(_, _)    => false
+        case Transformer2.Merge(_, _)        => false
+        case Transformer2.UDF(_, _, _, _, _) => false
+      }
   }
 
   object Component {

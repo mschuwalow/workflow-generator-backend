@@ -23,9 +23,8 @@ object TypeSpec extends BaseSpec {
         assert(Type.fromString("Number"))(isRight(equalTo(TNumber)))
       },
       testM("should parse any well formed type") {
-        check(gens.anyType) {
-          case (str, t) =>
-            assert(Type.fromString(str))(isRight(equalTo(t)))
+        check(gens.anyType) { case (str, t) =>
+          assert(Type.fromString(str))(isRight(equalTo(t)))
         }
       }
     )

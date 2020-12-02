@@ -19,7 +19,7 @@ object Main extends App {
     val prog =
       for {
         httpCfg <- getHttpConfig
-        httpApp = makeRoutes[Env]
+        httpApp  = makeRoutes[Env]
         _       <- runHttp(httpApp, httpCfg.port)
       } yield ZExitCode.success
 

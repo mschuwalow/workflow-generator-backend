@@ -11,7 +11,6 @@ object Interpreter {
 
   val stream: Interpreter = new Interpreter {
 
-    def run(flow: typed.Flow): Task[Unit] =
-      ZIO.foreachPar_(flow.streams)(_.run)
+    def run(flow: typed.Flow): Task[Unit] = ZIO.foreachPar_(flow.streams)(_.run)
   }
 }
