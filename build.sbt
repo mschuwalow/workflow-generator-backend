@@ -71,6 +71,7 @@ lazy val root = (project in file("."))
       "org.fomkin"               %% "korolev"                  % "0.16.1",
       "org.fomkin"               %% "korolev-zio"              % "0.16.1",
       "org.scala-lang.modules"   %% "scala-parser-combinators" % "1.1.2",
+      "net.sf.py4j"              % "py4j"                      % "0.10.9.1",
       // plugins
       compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
       compilerPlugin(
