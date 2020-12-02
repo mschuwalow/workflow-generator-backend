@@ -128,7 +128,8 @@ object syntactic {
     withPosition(id) {
       addVisisted(id) *> getComponent(id).flatMap {
         case Source.Never(_)                => unit
-        case Transformer1.UDF(stream, _, _) => checkComponent(stream)
+        case Source.Numbers(_)              => unit
+        case Transformer1.UDF(stream, _, _, _) => checkComponent(stream)
         case Transformer2.InnerJoin(stream1, stream2) =>
           checkComponent(stream1) *> checkComponent(stream2)
         case Transformer2.LeftJoin(stream1, stream2) =>

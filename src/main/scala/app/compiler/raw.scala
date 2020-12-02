@@ -18,8 +18,9 @@ object raw {
     def isSink: Boolean =
       self match {
         case Source.Never(_)                 => false
+        case Source.Numbers(_)               => false
         case Sink.Void(_, _)                 => true
-        case Transformer1.UDF(_, _, _)       => false
+        case Transformer1.UDF(_, _, _, _)    => false
         case Transformer2.LeftJoin(_, _)     => false
         case Transformer2.InnerJoin(_, _)    => false
         case Transformer2.Merge(_, _)        => false
@@ -34,6 +35,8 @@ object raw {
         hCursor.get[String]("type").flatMap {
           case "source:never" =>
             hCursor.as[Source.Never]
+          case "source:numbers" =>
+            hCursor.as[Source.Numbers]
           case "sink:void" =>
             hCursor.as[Sink.Void]
           case "transformer1:udf" =>
@@ -67,6 +70,13 @@ object raw {
       implicit val decoder: Decoder[Never] =
         deriveDecoder
     }
+
+    final case class Numbers(values: List[Long]) extends Source
+
+    object Numbers {
+      implicit val decoder: Decoder[Numbers] =
+        deriveDecoder
+    }
   }
 
   sealed trait Sink extends Component {
@@ -95,6 +105,7 @@ object raw {
 
     final case class UDF(
       stream: ComponentId,
+      code: String,
       inputTypeHint: Option[Type],
       outputTypeHint: Option[Type])
         extends Transformer1

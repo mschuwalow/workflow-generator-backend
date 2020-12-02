@@ -4,6 +4,7 @@ import app.compiler.Type._
 import zio.ZIO
 import zio.stream.ZStream
 import app.UDFRunner
+import zio.Has
 
 object typed {
   final case class Flow(streams: List[Sink])
@@ -17,7 +18,7 @@ object typed {
     id: ComponentId,
     source: Stream)
       extends Sink {
-    val run = source.run.runDrain
+    val run = source.run.map(e => {println(e); e}).runDrain
   }
 
   sealed trait Stream {
@@ -25,6 +26,8 @@ object typed {
     val id: ComponentId
     val elementType: Type
     val run: ZStream[UDFRunner, Throwable, Element]
+    def asElementType(elem: Element): elementType.Scala =
+      elem.asInstanceOf[elementType.Scala]
   }
 
   final case class Never(
@@ -33,6 +36,15 @@ object typed {
       extends Stream {
     type Element = Nothing
     val run: ZStream[Any, Throwable, Element] = ZStream.never
+  }
+
+  final case class Numbers(
+    id: ComponentId,
+    values: List[Long]
+  ) extends Stream {
+    type Element = Long
+    val elementType: Type = Type.tNumber
+    val run: ZStream[Has[UDFRunner.Service],Throwable,Long] = ZStream.fromIterable(values)
   }
 
   final case class InnerJoin(
@@ -107,9 +119,9 @@ object typed {
       extends Stream {
     type Element = elementType.Scala
     val run: ZStream[UDFRunner, Throwable, Element] =
-        stream.run.mapM { element =>
-          UDFRunner.runPython1(code, stream.elementType, elementType)(element)
-        }
+      stream.run.mapM { element =>
+        UDFRunner.runPython1(code, stream.elementType, elementType)(stream.asElementType(element))
+      }
   }
 
   final case class UDF2(

@@ -177,7 +177,9 @@ object semantic {
             .fold[Transform[typed.Stream]](
               fail("Type could not be determined. Try adding a type hint.")
             )(t => pure(typed.Never(id, t)))
-        case Transformer1.UDF(stream, inputTypeHint, outputTypeHint) =>
+        case Source.Numbers(values) =>
+          pure(typed.Numbers(id, values))
+        case Transformer1.UDF(stream, code, inputTypeHint, outputTypeHint) =>
           for {
             s <- typeCheckStream(stream, inputTypeHint)
             // prefer provided type hint over inferred type.
@@ -190,7 +192,7 @@ object semantic {
                     "Type could not be determined. Try adding a type hint"
                   )
                 )(pure(_))
-          } yield typed.UDF1(id, s, myType)
+          } yield typed.UDF1(id, code, s, myType)
         case Transformer2.InnerJoin(stream1, stream2) =>
           hint match {
             case Some(TTuple(left, right)) =>

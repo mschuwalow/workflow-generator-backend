@@ -37,10 +37,12 @@ object UDFRunner {
             log.info("Started python worker.") *>
             requests.take.flatMap {
               case Request1(function, input, cb) =>
+                log.debug(s"running function1: $function")
                 ZIO.effect {
                   runner.run_udf_1(function, input)
                 }.to(cb)
               case Request2(function, input1, input2, cb) =>
+                log.debug(s"runing function2: $function")
                 ZIO.effect {
                   runner.run_udf_2(function, input1, input2)
                 }.to(cb)

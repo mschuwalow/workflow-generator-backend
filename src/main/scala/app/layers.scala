@@ -13,30 +13,21 @@ object layers {
     AppConfig with HttpConfig with Logging with Blocking with Clock
 
   type Layer1Env =
-    Layer0Env with Sys
+    Layer0Env with Interpreter
 
-  type Layer2Env =
-    Layer1Env with Python
-
-  type Layer3Env =
-    Layer2Env with UDFRunner
-
-  type AppEnv = Layer3Env
+  type AppEnv = Layer1Env
 
   object live {
+
+    val interpreter: ZLayer[Layer0Env, Throwable, Interpreter] =
+      ZLayer.identity[Layer0Env] >+> Sys.live >+> Python.live >+> UDFRunner.live(5) >+> Interpreter.stream
 
     val layer0: ZLayer[ZEnv, Throwable, Layer0Env] =
       ZLayer.identity[ZEnv] ++ AppConfig.live ++ Slf4jLogger.make((_, msg) => msg)
 
-    val layer1: ZLayer[Layer0Env, Nothing, Layer1Env] =
-      ZLayer.identity ++ Sys.live
+    val layer1: ZLayer[Layer0Env, Throwable, Layer1Env] =
+      ZLayer.identity ++ interpreter
 
-    val layer2: ZLayer[Layer1Env, Nothing, Layer2Env] =
-      ZLayer.identity ++ Python.live
-
-    val layer3: ZLayer[Layer2Env, Throwable, Layer3Env] =
-      ZLayer.identity ++ UDFRunner.live(5)
-
-    val appLayer: ZLayer[ZEnv, Throwable, AppEnv] = layer0 >>> layer1 >>> layer2 >>> layer3
+    val appLayer: ZLayer[ZEnv, Throwable, AppEnv] = layer0 >>> layer1
   }
 }

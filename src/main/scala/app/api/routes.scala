@@ -1,5 +1,6 @@
 package app.api
 
+import app.Interpreter
 import app.flows.WorkflowCreationRequest
 import org.http4s._
 import org.http4s.implicits._
@@ -9,7 +10,7 @@ import zio.logging.Logging
 
 object routes {
 
-  def makeRoutes[R <: Logging]: HttpApp[RIO[R, ?]] = {
+  def makeRoutes[R <: Logging with Interpreter]: HttpApp[RIO[R, ?]] = {
     val endpoint = new Endpoint[R] {}
     import endpoint._
     import endpoint.dsl._
