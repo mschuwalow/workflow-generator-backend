@@ -7,16 +7,19 @@
     },
     "2": {
       "type": "transformer1:udf",
-      "code": "def run(n):\n    return n + 1",
+      "code": "def run(a):\n    return a._0 + a._1",
       "stream": "3"
     },
     "3": {
-      "type": "transformer1:udf",
-      "code": "def run(n):\n    return n - 1",
-      "stream": "4",
-      "outputTypeHint": "Number"
+      "type": "transformer2:innerJoin",
+      "stream1": "4",
+      "stream2": "5"
     },
     "4": {
+      "type": "source:numbers",
+      "values": [1, 2, 3]
+    },
+    "5": {
       "type": "source:numbers",
       "values": [1, 2, 3]
     }
