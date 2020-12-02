@@ -3,13 +3,14 @@ package app.compiler
 import app.compiler.Type._
 import zio.ZIO
 import zio.stream.ZStream
+import app.UDFRunner
 
 object typed {
   final case class Flow(streams: List[Sink])
 
   sealed trait Sink {
     def id: ComponentId
-    def run: ZIO[Any, Throwable, Unit]
+    def run: ZIO[UDFRunner, Throwable, Unit]
   }
 
   final case class Void(
@@ -23,7 +24,7 @@ object typed {
     type Element
     val id: ComponentId
     val elementType: Type
-    val run: ZStream[Any, Throwable, Element]
+    val run: ZStream[UDFRunner, Throwable, Element]
   }
 
   final case class Never(
@@ -42,7 +43,7 @@ object typed {
     type Element = (stream1.Element, stream2.Element)
     val elementType = TTuple(stream1.elementType, stream2.elementType)
 
-    val run: ZStream[Any, Throwable, Element] =
+    val run: ZStream[UDFRunner, Throwable, Element] =
       stream1.run
         .mergeEither(stream2.run)
         .mapAccum(
@@ -68,7 +69,7 @@ object typed {
     type Element = (stream1.Element, Option[stream2.Element])
     val elementType = tTuple(stream1.elementType, tOption(stream2.elementType))
 
-    val run: ZStream[Any, Throwable, Element] =
+    val run: ZStream[UDFRunner, Throwable, Element] =
       stream1.run
         .mergeEither(stream2.run)
         .mapAccum(
@@ -94,17 +95,21 @@ object typed {
     type Element = Either[stream1.Element, stream2.Element]
     val elementType: TEither = TEither(stream1.elementType, stream2.elementType)
 
-    val run: ZStream[Any, Throwable, Element] =
+    val run: ZStream[UDFRunner, Throwable, Element] =
       stream1.run.mergeEither(stream2.run)
   }
 
   final case class UDF1(
     id: ComponentId,
+    code: String,
     stream: Stream,
     elementType: Type)
       extends Stream {
     type Element = elementType.Scala
-    val run: ZStream[Any, Throwable, Element] = ???
+    val run: ZStream[UDFRunner, Throwable, Element] =
+        stream.run.mapM { element =>
+          UDFRunner.runPython1(code, stream.elementType, elementType)(element)
+        }
   }
 
   final case class UDF2(
