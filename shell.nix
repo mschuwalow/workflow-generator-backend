@@ -7,5 +7,7 @@ let
 in pkgs.mkShell {
   buildInputs = with pkgs; [
     customPython
+    openjdk11
+    sbt-extras
   ];
 }
