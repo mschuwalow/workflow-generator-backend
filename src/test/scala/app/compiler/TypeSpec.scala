@@ -10,9 +10,6 @@ object TypeSpec extends BaseSpec {
 
   val spec = suite("Type")(
     suite("parsing")(
-      test("should parse `null` primitive") {
-        assert(Type.fromString("Null"))(isRight(equalTo(TNull)))
-      },
       test("should parse `bool` primitive") {
         assert(Type.fromString("Bool"))(isRight(equalTo(TBool)))
       },

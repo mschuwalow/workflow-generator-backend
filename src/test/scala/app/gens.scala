@@ -12,13 +12,11 @@ object gens {
 
     def tBool: Gen[Any, (String, Type)] = const(("Bool", Type.tBool))
 
-    def tNull: Gen[Any, (String, Type)] = const(("Null", Type.tNull))
-
     def tString: Gen[Any, (String, Type)] = const(("String", Type.tString))
 
     def tNumber: Gen[Any, (String, Type)] = const(("Number", Type.tNumber))
 
-    def primitiveType: Gen[Random, (String, Type)] = oneOf(tBool, tNull, tString, tNumber)
+    def primitiveType: Gen[Random, (String, Type)] = oneOf(tBool, tString, tNumber)
 
     def tArray: Gen[Random with Sized, (String, Type)] =
       anyType.map { case (s, t) =>

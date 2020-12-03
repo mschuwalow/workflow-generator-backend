@@ -12,10 +12,6 @@ sealed abstract class Type {
 
 object Type {
 
-  case object TNull extends Type {
-    type Scala = ()
-  }
-
   case object TBool extends Type {
     type Scala = Boolean
   }
@@ -33,7 +29,8 @@ object Type {
   }
 
   final case class TObject(fields: (String, Type)*) extends Type {
-    type Scala = Any
+    // TODO: use an HList or similar
+    type Scala = Map[String, Any]
   }
 
   final case class TOption(value: Type) extends Type {
@@ -54,7 +51,6 @@ object Type {
     type Scala = Either[left.Scala, right.Scala]
   }
 
-  val tNull: Type                            = TNull
   val tBool: Type                            = TBool
   val tString: Type                          = TString
   val tNumber: Type                          = TNumber
@@ -91,10 +87,6 @@ object Type {
       "|",
       "?"
     )
-
-    lazy val tNull: PackratParser[TNull.type] = "Null" ^^ { _ =>
-      TNull
-    }
 
     lazy val tBoolean: PackratParser[TBool.type] = "Bool" ^^ { _ =>
       TBool
@@ -135,7 +127,7 @@ object Type {
       }
 
     lazy val fullType: PackratParser[Type] =
-      tOption | tNull | tBoolean | tString | tNumber | tArray | tObject | tTuple | tEither
+      tOption | tBoolean | tString | tNumber | tArray | tObject | tTuple | tEither
 
     def parse(in: String): Either[String, Type] = {
       val tokens = new PackratReader(new lexical.Scanner(in))

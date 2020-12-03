@@ -17,7 +17,6 @@ object Interpreter {
       }
     }
 
-  def run(flow: typed.Flow): RIO[Interpreter, Unit] =
-    ZIO.accessM(_.get.run(flow))
+  def run(flow: typed.Flow): RIO[Interpreter, Unit] = ZIO.accessM(_.get.run(flow))
 
 }

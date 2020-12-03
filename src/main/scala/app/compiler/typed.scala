@@ -1,10 +1,10 @@
 package app.compiler
 
+import app.UDFRunner
 import app.compiler.Type._
+import zio.Has
 import zio.ZIO
 import zio.stream.ZStream
-import app.UDFRunner
-import zio.Has
 
 object typed {
   final case class Flow(streams: List[Sink])
@@ -18,7 +18,7 @@ object typed {
     id: ComponentId,
     source: Stream)
       extends Sink {
-    val run = source.run.map(e => {println(e); e}).runDrain
+    val run = source.run.runCollect.map(s => println(s"Result: $s"))
   }
 
   sealed trait Stream {
@@ -26,6 +26,7 @@ object typed {
     val id: ComponentId
     val elementType: Type
     val run: ZStream[UDFRunner, Throwable, Element]
+
     def asElementType(elem: Element): elementType.Scala =
       elem.asInstanceOf[elementType.Scala]
   }
@@ -40,11 +41,13 @@ object typed {
 
   final case class Numbers(
     id: ComponentId,
-    values: List[Long]
-  ) extends Stream {
+    values: List[Long])
+      extends Stream {
     type Element = Long
     val elementType: Type = Type.tNumber
-    val run: ZStream[Has[UDFRunner.Service],Throwable,Long] = ZStream.fromIterable(values)
+
+    val run: ZStream[Has[UDFRunner.Service], Throwable, Long] =
+      ZStream.fromIterable(values)
   }
 
   final case class InnerJoin(
@@ -111,26 +114,20 @@ object typed {
       stream1.run.mergeEither(stream2.run)
   }
 
-  final case class UDF1(
+  final case class UDF(
     id: ComponentId,
     code: String,
     stream: Stream,
     elementType: Type)
       extends Stream {
     type Element = elementType.Scala
+
     val run: ZStream[UDFRunner, Throwable, Element] =
       stream.run.mapM { element =>
-        UDFRunner.runPython1(code, stream.elementType, elementType)(stream.asElementType(element))
+        UDFRunner.runPython1(code, stream.elementType, elementType)(
+          stream.asElementType(element)
+        )
       }
   }
 
-  final case class UDF2(
-    id: ComponentId,
-    stream1: Stream,
-    stream2: Stream,
-    elementType: Type)
-      extends Stream {
-    type Element = elementType.Scala
-    val run: ZStream[Any, Throwable, Element] = ???
-  }
 }

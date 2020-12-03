@@ -7,11 +7,11 @@
     },
     "2": {
       "type": "transformer1:udf",
-      "code": "def run(x):\n    return (x.left if x.isLeft else x.right)",
+      "code": "def run(x):\n    return ((x._1 + x._2) if x._2 else x._1)",
       "stream": "3"
     },
     "3": {
-      "type": "transformer2:merge",
+      "type": "transformer2:leftJoin",
       "stream1": "4",
       "stream2": "5"
     },

@@ -192,7 +192,7 @@ object semantic {
                     "Type could not be determined. Try adding a type hint"
                   )
                 )(pure(_))
-          } yield typed.UDF1(id, code, s, myType)
+          } yield typed.UDF(id, code, s, myType)
         case Transformer2.InnerJoin(stream1, stream2) =>
           hint match {
             case Some(TTuple(left, right)) =>
@@ -240,27 +240,6 @@ object semantic {
             case Some(t) =>
               fail(s"Found incompatible type. Expected either type, got $t")
           }
-        case Transformer2.UDF(
-              stream1,
-              stream2,
-              input1TypeHint,
-              input2TypeHint,
-              outputTypeHint
-            ) =>
-          for {
-            s1 <- typeCheckStream(stream1, input1TypeHint)
-            s2 <- typeCheckStream(stream2, input2TypeHint)
-            // prefer provided type hint over inferred type.
-            // if they do not match typechecking will fail later.
-            myType <-
-              outputTypeHint
-                .orElse(hint)
-                .fold[Transform[Type]](
-                  fail(
-                    "Type could not be determined. Try adding a type hint"
-                  )
-                )(pure(_))
-          } yield typed.UDF2(id, s1, s2, myType)
         case _: Sink =>
           fail("Sink not expected here")
       }

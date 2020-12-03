@@ -20,7 +20,9 @@ object layers {
   object live {
 
     val interpreter: ZLayer[Layer0Env, Throwable, Interpreter] =
-      ZLayer.identity[Layer0Env] >+> Sys.live >+> Python.live >+> UDFRunner.live(5) >+> Interpreter.stream
+      ZLayer.identity[Layer0Env] >+> Sys.live >+> Python.live >+> UDFRunner.live(
+        5
+      ) >+> Interpreter.stream
 
     val layer0: ZLayer[ZEnv, Throwable, Layer0Env] =
       ZLayer.identity[ZEnv] ++ AppConfig.live ++ Slf4jLogger.make((_, msg) => msg)

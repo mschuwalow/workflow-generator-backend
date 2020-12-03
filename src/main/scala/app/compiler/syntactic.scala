@@ -127,16 +127,14 @@ object syntactic {
     import raw._
     withPosition(id) {
       addVisisted(id) *> getComponent(id).flatMap {
-        case Source.Never(_)                => unit
-        case Source.Numbers(_)              => unit
+        case Source.Never(_)                   => unit
+        case Source.Numbers(_)                 => unit
         case Transformer1.UDF(stream, _, _, _) => checkComponent(stream)
         case Transformer2.InnerJoin(stream1, stream2) =>
           checkComponent(stream1) *> checkComponent(stream2)
         case Transformer2.LeftJoin(stream1, stream2) =>
           checkComponent(stream1) *> checkComponent(stream2)
         case Transformer2.Merge(stream1, stream2) =>
-          checkComponent(stream1) *> checkComponent(stream2)
-        case Transformer2.UDF(stream1, stream2, _, _, _) =>
           checkComponent(stream1) *> checkComponent(stream2)
         case Sink.Void(stream, _) =>
           checkComponent(stream)

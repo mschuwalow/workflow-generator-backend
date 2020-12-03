@@ -17,14 +17,13 @@ object raw {
 
     def isSink: Boolean =
       self match {
-        case Source.Never(_)                 => false
-        case Source.Numbers(_)               => false
-        case Sink.Void(_, _)                 => true
-        case Transformer1.UDF(_, _, _, _)    => false
-        case Transformer2.LeftJoin(_, _)     => false
-        case Transformer2.InnerJoin(_, _)    => false
-        case Transformer2.Merge(_, _)        => false
-        case Transformer2.UDF(_, _, _, _, _) => false
+        case Source.Never(_)              => false
+        case Source.Numbers(_)            => false
+        case Sink.Void(_, _)              => true
+        case Transformer1.UDF(_, _, _, _) => false
+        case Transformer2.LeftJoin(_, _)  => false
+        case Transformer2.InnerJoin(_, _) => false
+        case Transformer2.Merge(_, _)     => false
       }
   }
 
@@ -47,8 +46,6 @@ object raw {
             hCursor.as[Transformer2.LeftJoin]
           case "transformer2:merge" =>
             hCursor.as[Transformer2.Merge]
-          case "transformer2:udf" =>
-            hCursor.as[Transformer2.UDF]
           case id =>
             Left(
               DecodingFailure(
@@ -74,6 +71,7 @@ object raw {
     final case class Numbers(values: List[Long]) extends Source
 
     object Numbers {
+
       implicit val decoder: Decoder[Numbers] =
         deriveDecoder
     }
@@ -157,18 +155,5 @@ object raw {
         deriveDecoder
     }
 
-    final case class UDF(
-      stream1: ComponentId,
-      stream2: ComponentId,
-      input1TypeHint: Option[Type],
-      input2TypeHint: Option[Type],
-      outputTypeHint: Option[Type])
-        extends Transformer2
-
-    object UDF {
-
-      implicit val decoder: Decoder[UDF] =
-        deriveDecoder
-    }
   }
 }
