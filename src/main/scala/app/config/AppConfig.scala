@@ -5,7 +5,10 @@ import pureconfig.generic.semiauto._
 import zio._
 
 object AppConfig {
-  final private[this] case class Config(http: HttpConfig.Config)
+
+  final private[this] case class Config(
+    http: HttpConfig.Config,
+    database: DatabaseConfig.Config)
 
   private[this] object Config {
     implicit val convert: ConfigConvert[Config] = deriveConvert
@@ -21,6 +24,9 @@ object AppConfig {
           )
         )
     }
-    all >>> (ZLayer.fromFunction((_: Has[Config]).get.http))
+    all >>> (
+      ZLayer.fromFunction((_: Has[Config]).get.http) ++
+        ZLayer.fromFunction((_: Has[Config]).get.database)
+    )
   }
 }

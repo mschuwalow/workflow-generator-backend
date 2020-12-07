@@ -13,7 +13,7 @@ object layers {
     AppConfig with HttpConfig with Logging with Blocking with Clock
 
   type Layer1Env =
-    Layer0Env with Interpreter
+    Layer0Env with Interpreter with Database
 
   type AppEnv = Layer1Env
 
@@ -28,7 +28,7 @@ object layers {
       ZLayer.identity[ZEnv] ++ AppConfig.live ++ Slf4jLogger.make((_, msg) => msg)
 
     val layer1: ZLayer[Layer0Env, Throwable, Layer1Env] =
-      ZLayer.identity ++ interpreter
+      ZLayer.identity[Layer0Env] ++ interpreter ++ Database.live
 
     val appLayer: ZLayer[ZEnv, Throwable, AppEnv] = layer0 >>> layer1
   }

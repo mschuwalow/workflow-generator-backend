@@ -3,7 +3,10 @@ import Keys._
 
 object Options {
 
-  def scalacOptions(scalaVersion: String, optimize: Boolean) = {
+  def scalacOptions(
+    scalaVersion: String,
+    optimize: Boolean
+  ) = {
     val baseOptions = Seq(
       "-feature",
       "-deprecation",

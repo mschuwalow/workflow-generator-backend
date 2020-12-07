@@ -36,7 +36,8 @@ lazy val root = (project in file("."))
     name := "workflow-generator-backend",
     dockerUsername in Docker := Some("mschuwalow"),
     dockerExposedPorts in Docker := Seq(8080),
-    scalacOptions in ThisBuild := Options.scalacOptions(scalaVersion.value, isSnapshot.value),
+    scalacOptions in ThisBuild := Options
+      .scalacOptions(scalaVersion.value, isSnapshot.value),
     testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
     libraryDependencies ++= Dependencies.App
   )
