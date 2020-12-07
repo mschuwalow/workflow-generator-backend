@@ -36,7 +36,7 @@ object UDFRunner {
         case TNumber => v
         case TArray(elementType) =>
           v.asInstanceOf[Chunk[Any]].map(toJava(elementType)(_)).toArray
-        case TObject(_) =>
+        case _: TObject =>
           v.asInstanceOf[Map[String, Any]].asJava
         case TOption(valueType) =>
           val opt = v.asInstanceOf[Option[Any]]
@@ -68,7 +68,7 @@ object UDFRunner {
         case TArray(elementType) =>
           val jvalue = v.asInstanceOf[Array[AnyRef]]
           Chunk.fromArray(jvalue).map(fromJava(elementType, _)).asInstanceOf[t.Scala]
-        case TObject(_) =>
+        case _: TObject =>
           v.asInstanceOf[java.util.HashMap[String, Any]].asScala.asInstanceOf[t.Scala]
         case TOption(valueType) =>
           val value = if (v == null) None else Some(fromJava(valueType, v))
