@@ -1,6 +1,6 @@
 package app
 
-import app.compiler.typed
+import app.domain.typed
 import zio._
 
 object Interpreter {

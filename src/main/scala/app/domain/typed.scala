@@ -1,7 +1,7 @@
-package app.compiler
+package app.domain
 
 import app.UDFRunner
-import app.compiler.Type._
+import app.domain.Type._
 import zio.Has
 import zio.ZIO
 import zio.stream.ZStream

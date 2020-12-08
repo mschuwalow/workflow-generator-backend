@@ -2,7 +2,7 @@ package app.api
 
 import app.Interpreter
 import app.compiler.{ semantic, syntactic }
-import app.flows.WorkflowCreationRequest
+import app.api.representations.WorkflowCreationRequest
 import zio.interop.catz._
 import zio.logging.Logging
 import zio.logging.log

@@ -1,6 +1,6 @@
 package app
 
-import app.compiler.Type
+import app.domain.Type
 import zio.random.Random
 import zio.test.Gen
 import zio.test.Gen._
@@ -8,7 +8,7 @@ import zio.test.Sized
 
 object gens {
 
-  object backend {
+  object domain {
 
     def tBool: Gen[Any, (String, Type)] = const(("Bool", Type.tBool))
 

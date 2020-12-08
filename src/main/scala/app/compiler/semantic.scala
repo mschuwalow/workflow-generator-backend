@@ -1,6 +1,7 @@
 package app.compiler
 
-import app.compiler.Type._
+import app.domain.{ raw, typed, ComponentId, Type }
+import app.domain.Type._
 import cats.Monad
 import cats.instances.list._
 import cats.syntax.apply._

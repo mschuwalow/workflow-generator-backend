@@ -1,7 +1,7 @@
 package app.api
 
 import app.Interpreter
-import app.flows.WorkflowCreationRequest
+import app.api.representations.WorkflowCreationRequest
 import org.http4s._
 import org.http4s.implicits._
 import zio._

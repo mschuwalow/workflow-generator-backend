@@ -1,4 +1,4 @@
-package app.compiler
+package app.domain
 
 import scala.util.parsing.combinator.PackratParsers
 import scala.util.parsing.combinator.syntactical._

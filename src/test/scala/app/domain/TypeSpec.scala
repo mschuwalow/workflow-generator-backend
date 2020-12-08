@@ -1,8 +1,9 @@
 package app.compiler
 
 import app.BaseSpec
-import app.compiler.Type._
-import app.gens.{ backend => gens }
+import app.domain.Type
+import app.domain.Type._
+import app.gens.{ domain => gens }
 import zio.test.Assertion._
 import zio.test._
 

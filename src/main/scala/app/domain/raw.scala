@@ -1,6 +1,5 @@
-package app.compiler
+package app.domain
 
-import app.compiler.Type
 import io.circe._
 import io.circe.generic.semiauto._
 

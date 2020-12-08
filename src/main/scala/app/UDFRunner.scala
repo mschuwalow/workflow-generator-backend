@@ -2,7 +2,7 @@ package app
 
 import scala.jdk.CollectionConverters._
 
-import app.compiler.Type
+import app.domain.Type
 import app.udf.{ JEither, PythonRunner }
 import zio._
 import zio.duration._

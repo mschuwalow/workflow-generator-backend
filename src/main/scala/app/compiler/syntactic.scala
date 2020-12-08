@@ -1,5 +1,6 @@
 package app.compiler
 
+import app.domain.{ raw, ComponentId }
 import cats.Monad
 import cats.instances.either._
 import cats.instances.list._

@@ -1,4 +1,4 @@
-package app.compiler
+package app.domain
 
 import io.circe._
 
