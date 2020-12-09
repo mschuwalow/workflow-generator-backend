@@ -10,7 +10,7 @@ import app.repository.WorkflowRepository
 
 object layers {
 
-  type AppEnv = HttpConfig with Logging with Clock with Interpreter with WorkflowRepository
+  type AppEnv = HttpConfig with Logging with Clock with Interpreter with WorkflowManager
 
   object live {
 
@@ -19,6 +19,9 @@ object layers {
 
     type Layer1Env =
       Layer0Env with Interpreter with Database
+
+    type Layer2Env =
+      Layer1Env with WorkflowRepository
 
     val interpreter: ZLayer[Layer0Env, Throwable, Interpreter] =
       ZLayer.identity[Layer0Env] >+> Sys.live >+> Python.live >+> UDFRunner.live(
@@ -31,9 +34,13 @@ object layers {
     val layer1: ZLayer[Layer0Env, Throwable, Layer1Env] =
       ZLayer.identity[Layer0Env] ++ interpreter ++ Database.live
 
-    val layer2: ZLayer[Layer1Env, Nothing, AppEnv] =
+    val layer2: ZLayer[Layer1Env, Nothing, Layer2Env] =
       ZLayer.identity[Layer1Env] ++ WorkflowRepository.doobie
 
-    val appLayer: ZLayer[ZEnv, Throwable, AppEnv] = layer0 >>> layer1 >>> layer2
+    val layer3: ZLayer[Layer2Env, Throwable, AppEnv] =
+      ZLayer.identity[Layer2Env] ++ WorkflowManager.live
+
+    val appLayer: ZLayer[ZEnv, Throwable, AppEnv] =
+      layer0 >>> layer1 >>> layer2 >>> layer3
   }
 }

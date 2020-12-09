@@ -8,7 +8,7 @@ import zio._
 import zio.interop.catz._
 
 abstract class Endpoint[R] {
-  type RTask[A] = RIO[R, A]
+  type RTask[+A] = RIO[R, A]
 
   val dsl: Http4sDsl[RTask] = Http4sDsl[RTask]
 

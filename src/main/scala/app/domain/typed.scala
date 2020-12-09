@@ -31,8 +31,16 @@ object typed {
   final case class FlowWithId(
     id: FlowId,
     flow: Flow,
-    state: FlowState
-  )
+    state: FlowState)
+
+  object FlowWithId {
+
+    implicit val encoder: Encoder[FlowWithId] =
+      deriveEncoder
+
+    implicit val decoder: Decoder[FlowWithId] =
+      deriveDecoder
+  }
 
   sealed trait Sink {
     def id: ComponentId
@@ -52,7 +60,7 @@ object typed {
     id: ComponentId,
     source: Stream)
       extends Sink {
-    val run = source.run.runCollect.map(s => println(s"Result: $s"))
+    val run = source.run.runDrain
   }
 
   sealed trait Stream {
