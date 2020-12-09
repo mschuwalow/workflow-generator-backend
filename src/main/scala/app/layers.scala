@@ -6,18 +6,19 @@ import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.logging.Logging
 import zio.logging.slf4j.Slf4jLogger
+import app.repository.WorkflowRepository
 
 object layers {
 
-  type Layer0Env =
-    AppConfig with HttpConfig with Logging with Blocking with Clock
-
-  type Layer1Env =
-    Layer0Env with Interpreter with Database
-
-  type AppEnv = Layer1Env
+  type AppEnv = HttpConfig with Logging with Clock with Interpreter with WorkflowRepository
 
   object live {
+
+    type Layer0Env =
+      AppConfig with HttpConfig with Logging with Blocking with Clock
+
+    type Layer1Env =
+      Layer0Env with Interpreter with Database
 
     val interpreter: ZLayer[Layer0Env, Throwable, Interpreter] =
       ZLayer.identity[Layer0Env] >+> Sys.live >+> Python.live >+> UDFRunner.live(
@@ -30,6 +31,9 @@ object layers {
     val layer1: ZLayer[Layer0Env, Throwable, Layer1Env] =
       ZLayer.identity[Layer0Env] ++ interpreter ++ Database.live
 
-    val appLayer: ZLayer[ZEnv, Throwable, AppEnv] = layer0 >>> layer1
+    val layer2: ZLayer[Layer1Env, Nothing, AppEnv] =
+      ZLayer.identity[Layer1Env] ++ WorkflowRepository.doobie
+
+    val appLayer: ZLayer[ZEnv, Throwable, AppEnv] = layer0 >>> layer1 >>> layer2
   }
 }

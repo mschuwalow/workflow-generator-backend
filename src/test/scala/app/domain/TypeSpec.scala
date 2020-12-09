@@ -6,6 +6,7 @@ import app.domain.Type._
 import app.gens.{ domain => gens }
 import zio.test.Assertion._
 import zio.test._
+import io.circe.syntax._
 
 object TypeSpec extends BaseSpec {
 
@@ -25,6 +26,11 @@ object TypeSpec extends BaseSpec {
           assert(Type.fromString(str))(isRight(equalTo(t)))
         }
       }
-    )
+    ),
+    testM("circe roundtrip") {
+      check(gens.anyType) { case (_, t) =>
+        assert(t.asJson.as[Type])(isRight(equalTo(t)))
+      }
+    }
   )
 }

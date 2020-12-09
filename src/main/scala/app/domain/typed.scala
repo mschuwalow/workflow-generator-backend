@@ -5,13 +5,47 @@ import app.domain.Type._
 import zio.Has
 import zio.ZIO
 import zio.stream.ZStream
+import io.circe.generic.semiauto._
+import io.circe._
+import doobie.util.meta.Meta
+import io.circe.syntax._
+import io.circe.jawn._
 
 object typed {
   final case class Flow(streams: List[Sink])
 
+  object Flow {
+
+    implicit val encoder: Encoder[Flow] =
+      deriveEncoder
+
+    implicit val decoder: Decoder[Flow] =
+      deriveDecoder
+
+    implicit val meta: Meta[Flow] =
+      Meta[String].timap(parse(_).flatMap(_.as[Flow]).toOption.get)(
+        _.asJson.noSpaces
+      )
+  }
+
+  final case class FlowWithId(
+    id: FlowId,
+    flow: Flow,
+    state: FlowState
+  )
+
   sealed trait Sink {
     def id: ComponentId
     def run: ZIO[UDFRunner, Throwable, Unit]
+  }
+
+  object Sink {
+
+    implicit val encoder: Encoder[Sink] =
+      deriveEncoder
+
+    implicit val decoder: Decoder[Sink] =
+      deriveDecoder
   }
 
   final case class Void(
@@ -29,6 +63,15 @@ object typed {
 
     def asElementType(elem: Element): elementType.Scala =
       elem.asInstanceOf[elementType.Scala]
+  }
+
+  object Stream {
+
+    implicit val encoder: Encoder[Stream] =
+      deriveEncoder
+
+    implicit val decoder: Decoder[Stream] =
+      deriveDecoder
   }
 
   final case class Never(

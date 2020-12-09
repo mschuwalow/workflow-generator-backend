@@ -5,9 +5,26 @@ import scala.util.parsing.combinator.syntactical._
 
 import io.circe.Decoder
 import zio.Chunk
+import io.circe.Encoder
 
-sealed abstract class Type {
+sealed abstract class Type { self =>
   type Scala
+
+  def show: String = {
+    import Type._
+    self match {
+      case TBool               => "Bool"
+      case TNumber             => "Number"
+      case TString             => "String"
+      case TArray(elementType) => s"[${elementType.show}]"
+      case TObject(fields) =>
+        fields.map { case (name, t) => s""""$name": ${t.show}""" }
+          .mkString("{", ", ", "}")
+      case TOption(value)       => s"${value.show}?"
+      case TTuple(left, right)  => s"(${left.show}, ${right.show})"
+      case TEither(left, right) => s"(${left.show} | ${right.show})"
+    }
+  }
 }
 
 object Type {
@@ -28,7 +45,7 @@ object Type {
     type Scala = Chunk[elementType.Scala]
   }
 
-  final case class TObject(fields: (String, Type)*) extends Type {
+  final case class TObject(fields: List[(String, Type)]) extends Type {
     // TODO: use an HList or similar
     type Scala = Map[String, Any]
   }
@@ -55,7 +72,7 @@ object Type {
   val tString: Type                          = TString
   val tNumber: Type                          = TNumber
   def tArray(elementType: Type): Type        = TArray(elementType)
-  def tObject(fields: (String, Type)*): Type = TObject(fields: _*)
+  def tObject(fields: (String, Type)*): Type = TObject(fields.toList)
 
   def tTuple(
     left: Type,
@@ -72,6 +89,9 @@ object Type {
 
   implicit val decoder: Decoder[Type] =
     Decoder[String].emap(fromString)
+
+  implicit val encoder: Encoder[Type] =
+    Encoder[String].contramap(_.show)
 
   object parsing extends StandardTokenParsers with PackratParsers {
     lexical.reserved ++= List("Null", "Bool", "String", "Number")
@@ -109,7 +129,7 @@ object Type {
       ","
     ) ~ "}" ^^ { case (_ ~ rawFields ~ _) =>
       val fields = rawFields.map { case (name ~ _ ~ t) => (name, t) }
-      TObject(fields: _*)
+      TObject(fields)
     }
 
     lazy val tOption: PackratParser[TOption] = fullType ~ "?" ^^ { case (t ~ _) =>

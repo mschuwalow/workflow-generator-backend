@@ -39,7 +39,7 @@ object Dependencies {
       "org.tpolecat"            %% "doobie-core"              % doobie,
       "org.tpolecat"            %% "doobie-hikari"            % doobie,
       "org.tpolecat"            %% "doobie-postgres"          % doobie,
-      "org.typelevel"           %% "jawn-parser"              % "1.0.1" % "test",
+      "org.typelevel"           %% "jawn-parser"              % "1.0.1",
       compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
       compilerPlugin(
         ("org.typelevel" % "kind-projector" % "0.11.1").cross(CrossVersion.full)
