@@ -1,8 +1,8 @@
 package app
 
 import app.domain._
-import zio._
 import app.repository.WorkflowRepository
+import zio._
 
 object WorkflowManager {
 

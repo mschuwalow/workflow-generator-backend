@@ -4,9 +4,9 @@ import app.BaseSpec
 import app.domain.Type
 import app.domain.Type._
 import app.gens.{ domain => gens }
+import io.circe.syntax._
 import zio.test.Assertion._
 import zio.test._
-import io.circe.syntax._
 
 object TypeSpec extends BaseSpec {
 

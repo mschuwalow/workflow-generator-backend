@@ -1,16 +1,21 @@
 package app
 
+import app.repository.WorkflowRepository
 import config._
 import zio._
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.logging.Logging
 import zio.logging.slf4j.Slf4jLogger
-import app.repository.WorkflowRepository
 
 object layers {
 
-  type AppEnv = HttpConfig with Logging with Clock with Interpreter with WorkflowManager
+  type AppEnv = HttpConfig
+    with Logging
+    with Clock
+    with Interpreter
+    with WorkflowManager
+    with WorkflowRepository
 
   object live {
 

@@ -2,14 +2,14 @@ package app.domain
 
 import app.UDFRunner
 import app.domain.Type._
+import doobie.util.meta.Meta
+import io.circe._
+import io.circe.generic.semiauto._
+import io.circe.jawn._
+import io.circe.syntax._
 import zio.Has
 import zio.ZIO
 import zio.stream.ZStream
-import io.circe.generic.semiauto._
-import io.circe._
-import doobie.util.meta.Meta
-import io.circe.syntax._
-import io.circe.jawn._
 
 object typed {
   final case class Flow(streams: List[Sink])

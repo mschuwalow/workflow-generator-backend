@@ -1,10 +1,10 @@
 package app.domain
 
+import doobie.util.meta.Meta
 import io.circe._
 import io.circe.generic.semiauto._
-import doobie.util.meta.Meta
-import io.circe.syntax._
 import io.circe.jawn._
+import io.circe.syntax._
 
 sealed trait FlowState
 

@@ -1,13 +1,13 @@
 package app.api
 
-import cats.data.Kleisli
-import zio._
 import app.Error
-import zio.interop.catz._
-import org.http4s.Response
-import org.http4s.Request
+import cats.data.Kleisli
 import cats.data.OptionT
+import org.http4s.Request
+import org.http4s.Response
 import org.http4s.dsl.Http4sDsl
+import zio._
+import zio.interop.catz._
 
 object ErrorHandlingMiddleware {
 

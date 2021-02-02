@@ -4,8 +4,8 @@ import scala.util.parsing.combinator.PackratParsers
 import scala.util.parsing.combinator.syntactical._
 
 import io.circe.Decoder
-import zio.Chunk
 import io.circe.Encoder
+import zio.Chunk
 
 sealed abstract class Type { self =>
   type Scala
