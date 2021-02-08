@@ -1,11 +1,10 @@
 package app.domain
 
+import io.circe.{Decoder, Encoder}
+import zio.Chunk
+
 import scala.util.parsing.combinator.PackratParsers
 import scala.util.parsing.combinator.syntactical._
-
-import io.circe.Decoder
-import io.circe.Encoder
-import zio.Chunk
 
 sealed abstract class Type { self =>
   type Scala
@@ -13,11 +12,11 @@ sealed abstract class Type { self =>
   def show: String = {
     import Type._
     self match {
-      case TBool               => "Bool"
-      case TNumber             => "Number"
-      case TString             => "String"
-      case TArray(elementType) => s"[${elementType.show}]"
-      case TObject(fields) =>
+      case TBool                => "Bool"
+      case TNumber              => "Number"
+      case TString              => "String"
+      case TArray(elementType)  => s"[${elementType.show}]"
+      case TObject(fields)      =>
         fields.map { case (name, t) => s""""$name": ${t.show}""" }
           .mkString("{", ", ", "}")
       case TOption(value)       => s"${value.show}?"
@@ -54,17 +53,11 @@ object Type {
     type Scala = Option[value.Scala]
   }
 
-  final case class TTuple(
-    left: Type,
-    right: Type)
-      extends Type {
+  final case class TTuple(left: Type, right: Type) extends Type {
     type Scala = (left.Scala, right.Scala)
   }
 
-  final case class TEither(
-    left: Type,
-    right: Type)
-      extends Type {
+  final case class TEither(left: Type, right: Type) extends Type {
     type Scala = Either[left.Scala, right.Scala]
   }
 
@@ -120,30 +113,35 @@ object Type {
       TNumber
     }
 
-    lazy val tArray: PackratParser[TArray] = "[" ~ fullType ~ "]" ^^ { case (_ ~ t ~ _) =>
-      TArray(t)
+    lazy val tArray: PackratParser[TArray] = "[" ~ fullType ~ "]" ^^ {
+      case (_ ~ t ~ _) =>
+        TArray(t)
     }
 
     lazy val tObject: PackratParser[TObject] = "{" ~ repsep(
       stringLit ~ ":" ~ fullType,
       ","
-    ) ~ "}" ^^ { case (_ ~ rawFields ~ _) =>
-      val fields = rawFields.map { case (name ~ _ ~ t) => (name, t) }
-      TObject(fields)
+    ) ~ "}" ^^ {
+      case (_ ~ rawFields ~ _) =>
+        val fields = rawFields.map { case (name ~ _ ~ t) => (name, t) }
+        TObject(fields)
     }
 
-    lazy val tOption: PackratParser[TOption] = fullType ~ "?" ^^ { case (t ~ _) =>
-      TOption(t)
+    lazy val tOption: PackratParser[TOption] = fullType ~ "?" ^^ {
+      case (t ~ _) =>
+        TOption(t)
     }
 
     lazy val tTuple: PackratParser[TTuple] =
-      "(" ~ fullType ~ "," ~ fullType ~ ")" ^^ { case (_ ~ t1 ~ _ ~ t2 ~ _) =>
-        TTuple(t1, t2)
+      "(" ~ fullType ~ "," ~ fullType ~ ")" ^^ {
+        case (_ ~ t1 ~ _ ~ t2 ~ _) =>
+          TTuple(t1, t2)
       }
 
     lazy val tEither: PackratParser[TEither] =
-      "(" ~ fullType ~ "|" ~ fullType ~ ")" ^^ { case (_ ~ t1 ~ _ ~ t2 ~ _) =>
-        TEither(t1, t2)
+      "(" ~ fullType ~ "|" ~ fullType ~ ")" ^^ {
+        case (_ ~ t1 ~ _ ~ t2 ~ _) =>
+          TEither(t1, t2)
       }
 
     lazy val fullType: PackratParser[Type] =

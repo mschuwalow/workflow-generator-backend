@@ -7,8 +7,7 @@ import app.repository.WorkflowRepository
 import zio.interop.catz._
 import zio.logging.Logging
 
-final class WorkflowEndpoint[R <: Logging with WorkflowManager with WorkflowRepository]
-    extends Endpoint[R] {
+final class WorkflowEndpoint[R <: Logging with WorkflowManager with WorkflowRepository] extends Endpoint[R] {
   import dsl._
 
   def postWorkflow(workFlow: WorkflowCreationRequest) =

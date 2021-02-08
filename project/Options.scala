@@ -25,11 +25,11 @@ object Options {
     )
 
     val optimizeOptions =
-      if (optimize) {
+      if (optimize)
         Seq(
           "-opt:l:inline"
         )
-      } else Seq.empty
+      else Seq.empty
 
     baseOptions ++ optimizeOptions
   }

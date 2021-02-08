@@ -3,7 +3,7 @@ package app.compiler
 import app.BaseSpec
 import app.domain.Type
 import app.domain.Type._
-import app.gens.{ domain => gens }
+import app.gens.{domain => gens}
 import io.circe.syntax._
 import zio.test.Assertion._
 import zio.test._
@@ -22,14 +22,16 @@ object TypeSpec extends BaseSpec {
         assert(Type.fromString("Number"))(isRight(equalTo(TNumber)))
       },
       testM("should parse any well formed type") {
-        check(gens.anyType) { case (str, t) =>
-          assert(Type.fromString(str))(isRight(equalTo(t)))
+        check(gens.anyType) {
+          case (str, t) =>
+            assert(Type.fromString(str))(isRight(equalTo(t)))
         }
       }
     ),
     testM("circe roundtrip") {
-      check(gens.anyType) { case (_, t) =>
-        assert(t.asJson.as[Type])(isRight(equalTo(t)))
+      check(gens.anyType) {
+        case (_, t) =>
+          assert(t.asJson.as[Type])(isRight(equalTo(t)))
       }
     }
   )

@@ -7,9 +7,8 @@ import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.jawn._
 import io.circe.syntax._
-import zio.Has
-import zio.ZIO
 import zio.stream.ZStream
+import zio.{Has, ZIO}
 
 object typed {
   final case class Flow(streams: List[Sink])
@@ -28,10 +27,7 @@ object typed {
       )
   }
 
-  final case class FlowWithId(
-    id: FlowId,
-    flow: Flow,
-    state: FlowState)
+  final case class FlowWithId(id: FlowId, flow: Flow, state: FlowState)
 
   object FlowWithId {
 
@@ -56,10 +52,7 @@ object typed {
       deriveDecoder
   }
 
-  final case class Void(
-    id: ComponentId,
-    source: Stream)
-      extends Sink {
+  final case class Void(id: ComponentId, source: Stream) extends Sink {
     val run = source.run.runDrain
   }
 
@@ -82,18 +75,12 @@ object typed {
       deriveDecoder
   }
 
-  final case class Never(
-    id: ComponentId,
-    elementType: Type)
-      extends Stream {
+  final case class Never(id: ComponentId, elementType: Type) extends Stream {
     type Element = Nothing
     val run: ZStream[Any, Throwable, Element] = ZStream.never
   }
 
-  final case class Numbers(
-    id: ComponentId,
-    values: List[Long])
-      extends Stream {
+  final case class Numbers(id: ComponentId, values: List[Long]) extends Stream {
     type Element = Long
     val elementType: Type = Type.tNumber
 
@@ -101,11 +88,7 @@ object typed {
       ZStream.fromIterable(values)
   }
 
-  final case class InnerJoin(
-    id: ComponentId,
-    stream1: Stream,
-    stream2: Stream)
-      extends Stream {
+  final case class InnerJoin(id: ComponentId, stream1: Stream, stream2: Stream) extends Stream {
     type Element = (stream1.Element, stream2.Element)
     val elementType = TTuple(stream1.elementType, stream2.elementType)
 
@@ -115,23 +98,20 @@ object typed {
         .mapAccum(
           (None: Option[stream1.Element], None: Option[stream2.Element])
         ) {
-          case ((_, r), Left(l)) =>
+          case ((_, r), Left(l))  =>
             val result = (Some(l), r)
             (result, result)
           case ((l, _), Right(r)) =>
             val result = (l, Some(r))
             (result, result)
         }
-        .collect { case (Some(l), Some(r)) =>
-          ((l, r))
+        .collect {
+          case (Some(l), Some(r)) =>
+            ((l, r))
         }
   }
 
-  final case class LeftJoin(
-    id: ComponentId,
-    stream1: Stream,
-    stream2: Stream)
-      extends Stream {
+  final case class LeftJoin(id: ComponentId, stream1: Stream, stream2: Stream) extends Stream {
     type Element = (stream1.Element, Option[stream2.Element])
     val elementType = tTuple(stream1.elementType, tOption(stream2.elementType))
 
@@ -141,23 +121,20 @@ object typed {
         .mapAccum(
           (None: Option[stream1.Element], None: Option[stream2.Element])
         ) {
-          case ((_, r), Left(l)) =>
+          case ((_, r), Left(l))  =>
             val result = (Some(l), r)
             (result, result)
           case ((l, _), Right(r)) =>
             val result = (l, Some(r))
             (result, result)
         }
-        .collect { case (Some(l), r) =>
-          ((l, r))
+        .collect {
+          case (Some(l), r) =>
+            ((l, r))
         }
   }
 
-  final case class Merge(
-    id: ComponentId,
-    stream1: Stream,
-    stream2: Stream)
-      extends Stream {
+  final case class Merge(id: ComponentId, stream1: Stream, stream2: Stream) extends Stream {
     type Element = Either[stream1.Element, stream2.Element]
     val elementType: TEither = TEither(stream1.elementType, stream2.elementType)
 
@@ -165,12 +142,7 @@ object typed {
       stream1.run.mergeEither(stream2.run)
   }
 
-  final case class UDF(
-    id: ComponentId,
-    code: String,
-    stream: Stream,
-    elementType: Type)
-      extends Stream {
+  final case class UDF(id: ComponentId, code: String, stream: Stream, elementType: Type) extends Stream {
     type Element = elementType.Scala
 
     val run: ZStream[UDFRunner, Throwable, Element] =

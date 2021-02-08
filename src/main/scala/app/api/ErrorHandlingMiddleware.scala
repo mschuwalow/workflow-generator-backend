@@ -1,11 +1,9 @@
 package app.api
 
 import app.Error
-import cats.data.Kleisli
-import cats.data.OptionT
-import org.http4s.Request
-import org.http4s.Response
+import cats.data.{Kleisli, OptionT}
 import org.http4s.dsl.Http4sDsl
+import org.http4s.{Request, Response}
 import zio._
 import zio.interop.catz._
 

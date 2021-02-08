@@ -23,11 +23,11 @@ object routes {
     val workflowEndpoint = new WorkflowEndpoint[R]()
 
     val routes = HttpRoutes.of[RTask] {
-      case req @ POST -> Root / "workflows" =>
+      case req @ POST -> Root / "workflows"        =>
         req.as[WorkflowCreationRequest].flatMap(workflowEndpoint.postWorkflow)
       case GET -> Root / "workflows" / LongVar(id) =>
         workflowEndpoint.getWorkflow(FlowId(id))
-      case GET -> Root / "health" =>
+      case GET -> Root / "health"                  =>
         healthEndpoint.healthy
     }
     ErrorHandlingMiddleware(routes).orNotFound

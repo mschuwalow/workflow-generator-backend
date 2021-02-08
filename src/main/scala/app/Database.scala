@@ -36,7 +36,7 @@ object Database {
                             .blockingExecutor
                             .asEC
                         )
-          connectEC = rt.platform.executor.asEC
+          connectEC   = rt.platform.executor.asEC
           transactor <- HikariTransactor
                           .newHikariTransactor[Task](
                             cfg.driver,

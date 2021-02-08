@@ -1,9 +1,8 @@
 package app.repository
 
-import app.Database
-import app.Error
 import app.domain._
 import app.domain.typed.FlowWithId
+import app.{Database, Error}
 import doobie.implicits._
 import zio._
 import zio.interop.catz._

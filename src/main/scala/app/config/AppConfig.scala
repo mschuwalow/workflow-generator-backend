@@ -6,9 +6,7 @@ import zio._
 
 object AppConfig {
 
-  final private[this] case class Config(
-    http: HttpConfig.Config,
-    database: DatabaseConfig.Config)
+  final private[this] case class Config(http: HttpConfig.Config, database: DatabaseConfig.Config)
 
   private[this] object Config {
     implicit val convert: ConfigConvert[Config] = deriveConvert

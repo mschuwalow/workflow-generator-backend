@@ -1,14 +1,13 @@
 package app
 
-import java.nio.file.Path
-
-import scala.io.Source
-
 import app.BaseSpec
 import zio._
 import zio.logging.Logging
 import zio.test.Assertion._
 import zio.test._
+
+import java.nio.file.Path
+import scala.io.Source
 
 object SysSpec extends BaseSpec {
 

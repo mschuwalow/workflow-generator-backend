@@ -3,12 +3,13 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val circe      = "0.13.0"
-    val doobie     = "0.9.4"
-    val http4s     = "0.21.13"
-    val log4j      = "2.14.0"
-    val zio        = "1.0.3"
-    val zioLogging = "0.5.4"
+    val circe           = "0.13.0"
+    val doobie          = "0.9.4"
+    val http4s          = "0.21.13"
+    val log4j           = "2.14.0"
+    val organizeImports = "0.4.4"
+    val zio             = "1.0.3"
+    val zioLogging      = "0.5.4"
   }
   import Versions._
 
@@ -42,7 +43,13 @@ object Dependencies {
       "org.typelevel"           %% "jawn-parser"              % "1.0.1",
       compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
       compilerPlugin(
-        ("org.typelevel" % "kind-projector" % "0.11.1").cross(CrossVersion.full)
+        ("org.typelevel"         % "kind-projector"           % "0.11.1").cross(CrossVersion.full)
       )
     )
+
+  val ScalaFix =
+    List(
+      "com.github.liancheng" %% "organize-imports" % organizeImports
+    )
+
 }

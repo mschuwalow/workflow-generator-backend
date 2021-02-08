@@ -1,6 +1,6 @@
 package app.compiler
 
-import app.domain.{ raw, ComponentId }
+import app.domain.{ComponentId, raw}
 import cats.Monad
 import cats.instances.either._
 import cats.instances.list._
@@ -12,20 +12,21 @@ object syntactic {
 
   def checkCycles(graph: raw.Graph): Either[String, raw.Graph] = {
     // all starting points to traverse the graph
-    val sinks = graph.nodes.collect { case (id, _: raw.Sink) =>
-      id
+    val sinks = graph.nodes.collect {
+      case (id, _: raw.Sink) =>
+        id
     }.toList
     sinks.traverse { id =>
       // every subgraph needs to be checked seperately
       checkComponent(id).run(Context.initial(graph.nodes))
-    }
-      .as(graph)
+    }.as(graph)
   }
 
   final private[compiler] case class Context(
     nodes: Map[ComponentId, raw.Component],
     visited: Set[ComponentId],
-    position: List[ComponentId])
+    position: List[ComponentId]
+  )
 
   object Context {
 
@@ -46,8 +47,9 @@ object syntactic {
 
     def flatMap[B](f: A => Check[B]) =
       check {
-        run(_).flatMap { case (ctx, a) =>
-          f(a).run(ctx)
+        run(_).flatMap {
+          case (ctx, a) =>
+            f(a).run(ctx)
         }
       }
   }
@@ -128,16 +130,16 @@ object syntactic {
     import raw._
     withPosition(id) {
       addVisisted(id) *> getComponent(id).flatMap {
-        case Source.Never(_)                   => unit
-        case Source.Numbers(_)                 => unit
-        case Transformer1.UDF(stream, _, _, _) => checkComponent(stream)
+        case Source.Never(_)                          => unit
+        case Source.Numbers(_)                        => unit
+        case Transformer1.UDF(stream, _, _, _)        => checkComponent(stream)
         case Transformer2.InnerJoin(stream1, stream2) =>
           checkComponent(stream1) *> checkComponent(stream2)
-        case Transformer2.LeftJoin(stream1, stream2) =>
+        case Transformer2.LeftJoin(stream1, stream2)  =>
           checkComponent(stream1) *> checkComponent(stream2)
-        case Transformer2.Merge(stream1, stream2) =>
+        case Transformer2.Merge(stream1, stream2)     =>
           checkComponent(stream1) *> checkComponent(stream2)
-        case Sink.Void(stream, _) =>
+        case Sink.Void(stream, _)                     =>
           checkComponent(stream)
       }
     }

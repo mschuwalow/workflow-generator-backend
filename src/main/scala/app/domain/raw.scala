@@ -31,21 +31,21 @@ object raw {
     implicit val decoder: Decoder[Component] =
       Decoder.instance { hCursor =>
         hCursor.get[String]("type").flatMap {
-          case "source:never" =>
+          case "source:never"           =>
             hCursor.as[Source.Never]
-          case "source:numbers" =>
+          case "source:numbers"         =>
             hCursor.as[Source.Numbers]
-          case "sink:void" =>
+          case "sink:void"              =>
             hCursor.as[Sink.Void]
-          case "transformer1:udf" =>
+          case "transformer1:udf"       =>
             hCursor.as[Transformer1.UDF]
           case "transformer2:innerJoin" =>
             hCursor.as[Transformer2.InnerJoin]
-          case "transformer2:leftJoin" =>
+          case "transformer2:leftJoin"  =>
             hCursor.as[Transformer2.LeftJoin]
-          case "transformer2:merge" =>
+          case "transformer2:merge"     =>
             hCursor.as[Transformer2.Merge]
-          case id =>
+          case id                       =>
             Left(
               DecodingFailure(
                 s"Not a valid commponent type: ${id}",
@@ -82,10 +82,7 @@ object raw {
 
   object Sink {
 
-    final case class Void(
-      stream: ComponentId,
-      elementType: Option[Type])
-        extends Sink
+    final case class Void(stream: ComponentId, elementType: Option[Type]) extends Sink
 
     object Void {
 
@@ -100,11 +97,7 @@ object raw {
 
   object Transformer1 {
 
-    final case class UDF(
-      stream: ComponentId,
-      code: String,
-      inputTypeHint: Option[Type],
-      outputTypeHint: Option[Type])
+    final case class UDF(stream: ComponentId, code: String, inputTypeHint: Option[Type], outputTypeHint: Option[Type])
         extends Transformer1
 
     object UDF {
@@ -121,10 +114,7 @@ object raw {
 
   object Transformer2 {
 
-    final case class LeftJoin(
-      stream1: ComponentId,
-      stream2: ComponentId)
-        extends Transformer2
+    final case class LeftJoin(stream1: ComponentId, stream2: ComponentId) extends Transformer2
 
     object LeftJoin {
 
@@ -132,10 +122,7 @@ object raw {
         deriveDecoder
     }
 
-    final case class InnerJoin(
-      stream1: ComponentId,
-      stream2: ComponentId)
-        extends Transformer2
+    final case class InnerJoin(stream1: ComponentId, stream2: ComponentId) extends Transformer2
 
     object InnerJoin {
 
@@ -143,10 +130,7 @@ object raw {
         deriveDecoder
     }
 
-    final case class Merge(
-      stream1: ComponentId,
-      stream2: ComponentId)
-        extends Transformer2
+    final case class Merge(stream1: ComponentId, stream2: ComponentId) extends Transformer2
 
     object Merge {
 

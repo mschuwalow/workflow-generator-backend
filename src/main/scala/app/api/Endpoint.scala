@@ -1,6 +1,6 @@
 package app.api
 
-import io.circe.{ Decoder, Encoder }
+import io.circe.{Decoder, Encoder}
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl

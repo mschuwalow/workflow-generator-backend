@@ -1,13 +1,12 @@
 package app
 
-import scala.jdk.CollectionConverters._
-
 import app.domain.Type
-import app.udf.{ JEither, PythonRunner }
+import app.udf.{JEither, PythonRunner}
 import zio._
 import zio.duration._
-import zio.logging.Logging
-import zio.logging.log
+import zio.logging.{Logging, log}
+
+import scala.jdk.CollectionConverters._
 
 object UDFRunner {
 
@@ -23,28 +22,25 @@ object UDFRunner {
   }
 
   def live(workers: Int): ZLayer[Sys with Python with Logging, Throwable, UDFRunner] = {
-    final case class Request(
-      function: String,
-      input: Any,
-      cb: Promise[Throwable, Any])
+    final case class Request(function: String, input: Any, cb: Promise[Throwable, Any])
 
     def toJava(t: Type)(v: Any): Any = {
       import Type._
       t match {
-        case TBool   => v
-        case TString => v
-        case TNumber => v
-        case TArray(elementType) =>
+        case TBool                        => v
+        case TString                      => v
+        case TNumber                      => v
+        case TArray(elementType)          =>
           v.asInstanceOf[Chunk[Any]].map(toJava(elementType)(_)).toArray
-        case _: TObject =>
+        case _: TObject                   =>
           v.asInstanceOf[Map[String, Any]].asJava
-        case TOption(valueType) =>
+        case TOption(valueType)           =>
           val opt = v.asInstanceOf[Option[Any]]
           opt match {
             case None        => null
             case Some(value) => toJava(valueType)(value)
           }
-        case TTuple(leftType, rightType) =>
+        case TTuple(leftType, rightType)  =>
           val (left, right) = v.asInstanceOf[Tuple2[Any, Any]]
           (toJava(leftType)(left), toJava(rightType)(right))
         case TEither(leftType, rightType) =>
@@ -62,23 +58,23 @@ object UDFRunner {
     ): t.Scala = {
       import Type._
       t match {
-        case TBool   => v.asInstanceOf[t.Scala] // Boolean
-        case TString => v.asInstanceOf[t.Scala] // String
-        case TNumber => v.asInstanceOf[t.Scala] // Long
-        case TArray(elementType) =>
+        case TBool                        => v.asInstanceOf[t.Scala] // Boolean
+        case TString                      => v.asInstanceOf[t.Scala] // String
+        case TNumber                      => v.asInstanceOf[t.Scala] // Long
+        case TArray(elementType)          =>
           val jvalue = v.asInstanceOf[Array[AnyRef]]
           Chunk.fromArray(jvalue).map(fromJava(elementType, _)).asInstanceOf[t.Scala]
-        case _: TObject =>
+        case _: TObject                   =>
           v.asInstanceOf[java.util.HashMap[String, Any]].asScala.asInstanceOf[t.Scala]
-        case TOption(valueType) =>
+        case TOption(valueType)           =>
           val value = if (v == null) None else Some(fromJava(valueType, v))
           value.asInstanceOf[t.Scala]
-        case TTuple(leftType, rightType) =>
+        case TTuple(leftType, rightType)  =>
           val (left, right) = v.asInstanceOf[Tuple2[AnyRef, AnyRef]]
           (fromJava(leftType, left), fromJava(rightType, right)).asInstanceOf[t.Scala]
         case TEither(leftType, rightType) =>
           val jvalue = v.asInstanceOf[JEither]
-          val value =
+          val value  =
             if (jvalue.isLeft()) Left(fromJava(leftType, jvalue.left))
             else Right(fromJava(rightType, jvalue.right))
           value.asInstanceOf[t.Scala]
@@ -95,11 +91,12 @@ object UDFRunner {
             )
             .mapM { runner =>
               log.info("Started python worker.") *>
-                requests.take.flatMap { case Request(function, input, cb) =>
-                  log.debug(s"running function: $function")
-                  ZIO.effect {
-                    runner.run_udf(function, input)
-                  }.to(cb)
+                requests.take.flatMap {
+                  case Request(function, input, cb) =>
+                    log.debug(s"running function: $function")
+                    ZIO.effect {
+                      runner.run_udf(function, input)
+                    }.to(cb)
                 }.forever
             }
           ZManaged.collectAllPar_(List.fill(workers)(startWorker.fork)).map { _ =>

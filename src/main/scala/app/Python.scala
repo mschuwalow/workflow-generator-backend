@@ -1,7 +1,5 @@
 package app
 
-import scala.reflect.ClassTag
-
 import py4j.ClientServer
 import py4j.ClientServer.ClientServerBuilder
 import zio._
@@ -9,6 +7,8 @@ import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.duration._
 import zio.logging.Logging
+
+import scala.reflect.ClassTag
 
 object Python {
   type Command = String
@@ -27,8 +27,7 @@ object Python {
     ZLayer.fromFunction { env =>
       new Service {
         def retry[R <: Clock, E, A] =
-          (zio: ZIO[R, E, A]) =>
-            zio.retry(Schedule.recurs(5) && Schedule.spaced(200.milliseconds))
+          (zio: ZIO[R, E, A]) => zio.retry(Schedule.recurs(5) && Schedule.spaced(200.milliseconds))
 
         def runAs[A: ClassTag](
           startCommand: Port => Command,

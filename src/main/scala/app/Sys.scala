@@ -1,28 +1,21 @@
 package app
 
-import java.io.Closeable
-import java.io.FileOutputStream
-import java.io.InputStream
-import java.lang.{ Runtime => JRuntime }
-import java.net.ServerSocket
-import java.nio.file.Files
-import java.nio.file.Path
-
 import zio._
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.duration._
-import zio.logging.Logging
-import zio.logging.log
+import zio.logging.{Logging, log}
+
+import java.io.{Closeable, FileOutputStream, InputStream}
+import java.lang.{Runtime => JRuntime}
+import java.net.ServerSocket
+import java.nio.file.{Files, Path}
 
 object Sys {
   type Command = String
   type Port    = Int
 
-  final case class RunningProcess(
-    await: UIO[Int],
-    destroy: UIO[Unit],
-    destroyForcibly: UIO[Unit])
+  final case class RunningProcess(await: UIO[Int], destroy: UIO[Unit], destroyForcibly: UIO[Unit])
 
   trait Service {
     def runCommand(cmd: Command): Managed[Throwable, RunningProcess]
@@ -57,8 +50,8 @@ object Sys {
             val reader = new java.io.BufferedReader(
               new java.io.InputStreamReader(stream)
             )
-            val next  = blocking.effectBlocking(reader.readLine())
-            val ready = ZIO.effect(reader.ready())
+            val next   = blocking.effectBlocking(reader.readLine())
+            val ready  = ZIO.effect(reader.ready())
 
             def loop: ZIO[Clock with Blocking with R, Throwable, Unit] = {
               import zio.duration._
@@ -72,23 +65,21 @@ object Sys {
 
           def run(cmd: String) =
             for {
-              proc <-
-                blocking.effectBlocking(runtime.exec(cmd)).toManaged { p =>
-                  blocking.effectBlocking {
-                    blocking.effectBlocking(p.destroy()).ignore *>
-                      blocking
-                        .effectBlocking(p.waitFor)
-                        .race(Task(p.destroyForcibly).delay(5.minutes))
-                  }
-                    .catchAll(e =>
-                      log.warn(
-                        s"Waiting for $cmd failed with ${e.toString}."
-                      )
-                    )
-                }
-              _ <- pump(proc.getInputStream(), log.info(_)).fork
+              proc <- blocking.effectBlocking(runtime.exec(cmd)).toManaged { p =>
+                        blocking.effectBlocking {
+                          blocking.effectBlocking(p.destroy()).ignore *>
+                            blocking
+                              .effectBlocking(p.waitFor)
+                              .race(Task(p.destroyForcibly).delay(5.minutes))
+                        }.catchAll(e =>
+                            log.warn(
+                              s"Waiting for $cmd failed with ${e.toString}."
+                            )
+                          )
+                      }
+              _    <- pump(proc.getInputStream(), log.info(_)).fork
                      .toManaged(_.interrupt)
-              _ <- pump(proc.getErrorStream(), log.warn(_)).fork
+              _    <- pump(proc.getErrorStream(), log.warn(_)).fork
                      .toManaged(_.interrupt)
             } yield proc
 
@@ -125,7 +116,7 @@ object Sys {
             is          <- fromCloseable(getClass().getResource(name).openStream())
             resourcePath = dir.resolve("resource")
             os          <- fromCloseable(new FileOutputStream(resourcePath.toFile()))
-            _ <- ZIO.effect {
+            _           <- ZIO.effect {
                    val buffer = new Array[Byte](2048)
                    var length = 0
 
