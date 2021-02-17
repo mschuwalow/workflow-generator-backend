@@ -1,5 +1,6 @@
 package app
 
+import app.flows.Type.TDate
 import zio.random.Random
 import zio.test.Gen._
 import zio.test.{Gen, Sized}
@@ -95,7 +96,9 @@ object gens {
 
     def tNumber: Gen[Any, (String, Type)] = const(("Number", Type.TNumber))
 
-    def primitiveType: Gen[Random, (String, Type)] = oneOf(tBool, tString, tNumber)
+    def tDate: Gen[Any, (String, Type)] = const(("Date", TDate))
+
+    def primitiveType: Gen[Random, (String, Type)] = oneOf(tBool, tString, tNumber, tDate)
 
     def tArray: Gen[Random with Sized, (String, Type)] =
       anyType.map {

@@ -1,0 +1,46 @@
+diff --git a/src/py4j/clientserver.py b/src/py4j/clientserver.py
+index 345c5f3c..d57766ed 100644
+--- a/src/py4j/clientserver.py
++++ b/src/py4j/clientserver.py
+@@ -23,7 +23,7 @@
+     CallbackServerParameters, GatewayParameters, CallbackServer,
+     GatewayConnectionGuard, DEFAULT_ADDRESS, DEFAULT_PORT,
+     DEFAULT_PYTHON_PROXY_PORT, DEFAULT_ACCEPT_TIMEOUT_PLACEHOLDER,
+-    server_connection_stopped, do_client_auth, _garbage_collect_proxy)
++    server_connection_stopped, do_client_auth, _garbage_collect_proxy, JavaObject)
+ from py4j import protocol as proto
+ from py4j.protocol import (
+     Py4JError, Py4JNetworkError, smart_decode, get_command_part,
+@@ -579,8 +579,14 @@ def _call_proxy(self, obj_id, input):
+             method = smart_decode(input.readline())[:-1]
+             params = self._get_params(input)
+             return_value = getattr(self.pool[obj_id], method)(*params)
+-            return proto.RETURN_MESSAGE + proto.SUCCESS +\
+-                get_command_part(return_value, self.pool)
++            if (not isinstance(return_value, JavaObject)) and (
++                    not self.python_server.gateway_client.converters is None):
++                for converter in self.python_server.gateway_client.converters:
++                    if converter.can_convert(return_value):
++                        return_value = converter.convert(return_value, self.python_server.gateway_client)
++                        break
++            return proto.RETURN_MESSAGE + proto.SUCCESS + \
++                   get_command_part(return_value, self.pool)
+         except Exception as e:
+             logger.exception("There was an exception while executing the "
+                              "Python Proxy on the Python Side.")
+diff --git a/src/py4j/java_gateway.py b/src/py4j/java_gateway.py
+index 9bcc8462..8a3f0a1f 100644
+--- a/src/py4j/java_gateway.py
++++ b/src/py4j/java_gateway.py
+@@ -2451,6 +2451,12 @@ def _call_proxy(self, obj_id, input):
+             else:
+                 java_exception = traceback.format_exc()
+
++            if not isinstance(return_value, JavaObject) and self.gateway_client.converters:
++                for converter in self.gateway_client.converters:
++                    if converter.can_convert(return_value):
++                        return_value = converter.convert(return_value, self.gateway_client)
++                        break
++
+             return proto.RETURN_MESSAGE + proto.ERROR +\
+                 get_command_part(java_exception, self.pool)

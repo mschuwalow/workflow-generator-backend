@@ -3,6 +3,7 @@ package app.flows
 import io.circe.{Decoder, Encoder}
 import zio.Chunk
 
+import java.time.LocalDate
 import scala.util.parsing.combinator.PackratParsers
 import scala.util.parsing.combinator.syntactical._
 
@@ -12,6 +13,7 @@ sealed abstract class Type { self =>
   def show: String = {
     import Type._
     self match {
+      case TDate                => "Date"
       case TBool                => "Bool"
       case TNumber              => "Number"
       case TString              => "String"
@@ -24,9 +26,16 @@ sealed abstract class Type { self =>
       case TEither(left, right) => s"(${left.show} | ${right.show})"
     }
   }
+
+  override def toString(): String = show
 }
 
 object Type {
+  type TDate = TDate.type
+  object TDate extends Type {
+    type Scala = LocalDate
+  }
+
   type TBool = TBool.type
 
   case object TBool extends Type {
@@ -74,7 +83,7 @@ object Type {
     Encoder[String].contramap(_.show)
 
   object parsing extends StandardTokenParsers with PackratParsers {
-    lexical.reserved ++= List("Null", "Bool", "String", "Number")
+    lexical.reserved ++= List("Null", "Bool", "String", "Number", "Date")
     lexical.delimiters ++= List(
       "(",
       ")",
@@ -87,6 +96,10 @@ object Type {
       "|",
       "?"
     )
+
+    lazy val tDate: PackratParser[TDate] = "Date" ^^ { _ =>
+      TDate
+    }
 
     lazy val tBoolean: PackratParser[TBool] = "Bool" ^^ { _ =>
       TBool
@@ -132,7 +145,7 @@ object Type {
       }
 
     lazy val fullType: PackratParser[Type] =
-      tOption | tBoolean | tString | tNumber | tArray | tObject | tTuple | tEither
+      tOption | tBoolean | tString | tNumber | tDate | tArray | tObject | tTuple | tEither
 
     def parse(in: String): Either[String, Type] = {
       val tokens = new PackratReader(new lexical.Scanner(in))

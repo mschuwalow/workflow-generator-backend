@@ -2,12 +2,12 @@
   "components": {
     "1": {
       "type": "FormOutput",
-      "formId": "f0bcb983-3df5-4863-890b-3f522835df83"
+      "formId": "a1da1b9a-95a8-49eb-a7f4-54aeec78ea1b"
     },
     "2": {
       "type": "UDF",
-      "code": "def run(x):\n    print(x)\n    return x['age']",
-      "outputTypeHint": "Number",
+      "code": "def run(x):\n    print(x)\n    return x['date']",
+      "outputTypeHint": "Date",
       "stream": "1"
     },
     "3": {

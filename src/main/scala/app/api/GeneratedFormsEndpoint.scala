@@ -1,7 +1,7 @@
 package app.api
 
 import app.flows.FlowRunner
-import app.forms.FormElement.TextField
+import app.forms.FormElement.{TextField, _}
 import app.forms._
 import korolev.server.{KorolevServiceConfig, StateLoader}
 import korolev.state.javaSerialization._
@@ -10,10 +10,10 @@ import org.http4s.HttpRoutes
 import zio._
 import zio.interop.catz._
 
+import java.time.LocalDate
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.util.control.NoStackTrace
-import app.forms.FormElement.NumberField
 
 final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends Endpoint[R] {
   import levsha.dsl._
@@ -44,7 +44,7 @@ final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends Endp
                     div(
                       legend("Form"),
                       definitions.map {
-                        case (inputId, FormElement.TextField(_, name)) =>
+                        case (inputId, FormElement.TextField(_, name))   =>
                           p(
                             label(name),
                             input(
@@ -60,6 +60,14 @@ final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends Endp
                               `type` := "number"
                             )
                           )
+                        case (inputId, FormElement.DatePicker(_, name))  =>
+                          p(
+                            label(name),
+                            input(
+                              inputId,
+                              `type` := "date"
+                            )
+                          )
                       },
                       p(
                         button(
@@ -71,10 +79,15 @@ final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends Endp
                                   case (inputId, element) =>
                                     val property = access.property(inputId)
                                     val out      = element match {
-                                      case TextField(_, _) =>
+                                      case TextField(_, _)   =>
                                         property.get("value")
                                       case NumberField(_, _) =>
                                         property.get("value").flatMap(str => Task(str.toLong))
+                                      case DatePicker(_, _)  =>
+                                        for {
+                                          value  <- property.get("value")
+                                          parsed <- Task(LocalDate.parse(value))
+                                        } yield parsed
                                     }
                                     out.map((element.id.value, _))
                                 }

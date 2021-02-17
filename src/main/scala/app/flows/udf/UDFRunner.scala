@@ -77,6 +77,7 @@ object UDFRunner {
   private def toJava(t: Type)(v: t.Scala): Any = {
     import Type._
     t match {
+      case TDate                        => v
       case TBool                        => v
       case TString                      => v
       case TNumber                      => v
@@ -111,6 +112,7 @@ object UDFRunner {
       case TBool                        => v.asInstanceOf[t.Scala] // Boolean
       case TString                      => v.asInstanceOf[t.Scala] // String
       case TNumber                      => v.asInstanceOf[t.Scala] // Long
+      case TDate                        => v.asInstanceOf[t.Scala] // LocalDate
       case TArray(elementType)          =>
         val jvalue = v.asInstanceOf[Array[AnyRef]]
         Chunk.fromArray(jvalue).map(fromJava(elementType, _)).asInstanceOf[t.Scala]
