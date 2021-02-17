@@ -15,12 +15,12 @@ let
     })
   ];
   pkgs = import sources.nixpkgs { inherit overlays; };
-  customPython = pkgs.python38.buildEnv.override {
+  python = pkgs.python38.buildEnv.override {
     extraLibs = with pkgs.python38Packages; [ py4j click ];
   };
 in pkgs.mkShell {
-  buildInputs = with pkgs; [
-    customPython
-    sbt-extras
+  buildInputs = [
+    python
+    pkgs.sbt-extras
   ];
 }
