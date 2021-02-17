@@ -21,6 +21,13 @@ object FormElement {
     val elementType = Type.TString
   }
 
+  final case class NumberField(
+    id: FormElementId,
+    label: String
+  ) extends FormElement {
+    val elementType = Type.TNumber
+  }
+
   @unused
   private implicit val configuration: Configuration =
     Configuration.default.withDiscriminator("type")

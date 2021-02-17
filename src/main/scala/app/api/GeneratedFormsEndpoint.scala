@@ -13,6 +13,7 @@ import zio.interop.catz._
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.util.control.NoStackTrace
+import app.forms.FormElement.NumberField
 
 final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends Endpoint[R] {
   import levsha.dsl._
@@ -42,16 +43,21 @@ final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends Endp
                     formId,
                     div(
                       legend("Form"),
-                      definitions.flatMap {
+                      definitions.map {
                         case (inputId, FormElement.TextField(_, name)) =>
-                          List(
-                            p(
-                              label(name),
-                              input(
-                                inputId,
-                                id := "todo-input",
-                                `type` := "text"
-                              )
+                          p(
+                            label(name),
+                            input(
+                              inputId,
+                              `type` := "text"
+                            )
+                          )
+                        case (inputId, FormElement.NumberField(_, name)) =>
+                          p(
+                            label(name),
+                            input(
+                              inputId,
+                              `type` := "number"
                             )
                           )
                       },
@@ -67,6 +73,8 @@ final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends Endp
                                     val out      = element match {
                                       case TextField(_, _) =>
                                         property.get("value")
+                                      case NumberField(_, _) =>
+                                        property.get("value").flatMap(str => Task(str.toLong))
                                     }
                                     out.map((element.id.value, _))
                                 }
