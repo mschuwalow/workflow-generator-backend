@@ -6,6 +6,7 @@ object Dependencies {
     val circe           = "0.13.0"
     val doobie          = "0.9.4"
     val http4s          = "0.21.13"
+    val korolev         = "0.17.0"
     val log4j           = "2.14.0"
     val organizeImports = "0.4.4"
     val zio             = "1.0.3"
@@ -27,6 +28,7 @@ object Dependencies {
       "dev.zio"                 %% "zio"                      % zio,
       "io.circe"                %% "circe-core"               % circe,
       "io.circe"                %% "circe-generic"            % circe,
+      "io.circe"                %% "circe-generic-extras"     % circe,
       "io.circe"                %% "circe-literal"            % circe % "test",
       "net.sf.py4j"              % "py4j"                     % "0.10.9.1",
       "org.apache.logging.log4j" % "log4j-api"                % log4j,
@@ -36,10 +38,13 @@ object Dependencies {
       "org.http4s"              %% "http4s-blaze-server"      % http4s,
       "org.http4s"              %% "http4s-circe"             % http4s,
       "org.http4s"              %% "http4s-dsl"               % http4s,
+      "org.fomkin"              %% "korolev-http4s"           % korolev,
+      "org.fomkin"              %% "korolev-zio"              % korolev,
       "org.scala-lang.modules"  %% "scala-parser-combinators" % "1.1.2",
       "org.tpolecat"            %% "doobie-core"              % doobie,
       "org.tpolecat"            %% "doobie-hikari"            % doobie,
       "org.tpolecat"            %% "doobie-postgres"          % doobie,
+      "org.tpolecat"            %% "doobie-postgres-circe"    % doobie,
       "org.typelevel"           %% "jawn-parser"              % "1.0.1",
       compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
       compilerPlugin(

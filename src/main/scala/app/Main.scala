@@ -1,6 +1,6 @@
 package app
 
-import app.api.routes.makeRoutes
+import app.api.Router
 import app.config._
 import cats.effect._
 import fs2.Stream.Compiler._
@@ -8,27 +8,29 @@ import org.http4s.HttpApp
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.CORS
 import zio.clock.Clock
+import zio.internal.{Platform, Tracing}
 import zio.interop.catz._
 import zio.{ExitCode => ZExitCode, _}
 
 object Main extends App {
-  type Env        = layers.AppEnv with Clock
-  type AppTask[A] = RIO[Env, A]
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, ZExitCode] = {
     val prog =
       for {
-        httpCfg <- getHttpConfig
-        httpApp  = makeRoutes[Env]
+        httpCfg <- HttpConfig.get
+        httpApp <- Router.makeApp[AppEnvironment]
         _       <- runHttp(httpApp, httpCfg.port)
       } yield ZExitCode.success
 
     prog
-      .provideSomeLayer[ZEnv](layers.live.appLayer)
-      .orDie
+      .provideSomeLayer[ZEnv](layers.prod)
+      .exitCode
   }
 
-  def runHttp[R <: Clock](
+  override val platform: Platform = Platform.default
+    .withTracing(Tracing.disabled)
+
+  private def runHttp[R <: Clock](
     httpApp: HttpApp[RIO[R, *]],
     port: Int
   ): ZIO[R, Throwable, Unit] = {

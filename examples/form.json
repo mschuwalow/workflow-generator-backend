@@ -1,0 +1,18 @@
+{
+  "components": {
+    "1": {
+      "type": "FormOutput",
+      "formId": "a377d1eb-dd9b-4436-8253-c6307df1c9ea"
+    },
+    "2": {
+      "type": "UDF",
+      "code": "def run(x):\n    print(x)\n    return x['firstName']",
+      "outputTypeHint": "String",
+      "stream": "1"
+    },
+    "3": {
+      "type": "Void",
+      "stream": "2"
+    }
+  }
+}

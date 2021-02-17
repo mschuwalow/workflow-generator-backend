@@ -12,8 +12,8 @@ abstract class Endpoint[R] {
 
   val dsl: Http4sDsl[RTask] = Http4sDsl[RTask]
 
-  implicit def circeJsonDecoder[A: Decoder]: EntityDecoder[RTask, A] = jsonOf[RTask, A]
+  protected implicit def circeJsonDecoder[A: Decoder]: EntityDecoder[RTask, A] = jsonOf[RTask, A]
 
-  implicit def circeJsonEncoder[A: Encoder]: EntityEncoder[RTask, A] =
+  protected implicit def circeJsonEncoder[A: Encoder]: EntityEncoder[RTask, A] =
     jsonEncoderOf[RTask, A]
 }
