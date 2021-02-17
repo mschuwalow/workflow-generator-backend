@@ -30,7 +30,9 @@ object FlowRunner {
             import typed.Sink._
             sink match {
               case Void(id, source) =>
-                interpretStream(flowId, source).mapM(element => log.info(s"$id: Discarded element $element")).runDrain
+                interpretStream(flowId, source)
+                  .mapM(element => log.info(s"${flowId.value}/${id.value}: Discarded element $element"))
+                  .runDrain
             }
           }
 
