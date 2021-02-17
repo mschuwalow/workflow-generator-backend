@@ -6,7 +6,7 @@ import io.circe.{Decoder, Encoder}
 
 final case class FormWithId(
   id: FormId,
-  elements: List[FormElement]
+  elements: UniqueFormElements
 ) {
   val outputType =
     Type.TObject(elements.map(e => (e.id.value, e.elementType)))

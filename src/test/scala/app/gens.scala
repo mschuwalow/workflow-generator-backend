@@ -172,7 +172,8 @@ object gens {
 
     val form: Gen[Random with Sized, Form] =
       for {
-        elements <- Gen.listOf(formElement)
-      } yield Form(elements)
+        elements      <- Gen.listOf(formElement)
+        uniqueElements = UniqueFormElements.make(elements.distinctBy(_.id)).runEither.toOption.get
+      } yield Form(uniqueElements)
   }
 }

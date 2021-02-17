@@ -29,6 +29,7 @@ object Dependencies {
       "dev.zio"                 %% "zio-interop-cats"         % zioInteropCats,
       "dev.zio"                 %% "zio-logging-slf4j"        % zioLogging,
       "dev.zio"                 %% "zio-logging"              % zioLogging,
+      "dev.zio"                 %% "zio-prelude"              % zioPrelude,
       "dev.zio"                 %% "zio-streams"              % zio,
       "dev.zio"                 %% "zio-test-sbt"             % zio   % "test",
       "dev.zio"                 %% "zio-test"                 % zio   % "test",

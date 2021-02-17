@@ -36,7 +36,7 @@ object FormsRepository extends MetaInstances {
         def store(form: Form): Task[FormWithId] = {
           val query =
             sql"""INSERT INTO forms (elements)
-                 |VALUES ($form)""".stripMargin
+                 |VALUES (${form.elements})""".stripMargin
           query.update
             .withUniqueGeneratedKeys[FormId]("form_id")
             .map(id => FormWithId(id, form.elements))
