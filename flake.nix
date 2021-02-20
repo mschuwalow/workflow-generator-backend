@@ -1,7 +1,7 @@
 {
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-20.09";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     sbt-derivation.url = "github:zaninime/sbt-derivation";
   };
@@ -13,7 +13,7 @@
       name = "workflow-generator-backend";
       preOverlays = [
         # korolev wants jdk 11 or newer.
-        (self: super: { jre = super.openjdk14; })
+        (self: super: { jre = super.adoptopenjdk-jre-hotspot-bin-14; })
         # fix py4j issues with client server.
         (self: super: {
           python38 = super.python38.override {
