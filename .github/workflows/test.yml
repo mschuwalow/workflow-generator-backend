@@ -5,30 +5,30 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-    - name: checkout
+    - name: Checkout
       uses: actions/checkout@v2
       with:
           fetch-depth: 0
-    - name: install nix
+    - name: Install nix
       uses: cachix/install-nix-action@v12
       with:
         install_url: https://github.com/numtide/nix-flakes-installer/releases/download/nix-2.4pre20201221_9fab14a/install
         extra_nix_config: |
           experimental-features = nix-command flakes
-    - name: configure cachix
+    - name: Configure cachix
       uses: cachix/cachix-action@v8
       with:
         name: mschuwalow
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-    - name: lint
+    - name: Lint
       run: |
         nix develop --command sbt fixCheck
-    - name: start docker-compose
+    - name: Start docker-compose
       run: |
         docker-compose up -d
-    - name: run tests
+    - name: Run tests
       run: |
         nix develop --command sbt test
-    - name: stop docker-compose
+    - name: Stop docker-compose
       run: |
         docker-compose down
