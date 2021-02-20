@@ -17,3 +17,7 @@ test-output/
 website/node_modules
 website/build
 website/i18n/en.json
+
+# nix
+result
+.direnv
