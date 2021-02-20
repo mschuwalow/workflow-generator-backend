@@ -11,28 +11,34 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged
     steps:
-    - name: checkout
+    - name: Checkout
       uses: actions/checkout@v2
       with:
           fetch-depth: 0
-    - name: install nix
+    - name: Install nix
       uses: cachix/install-nix-action@v12
       with:
         install_url: https://github.com/numtide/nix-flakes-installer/releases/download/nix-2.4pre20201221_9fab14a/install
         extra_nix_config: |
           experimental-features = nix-command flakes
-    - name: configure cachix
+    - name: Configure cachix
       uses: cachix/cachix-action@v8
       with:
         name: mschuwalow
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-    - name: test
+    - name: Start docker-compose
       run: |
-        nix develop --command docker-compose up -d && sbt test && docker-compose down
-    - name: build docker image
+        docker-compose up -d
+    - name: Run tests
+      run: |
+        nix develop --command sbt test
+    - name: Stop docker-compose
+      run: |
+        docker-compose down
+    - name: Build docker image
       run: |
         nix build .#docker
-    - name: store docker artifact
+    - name: Store docker artifact
       uses: actions/upload-artifact@v2
       with:
         name: docker-artifact
@@ -42,9 +48,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-image
     steps:
-      - name: checkout
+      - name: Checkout
         uses: actions/checkout@v2
-      - name: create github release
+      - name: Create GitHub release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -57,17 +63,17 @@ jobs:
     runs-on: ubuntu-latest
     needs: github-release
     steps:
-      - name: login to dockerhub
+      - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: retrieve docker artifacts
+      - name: Retrieve docker artifacts
         uses: actions/download-artifact@v2
         with:
           name: docker-artifact
           path: result
-      - name: push image to dockerhub
+      - name: Push image to Docker Hub
         run: |
           docker load < result
           docker tag workflow-generator-backend workflow-generator-backend:${{ github.ref }}

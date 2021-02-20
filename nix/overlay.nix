@@ -10,7 +10,7 @@ with prev; {
       # depsSha256 = "0000000000000000000000000000000000000000000000000000";
       depsSha256 = "74yc8FitUd7HgXGF0QuDqNMotSdXdMCmYYQLFYxlqN4=";
 
-      src = ../../.;
+      src = ../.;
 
       buildPhase = ''
         sbt 'set test in assembly := {}' assembly
@@ -50,7 +50,7 @@ with prev; {
     docker = dockerTools.buildImage {
       name = "workflow-generator-backend";
       tag = "latest";
-      contents = [ app ];
+      contents = [ app prev.bash ];
       config = { Cmd = [ "/bin/workflow-generator-backend" ]; };
     };
   };
