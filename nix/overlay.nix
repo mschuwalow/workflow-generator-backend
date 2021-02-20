@@ -50,7 +50,7 @@ with prev; {
     docker = dockerTools.buildImage {
       name = "workflow-generator-backend";
       tag = "latest";
-      contents = [ app prev.bash ];
+      contents = [ app ];
       config = { Cmd = [ "/bin/workflow-generator-backend" ]; };
     };
   };
