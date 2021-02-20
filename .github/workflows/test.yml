@@ -21,7 +21,14 @@ jobs:
         name: mschuwalow
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
     - name: lint
-      run: nix develop --command sbt fixCheck
-    - name: check
       run: |
-        nix develop --command docker-compose up -d && sbt test && docker-compose down
+        nix develop --command sbt fixCheck
+    - name: start docker-compose
+      run: |
+        docker-compose up -d
+    - name: run tests
+      run: |
+        nix develop --command sbt test
+    - name: stop docker-compose
+      run: |
+        docker-compose down
