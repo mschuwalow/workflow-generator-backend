@@ -36,7 +36,7 @@ in stdenv.mkDerivation {
   pname = "workflow-generator-backend";
   version = "0.0.1";
 
-  buildInputs = [ launcher makeWrapper ] ++ runtimeDeps;
+  buildInputs = [ makeWrapper ];
 
   unpackPhase = "true";
 
