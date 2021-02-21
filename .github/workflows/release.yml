@@ -1,15 +1,13 @@
 name: "Deploy"
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches:
       - master
 
 jobs:
   build-image:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged
     steps:
     - name: Checkout
       uses: actions/checkout@v2
