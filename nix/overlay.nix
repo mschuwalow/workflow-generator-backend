@@ -7,8 +7,8 @@ with prev; {
       pname = "workflow-generator-backend-jar";
       version = "latest";
 
-      # depsSha256 = "0000000000000000000000000000000000000000000000000000";
-      depsSha256 = "MayKpjtSM9lVd1egggRthUk+9blohRTN4FEdSW+ElVM=";
+      depsSha256 = "0000000000000000000000000000000000000000000000000000";
+      # depsSha256 = "MayKpjtSM9lVd1egggRthUk+9blohRTN4FEdSW+ElVM=";
 
       src = ../.;
 

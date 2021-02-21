@@ -12,7 +12,6 @@ sealed abstract class Error extends NoStackTrace {
 }
 
 object Error {
-
   final case class GraphValidationFailed(reason: String) extends Error {
     def httpResponse[R](dsl: Http4sDsl[RIO[R, *]]) = {
       import dsl._

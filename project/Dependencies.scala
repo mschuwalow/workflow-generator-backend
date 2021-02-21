@@ -16,6 +16,7 @@ object Dependencies {
     val pureConfig             = "0.14.0"
     val py4j                   = "0.10.9.1"
     val scalaParserCombinators = "1.1.2"
+    val sttp                   = "2.2.9"
     val zio                    = "1.0.4-2"
     val zioInteropCats         = "2.3.1.0"
     val zioLogging             = "0.5.6"
@@ -26,6 +27,7 @@ object Dependencies {
   val App =
     List(
       "com.github.pureconfig"   %% "pureconfig"               % pureConfig,
+      "com.softwaremill.sttp.client" %% "httpclient-backend-zio" % sttp,
       "dev.zio"                 %% "zio-interop-cats"         % zioInteropCats,
       "dev.zio"                 %% "zio-logging-slf4j"        % zioLogging,
       "dev.zio"                 %% "zio-logging"              % zioLogging,

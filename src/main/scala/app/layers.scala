@@ -1,5 +1,6 @@
 package app
 
+import sttp.client.httpclient.zio.HttpClientZioBackend
 import app.config._
 import app.flows.udf.{Python, Sys, UDFRunner}
 import app.flows.{FlowRepository, FlowRunner, FlowService}
@@ -14,6 +15,7 @@ object layers {
     ZLayer.identity[ZEnv] >+>
       AppConfig.live >+>
       Slf4jLogger.make((_, msg) => msg) >+>
+      HttpClientZioBackend.layer() >+>
       Database.live >+>
       FlowRepository.doobie >+>
       FormsRepository.doobie >+>
