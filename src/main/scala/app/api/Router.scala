@@ -25,11 +25,13 @@ object Router {
 
     val securedRoutes = for {
       authenticator        <- Auth.getTSecAuthenticator[R]
+      authRoutes            = authEndpoint.authedRoutes
       flowRoutes            = flowEndpoint.authedRoutes
       formsRoutes           = formsEndpoint.authedRoutes
       generatedFormsRoutes <- generatedFormsEndpoint.authedRoutes
     } yield AuthMiddleware(authenticator)(
       TSecRouter(
+        "/auth"      -> authRoutes,
         "/workflows" -> flowRoutes,
         "/forms"     -> formsRoutes,
         "/generated" -> generatedFormsRoutes

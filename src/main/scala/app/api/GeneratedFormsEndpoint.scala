@@ -24,7 +24,7 @@ final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env](mountPath: S
     import ctx._
 
     val config = KorolevServiceConfig[RIO[R, *], State, Any](
-      rootPath = s"${mountPath}/",
+      rootPath = s"$mountPath/",
       stateLoader = authedStateLoader {
         case (_, request, userInfo) =>
           request.pq match {
@@ -114,7 +114,7 @@ final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env](mountPath: S
               )
             )
           }
-        case State.Submitted                            =>
+        case State.Submitted                     =>
           optimize {
             Html(
               body(
