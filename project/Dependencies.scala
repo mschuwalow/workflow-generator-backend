@@ -18,7 +18,7 @@ object Dependencies {
     val scalaParserCombinators = "1.1.2"
     val zio                    = "1.0.4-2"
     val zioInteropCats         = "2.2.0.1"
-    val zioLogging             = "0.5.4"
+    val zioLogging             = "0.5.6"
     val zioPrelude             = "1.0.0-RC2"
   }
   import Versions._
