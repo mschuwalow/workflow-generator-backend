@@ -12,7 +12,7 @@ object Dependencies {
     val kindProjector          = "0.11.1"
     val korolev                = "0.17.0"
     val log4j                  = "2.14.0"
-    val organizeImports        = "0.4.4"
+    val organizeImports        = "0.5.0"
     val pureConfig             = "0.14.0"
     val py4j                   = "0.10.9.1"
     val scalaParserCombinators = "1.1.2"
