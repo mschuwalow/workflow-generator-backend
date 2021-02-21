@@ -35,6 +35,6 @@ jobs:
     - name: Push image to Docker Hub
       run: |
         docker load < result
-        docker tag workflow-generator-backend workflow-generator-backend:${GITHUB_SHA::8}
-        docker push workflow-generator-backend:${GITHUB_SHA::8}
+        docker tag workflow-generator-backend ${{ secrets.DOCKERHUB_USERNAME }}/workflow-generator-backend:${GITHUB_SHA::8}
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/workflow-generator-backend:${GITHUB_SHA::8}
 
