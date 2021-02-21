@@ -34,7 +34,9 @@ jobs:
         nix build .#docker
     - name: Push image to Docker Hub
       run: |
+        VERSION="$(date '+%Y.%m.%d')-${GITHUB_SHA::7}"
+        IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/workflow-generator-backend:$VERSION"
         docker load < result
-        docker tag workflow-generator-backend ${{ secrets.DOCKERHUB_USERNAME }}/workflow-generator-backend:${GITHUB_SHA::8}
-        docker push ${{ secrets.DOCKERHUB_USERNAME }}/workflow-generator-backend:${GITHUB_SHA::8}
+        docker tag workflow-generator-backend $IMAGE_NAME
+        docker push $IMAGE_NAME
 
