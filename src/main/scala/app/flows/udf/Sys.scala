@@ -78,9 +78,9 @@ object Sys {
                         )
                       }
               _    <- pump(proc.getInputStream(), log.info(_)).fork
-                     .toManaged(_.interrupt)
+                        .toManaged(_.interrupt)
               _    <- pump(proc.getErrorStream(), log.warn(_)).fork
-                     .toManaged(_.interrupt)
+                        .toManaged(_.interrupt)
             } yield proc
 
           run(cmd).map { p =>
@@ -117,14 +117,14 @@ object Sys {
             resourcePath = dir.resolve("resource")
             os          <- fromCloseable(new FileOutputStream(resourcePath.toFile()))
             _           <- ZIO.effect {
-                   val buffer = new Array[Byte](2048)
-                   var length = 0
+                             val buffer = new Array[Byte](2048)
+                             var length = 0
 
-                   while ({ length = is.read(buffer); length } != -1)
-                     os.write(buffer, 0, length);
-                   os.close()
-                   is.close()
-                 }.toManaged_
+                             while ({ length = is.read(buffer); length } != -1)
+                               os.write(buffer, 0, length);
+                             os.close()
+                             is.close()
+                           }.toManaged_
           } yield resourcePath
         }.provide(env)
 
