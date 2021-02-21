@@ -1,8 +1,8 @@
 package app.api
 
 import app.flows.{FlowId, FlowRepository, FlowService, unresolved}
-import zio.interop.catz._
 import tsec.authentication._
+import zio.interop.catz._
 
 final class FlowEndpoint[R <: FlowEndpoint.Env] extends Endpoint[R] {
   import dsl._

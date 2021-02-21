@@ -14,16 +14,16 @@ object Router {
     val healthEndpoint         = new HealthEndpoint[R]()
     val flowEndpoint           = new FlowEndpoint[R]()
     val formsEndpoint          = new FormsEndpoint[R]()
-    val generatedFormsEndpoint = new GeneratedFormsEndpoint[R]()
+    // val generatedFormsEndpoint = new GeneratedFormsEndpoint[R]()
     val authEndpoint           = new AuthEndpoint[R]()
 
     for {
-      generatedFormsRoutes <- generatedFormsEndpoint.routes
-      authRoutes            = authEndpoint.routes
-      healthRoutes          = healthEndpoint.routes
+      // generatedFormsRoutes <- generatedFormsEndpoint.authedRoutes
       flowRoutes           <- flowEndpoint.authedRoutes
       formsRoutes          <- formsEndpoint.authedRoutes
-      routes                = healthRoutes <+> authRoutes <+> flowRoutes <+> formsRoutes <+> generatedFormsRoutes
+      authRoutes            = authEndpoint.routes
+      healthRoutes          = healthEndpoint.routes
+      routes                = healthRoutes <+> authRoutes <+> flowRoutes <+> formsRoutes
     } yield ErrorHandlingMiddleware(routes).orNotFound
   }
 }

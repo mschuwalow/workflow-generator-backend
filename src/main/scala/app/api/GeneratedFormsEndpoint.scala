@@ -3,148 +3,132 @@ package app.api
 import app.flows.FlowRunner
 import app.forms.FormElement.{TextField, _}
 import app.forms._
-import korolev.server.{KorolevServiceConfig, StateLoader}
+import korolev.effect.Effect
+import korolev.server.{KorolevService, KorolevServiceConfig, StateLoader}
 import korolev.state.javaSerialization._
-import korolev.zio.zioEffectInstance
-import org.http4s.HttpRoutes
+import korolev.{/, Context}
 import zio._
-import zio.interop.catz._
 
 import java.time.LocalDate
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.util.control.NoStackTrace
 
-final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends Endpoint[R] {
-  import levsha.dsl._
-  import html._
+final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends KorolevEndpoint[R] {
   import GeneratedFormsEndpoint.internal._
 
-  val routes: URIO[R, HttpRoutes[RIO[R, *]]] =
-    ZIO.runtime[R].map { implicit runtime =>
-      import korolev._
-      implicit val ec: ExecutionContext = runtime.platform.executor.asEC
-      implicit val effect               = zioEffectInstance[R, Throwable](runtime)(identity)(identity)
+  def makeService(implicit effect: Effect[RTask], ec: ExecutionContext): KorolevService[RTask] = {
+    val ctx = Context[RTask, State, Any]
+    import levsha.dsl._
+    import html._
+    import ctx._
 
-      val ctx = Context[RIO[R, *], State, Any]
-      import ctx._
-
-      val config = KorolevServiceConfig[RIO[R, *], State, Any](
-        stateLoader = StateLoader.default(State.Impossible),
-        rootPath = "/",
-        document = {
-          case State.Found(_, formDefinition) =>
-            val formId      = elementId()
-            val definitions = formDefinition.elements.map(e => (elementId(), e))
-            optimize {
-              Html(
-                body(
-                  form(
-                    formId,
-                    div(
-                      legend("Form"),
-                      definitions.map {
-                        case (inputId, FormElement.TextField(_, name))   =>
-                          p(
-                            label(name),
-                            input(
-                              inputId,
-                              `type` := "text"
-                            )
-                          )
-                        case (inputId, FormElement.NumberField(_, name)) =>
-                          p(
-                            label(name),
-                            input(
-                              inputId,
-                              `type` := "number"
-                            )
-                          )
-                        case (inputId, FormElement.DatePicker(_, name))  =>
-                          p(
-                            label(name),
-                            input(
-                              inputId,
-                              `type` := "date"
-                            )
-                          )
-                      },
-                      p(
-                        button(
-                          "Submit",
-                          event("click") {
-                            access =>
-                              val elements = ZIO
-                                .foreach(definitions) {
-                                  case (inputId, element) =>
-                                    val property = access.property(inputId)
-                                    val out      = element match {
-                                      case TextField(_, _)   =>
-                                        property.get("value")
-                                      case NumberField(_, _) =>
-                                        property.get("value").flatMap(str => Task(str.toLong))
-                                      case DatePicker(_, _)  =>
-                                        for {
-                                          value  <- property.get("value")
-                                          parsed <- Task(LocalDate.parse(value))
-                                        } yield parsed
-                                    }
-                                    out.map((element.id.value, _))
-                                }
-                                .map(_.toMap)
-                              val emit     = elements.flatMap { event =>
-                                val outputType = formDefinition.outputType
-                                FlowRunner
-                                  .emitFormOutput(formDefinition.id, outputType)(event.asInstanceOf[outputType.Scala])
+    val config = KorolevServiceConfig[RIO[R, *], State, Any](
+      stateLoader = StateLoader {
+        case (_, request) =>
+          request.pq match {
+            case korolev.Root / "generated" / id if id.nonEmpty =>
+              for {
+                formId     <- Task(FormId(UUID.fromString(id))).mapError(_ => NotFoundError)
+                formWithId <- FormsRepository.get(formId).flatMap {
+                                _.fold[IO[NotFoundError.type, FormWithId]](ZIO.fail(NotFoundError))(ZIO.succeed(_))
                               }
-                              emit *> access.transition(_ => State.Submitted)
-                          }
+              } yield State.Working(formId, formWithId)
+            case _                                              =>
+              ZIO.fail(NotFoundError)
+          }
+      },
+      rootPath = "/",
+      document = {
+        case State.Working(_, formDefinition) =>
+          val formId      = elementId()
+          val definitions = formDefinition.elements.map(e => (elementId(), e))
+          optimize {
+            Html(
+              body(
+                form(
+                  formId,
+                  div(
+                    legend("Form"),
+                    definitions.map {
+                      case (inputId, FormElement.TextField(_, name))   =>
+                        p(
+                          label(name),
+                          input(
+                            inputId,
+                            `type` := "text"
+                          )
                         )
+                      case (inputId, FormElement.NumberField(_, name)) =>
+                        p(
+                          label(name),
+                          input(
+                            inputId,
+                            `type` := "number"
+                          )
+                        )
+                      case (inputId, FormElement.DatePicker(_, name))  =>
+                        p(
+                          label(name),
+                          input(
+                            inputId,
+                            `type` := "date"
+                          )
+                        )
+                    },
+                    p(
+                      button(
+                        "Submit",
+                        event("click") {
+                          access =>
+                            val elements = ZIO
+                              .foreach(definitions) {
+                                case (inputId, element) =>
+                                  val property = access.property(inputId)
+                                  val out      = element match {
+                                    case TextField(_, _)   =>
+                                      property.get("value")
+                                    case NumberField(_, _) =>
+                                      property.get("value").flatMap(str => Task(str.toLong))
+                                    case DatePicker(_, _)  =>
+                                      for {
+                                        value  <- property.get("value")
+                                        parsed <- Task(LocalDate.parse(value))
+                                      } yield parsed
+                                  }
+                                  out.map((element.id.value, _))
+                              }
+                              .map(_.toMap)
+                            val emit     = elements.flatMap { event =>
+                              val outputType = formDefinition.outputType
+                              FlowRunner
+                                .emitFormOutput(formDefinition.id, outputType)(event.asInstanceOf[outputType.Scala])
+                            }
+                            emit *> access.transition(_ => State.Submitted)
+                        }
                       )
                     )
                   )
                 )
               )
-            }
-          case State.Submitted                =>
-            optimize {
-              Html(
-                body(
-                  "form has been submitted"
-                )
-              )
-            }
-          case State.Impossible               =>
-            throw new IllegalStateException()
-        },
-        router = korolev.Router(
-          fromState = {
-            case State.Found(id, _) =>
-              korolev.Root / "generated" / id.value.toString()
-          },
-          toState = {
-            case korolev.Root / "generated" / id if id.nonEmpty =>
-              _ =>
-                for {
-                  formId     <- Task(FormId(UUID.fromString(id))).mapError(_ => NotFoundError)
-                  formWithId <- FormsRepository.get(formId).flatMap {
-                                  _.fold[IO[NotFoundError.type, FormWithId]](ZIO.fail(NotFoundError))(ZIO.succeed(_))
-                                }
-                } yield State.Found(formId, formWithId)
-            case _                                              => _ => ZIO.fail(NotFoundError)
-
+            )
           }
-        )
-      )
-      NotFoundHandler(
-        http4s.http4sKorolevService(config)
-      )
-    }
-
+        case State.Submitted                  =>
+          optimize {
+            Html(
+              body(
+                "form has been submitted"
+              )
+            )
+          }
+      }
+    )
+    korolev.server.korolevService(config)
+  }
 }
 
 object GeneratedFormsEndpoint {
-  type Env = FormsRepository with FlowRunner
+  type Env = FormsRepository with FlowRunner with Auth
 
   private[GeneratedFormsEndpoint] object internal {
 
@@ -169,9 +153,9 @@ object GeneratedFormsEndpoint {
     sealed trait State
 
     object State {
-      case object Submitted                                extends State
-      case object Impossible                               extends State
-      final case class Found(id: FormId, form: FormWithId) extends State
+      case object Submitted extends State
+
+      final case class Working(id: FormId, form: FormWithId) extends State
     }
 
   }

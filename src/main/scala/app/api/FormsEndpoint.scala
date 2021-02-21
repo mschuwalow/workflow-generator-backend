@@ -1,8 +1,8 @@
 package app.api
 
 import app.forms.{Form, FormId, FormsRepository}
-import zio.interop.catz._
 import tsec.authentication._
+import zio.interop.catz._
 
 final class FormsEndpoint[R <: FormsEndpoint.Env] extends Endpoint[R] {
   import dsl._
@@ -11,7 +11,7 @@ final class FormsEndpoint[R <: FormsEndpoint.Env] extends Endpoint[R] {
     Auth.getTSecAuthenticator[R].map { auth =>
       SecuredRequestHandler(auth).liftService {
         TSecAuthService {
-          case req @ POST -> Root / "forms" asAuthed _ =>
+          case req @ POST -> Root / "forms" asAuthed _        =>
             for {
               body     <- req.request.as[Form]
               result   <- FormsRepository.store(body)

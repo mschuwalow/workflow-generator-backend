@@ -1,7 +1,7 @@
 package app.auth
 
-import io.circe.{Encoder, Decoder}
 import io.circe.generic.semiauto._
+import io.circe.{Decoder, Encoder}
 
 final case class UserInfo(
   username: String,

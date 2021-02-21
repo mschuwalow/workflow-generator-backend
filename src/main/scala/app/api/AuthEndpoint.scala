@@ -1,19 +1,17 @@
 package app.api
 
-import org.http4s.HttpRoutes
-import zio.RIO
-import zio.interop.catz._
 import io.circe.Decoder
 import io.circe.generic.semiauto.deriveDecoder
-import org.http4s.Response
-import org.http4s.Status
+import org.http4s.{HttpRoutes, Response, Status}
+import zio.RIO
+import zio.interop.catz._
 
 final class AuthEndpoint[R <: AuthEndpoint.Env] extends Endpoint[R] {
   import AuthEndpoint._
   import dsl._
 
   val routes: HttpRoutes[RIO[R, *]] = HttpRoutes.of {
-    case req @ POST -> Root / "auth" / "login"        =>
+    case req @ POST -> Root / "auth" / "login" =>
       for {
         body          <- req.as[LoginRequest]
         token         <- Auth.auth(body.username, body.password)

@@ -1,13 +1,12 @@
 package app.api
 
-import tsec.authentication.JWTAuthenticator
-import zio._
-import app.auth.UserInfo
+import app.auth.{UserInfo, UserInfoService}
+import tsec.authentication.{AugmentedJWT, JWTAuthenticator}
 import tsec.mac.jca.HMACSHA256
-import app.auth.UserInfoService
+import zio._
 import zio.interop.catz._
+
 import scala.concurrent.duration._
-import tsec.authentication.AugmentedJWT
 
 object Auth {
 
@@ -22,9 +21,9 @@ object Auth {
     } yield new Service {
       def auth(username: String, password: String) = {
         for {
-          userInfo <- UserInfoService.getUserInfo(username, password)
+          userInfo     <- UserInfoService.getUserInfo(username, password)
           authenticator = getTSecAuthenticator[Any]
-          token <- authenticator.create(userInfo)
+          token        <- authenticator.create(userInfo)
         } yield token
       }.provide(env)
 

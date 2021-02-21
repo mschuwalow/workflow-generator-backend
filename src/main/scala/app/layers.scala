@@ -1,5 +1,7 @@
 package app
 
+import app.api.Auth
+import app.auth.UserInfoService
 import app.config._
 import app.flows.udf.{Python, Sys, UDFRunner}
 import app.flows.{FlowRepository, FlowRunner, FlowService}
@@ -8,8 +10,6 @@ import app.postgres.Database
 import sttp.client.httpclient.zio.HttpClientZioBackend
 import zio._
 import zio.logging.slf4j.Slf4jLogger
-import app.auth.UserInfoService
-import app.api.Auth
 
 object layers {
 
