@@ -8,22 +8,27 @@ import zio.interop.catz._
 
 object Router {
 
-  type Env = FlowEndpoint.Env with GeneratedFormsEndpoint.Env with FormsEndpoint.Env
+  type Env = FlowEndpoint.Env with GeneratedFormsEndpoint.Env with FormsEndpoint.Env with Auth
 
   def makeApp[R <: Env]: URIO[R, HttpApp[RIO[R, *]]] = {
     val healthEndpoint         = new HealthEndpoint[R]()
     val flowEndpoint           = new FlowEndpoint[R]()
     val formsEndpoint          = new FormsEndpoint[R]()
-    // val generatedFormsEndpoint = new GeneratedFormsEndpoint[R]()
+    val generatedFormsEndpoint = new GeneratedFormsEndpoint[R]()
     val authEndpoint           = new AuthEndpoint[R]()
 
+    val normalRoutes = healthEndpoint.routes <+> authEndpoint.routes
+
+    val securedRoutes = for {
+      authenticator        <- Auth.getTSecAuthenticator[R]
+      flowRoutes            = flowEndpoint.authedRoutes
+      formsRoutes           = formsEndpoint.authedRoutes
+      generatedFormsRoutes <- generatedFormsEndpoint.authedRoutes
+    } yield AuthMiddleware(authenticator)(flowRoutes <+> formsRoutes <+> generatedFormsRoutes)
+
     for {
-      // generatedFormsRoutes <- generatedFormsEndpoint.authedRoutes
-      flowRoutes           <- flowEndpoint.authedRoutes
-      formsRoutes          <- formsEndpoint.authedRoutes
-      authRoutes            = authEndpoint.routes
-      healthRoutes          = healthEndpoint.routes
-      routes                = healthRoutes <+> authRoutes <+> flowRoutes <+> formsRoutes
-    } yield ErrorHandlingMiddleware(routes).orNotFound
+      secured <- securedRoutes
+      normal   = normalRoutes
+    } yield ErrorHandlingMiddleware(normal <+> secured).orNotFound
   }
 }

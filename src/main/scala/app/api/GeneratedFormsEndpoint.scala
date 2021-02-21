@@ -4,7 +4,7 @@ import app.flows.FlowRunner
 import app.forms.FormElement.{TextField, _}
 import app.forms._
 import korolev.effect.Effect
-import korolev.server.{KorolevService, KorolevServiceConfig, StateLoader}
+import korolev.server.{KorolevService, KorolevServiceConfig}
 import korolev.state.javaSerialization._
 import korolev.{/, Context}
 import zio._
@@ -12,9 +12,10 @@ import zio._
 import java.time.LocalDate
 import java.util.UUID
 import scala.concurrent.ExecutionContext
-import scala.util.control.NoStackTrace
+import app.auth.UserInfo
 
 final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends KorolevEndpoint[R] {
+  import KorolevEndpoint._
   import GeneratedFormsEndpoint.internal._
 
   def makeService(implicit effect: Effect[RTask], ec: ExecutionContext): KorolevService[RTask] = {
@@ -24,23 +25,23 @@ final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends Koro
     import ctx._
 
     val config = KorolevServiceConfig[RIO[R, *], State, Any](
-      stateLoader = StateLoader {
-        case (_, request) =>
+      stateLoader = authedStateLoader {
+        case (_, request, userInfo) =>
           request.pq match {
             case korolev.Root / "generated" / id if id.nonEmpty =>
               for {
-                formId     <- Task(FormId(UUID.fromString(id))).mapError(_ => NotFoundError)
+                formId     <- Task(FormId(UUID.fromString(id))).mapError(_ => NotFound)
                 formWithId <- FormsRepository.get(formId).flatMap {
-                                _.fold[IO[NotFoundError.type, FormWithId]](ZIO.fail(NotFoundError))(ZIO.succeed(_))
+                                _.fold[IO[NotFound.type, FormWithId]](ZIO.fail(NotFound))(ZIO.succeed(_))
                               }
-              } yield State.Working(formId, formWithId)
+              } yield State.Working(formId, formWithId, userInfo)
             case _                                              =>
-              ZIO.fail(NotFoundError)
+              ZIO.fail(NotFound)
           }
       },
-      rootPath = "/",
       document = {
-        case State.Working(_, formDefinition) =>
+        case State.Working(_, formDefinition, userInfo) =>
+          println(userInfo)
           val formId      = elementId()
           val definitions = formDefinition.elements.map(e => (elementId(), e))
           optimize {
@@ -121,43 +122,24 @@ final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends Koro
               )
             )
           }
-      }
+      },
+      router = korolev.Router(
+        toState = _ => s => ZIO.succeed(s)
+      )
     )
     korolev.server.korolevService(config)
   }
 }
 
 object GeneratedFormsEndpoint {
-  type Env = FormsRepository with FlowRunner with Auth
+  type Env = FormsRepository with FlowRunner with KorolevEndpoint.Env
 
   private[GeneratedFormsEndpoint] object internal {
-
-    case object NotFoundError extends NoStackTrace
-
-    object NotFoundHandler {
-      import cats.data.{Kleisli, OptionT}
-      import org.http4s.{Request, Response}
-
-      def apply[R](
-        k: Kleisli[OptionT[RIO[R, *], *], Request[RIO[R, *]], Response[RIO[R, *]]]
-      ): Kleisli[OptionT[RIO[R, *], *], Request[RIO[R, *]], Response[RIO[R, *]]] =
-        Kleisli { req =>
-          OptionT {
-            k.run(req).value.catchSome {
-              case NotFoundError => ZIO.succeed(None)
-            }
-          }
-        }
-    }
-
     sealed trait State
 
     object State {
-      case object Submitted extends State
-
-      final case class Working(id: FormId, form: FormWithId) extends State
+      final case class Working(id: FormId, form: FormWithId, userInfo: UserInfo) extends State
+      case object Submitted                                                      extends State
     }
-
   }
-
 }

@@ -1,5 +1,6 @@
 package app.api
 
+import app.auth.UserInfo
 import cats.effect.ConcurrentEffect
 import cats.syntax.functor._
 import fs2.{Chunk, Pipe, Stream => FS2Stream}
@@ -14,60 +15,69 @@ import org.http4s.headers.Cookie
 import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket.WebSocketFrame
 import org.http4s.websocket.WebSocketFrame.{Close, Text}
-import org.http4s.{Header, Headers, Request, Response, Status}
+import org.http4s.{Header, Headers, Response, Status}
 import scodec.bits.ByteVector
 import tsec.authentication._
+import tsec.mac.jca.HMACSHA256
 import zio.interop.catz._
 import zio.{Chunk => _, _}
-
+import io.circe.syntax._
 import scala.concurrent.ExecutionContext
+import scala.util.control.NoStackTrace
+import korolev.server.StateLoader
+import korolev.web.Request.Head
+import io.circe.parser.{parse => parseJson}
 
 abstract class KorolevEndpoint[R <: KorolevEndpoint.Env] extends Endpoint[R] {
+  import KorolevEndpoint._
   import dsl._
 
-  def makeService(implicit effect: Effect[RTask], ec: ExecutionContext): KorolevService[RTask]
+  protected def makeService(implicit effect: Effect[RTask], ec: ExecutionContext): KorolevService[RTask]
 
-  def authedRoutes =
-    ZIO.runtime[R].flatMap { implicit runtime =>
-      Auth.getTSecAuthenticator[R].map { auth =>
-        implicit val ec: ExecutionContext            = runtime.platform.executor.asEC
-        implicit val effect                          = zioEffectInstance[R, Throwable](runtime)(identity)(identity)
-        val korolevServer: KorolevService[RIO[R, *]] = makeService
+  protected def authedStateLoader[S](f: (String, Head, UserInfo) => RTask[S]): StateLoader[RTask, S] =
+    StateLoader { case (deviceId, request) =>
+      val userInfo = parseJson(request.header(UserInfoHeader).get).flatMap(_.as[UserInfo]).toOption.get
+      f(deviceId, request, userInfo)
+    }
 
-        SecuredRequestHandler(auth).liftService {
-          TSecAuthService {
-            case req @ GET -> Root / "bridge" / "web-socket" / _ asAuthed _ =>
-              val (fromClient, kStream) = makeSinkAndSubscriber()
+  final def authedRoutes =
+    ZIO.runtime[R].map { implicit runtime =>
+      implicit val ec: ExecutionContext            = runtime.platform.executor.asEC
+      implicit val effect                          = zioEffectInstance[R, Throwable](runtime)(identity)(identity)
+      val korolevServer: KorolevService[RIO[R, *]] = makeService
 
-              val korolevRequest = mkKorolevRequest[RTask, KStream[RTask, String]](req.request, kStream)
+      val routes = TSecAuthService[UserInfo, AugmentedJWT[HMACSHA256, UserInfo], RTask] {
+        case req @ GET -> Root / "bridge" / "web-socket" / _ asAuthed _ =>
+          val (fromClient, kStream) = makeSinkAndSubscriber()
 
-              for {
-                response <- korolevServer.ws(korolevRequest)
-                toClient  = response match {
-                              case KorolevResponse(_, outStream, _, _) =>
-                                outStream
-                                  .map(out => Text(out))
-                                  .toFs2
-                              case _                                   =>
-                                throw new RuntimeException
-                            }
-                route    <- WebSocketBuilder[RTask].build(toClient, fromClient)
-              } yield route
+          val korolevRequest = mkKorolevRequest[RTask, KStream[RTask, String]](req, kStream)
 
-            case req @ GET -> _ asAuthed _                                  =>
-              val body           = KStream.empty[RTask, Bytes]
-              val korolevRequest = mkKorolevRequest(req.request, body)
-              handleHttpResponse(korolevServer, korolevRequest)
+          for {
+            response <- korolevServer.ws(korolevRequest)
+            toClient  = response match {
+                          case KorolevResponse(_, outStream, _, _) =>
+                            outStream
+                              .map(out => Text(out))
+                              .toFs2
+                          case _                                   =>
+                            throw new RuntimeException
+                        }
+            route    <- WebSocketBuilder[RTask].build(toClient, fromClient)
+          } yield route
 
-            case req                                                        =>
-              for {
-                stream        <- req.request.body.chunks.map(ch => Bytes.wrap(ch.toByteVector)).toKorolev()
-                korolevRequest = mkKorolevRequest(req.request, stream)
-                response      <- handleHttpResponse(korolevServer, korolevRequest)
-              } yield response
-          }
-        }
+        case req @ GET -> _ asAuthed _                                  =>
+          val body           = KStream.empty[RTask, Bytes]
+          val korolevRequest = mkKorolevRequest(req, body)
+          handleHttpResponse(korolevServer, korolevRequest)
+
+        case req                                                        =>
+          for {
+            stream        <- req.request.body.chunks.map(ch => Bytes.wrap(ch.toByteVector)).toKorolev()
+            korolevRequest = mkKorolevRequest(req, stream)
+            response      <- handleHttpResponse(korolevServer, korolevRequest)
+          } yield response
       }
+      NotFoundHandler(routes)
     }
 
   private[this] def handleHttpResponse[F[_]: Effect: ConcurrentEffect](
@@ -90,7 +100,7 @@ abstract class KorolevEndpoint[R <: KorolevEndpoint.Env] extends Endpoint[R] {
     }
 
   private[this] def getContentTypeAndResponseHeaders(responseHeaders: Seq[(String, String)]) =
-    responseHeaders.map { case (name, value) => Header(name, value) }
+    responseHeaders.filterNot(_._1 == UserInfoHeader).map { case (name, value) => Header(name, value) }
 
   private[this] def makeSinkAndSubscriber[F[_]: Effect: ConcurrentEffect]() = {
     val queue                               = Queue[F, String]()
@@ -107,7 +117,8 @@ abstract class KorolevEndpoint[R <: KorolevEndpoint.Env] extends Endpoint[R] {
     (sink, queue.stream)
   }
 
-  private[this] def mkKorolevRequest[F[_], A](request: Request[F], body: A): KorolevRequest[A] = {
+  private[this] def mkKorolevRequest[F[_], A](securedRequest: SecuredRequest[RTask,UserInfo,AugmentedJWT[HMACSHA256,UserInfo]], body: A): KorolevRequest[A] = {
+    val request = securedRequest.request
     val cookies = request.headers.get(Cookie).map(x => x.value)
     KorolevRequest(
       pq = PQ.fromString(request.pathInfo).withParams(request.params),
@@ -120,7 +131,8 @@ abstract class KorolevEndpoint[R <: KorolevEndpoint.Env] extends Endpoint[R] {
           contentType.map { ct =>
             if (ct.mediaType.isMultipart) Seq("content-type" -> contentType.toString) else Seq.empty
           }.getOrElse(Seq.empty)
-        request.headers.toList.map(h => (h.name.value, h.value)) ++ contentTypeHeaders
+        val userInfoHeaders    = Seq(UserInfoHeader -> securedRequest.identity.asJson.noSpaces)
+        request.headers.toList.map(h => (h.name.value, h.value)) ++ contentTypeHeaders ++ userInfoHeaders
       },
       body = body
     )
@@ -129,6 +141,32 @@ abstract class KorolevEndpoint[R <: KorolevEndpoint.Env] extends Endpoint[R] {
 }
 
 object KorolevEndpoint {
-  type Env = Auth
+  type Env = Any
+
+  final val UserInfoHeader = "internal-user-info"
+
+  case object NotFound extends NoStackTrace
+
+  object NotFoundHandler {
+    import cats.data.{Kleisli, OptionT}
+    import org.http4s.Response
+
+    def apply[R](
+      k: Kleisli[
+        OptionT[RIO[R, *], *],
+        SecuredRequest[RIO[R, *], UserInfo, AugmentedJWT[HMACSHA256, UserInfo]],
+        Response[RIO[R, *]]
+      ]
+    ): Kleisli[OptionT[RIO[R, *], *], SecuredRequest[RIO[R, *], UserInfo, AugmentedJWT[HMACSHA256, UserInfo]], Response[
+      RIO[R, *]
+    ]] =
+      Kleisli { req =>
+        OptionT {
+          k.run(req).value.catchSome {
+            case NotFound => ZIO.succeed(None)
+          }
+        }
+      }
+  }
 
 }
