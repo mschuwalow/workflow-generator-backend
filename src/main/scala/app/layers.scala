@@ -1,7 +1,7 @@
 package app
 
 import app.api.Auth
-import app.auth.UserInfoService
+import app.auth.{Permissions, UserInfoService}
 import app.config._
 import app.flows.udf.{Python, Sys, UDFRunner}
 import app.flows.{FlowRepository, FlowRunner, FlowService}
@@ -17,6 +17,7 @@ object layers {
     ZLayer.identity[ZEnv] >+>
       AppConfig.live >+>
       Slf4jLogger.make((_, msg) => msg) >+>
+      Permissions.live >+>
       HttpClientZioBackend.layer() >+>
       UserInfoService.live >+>
       Auth.live >+>

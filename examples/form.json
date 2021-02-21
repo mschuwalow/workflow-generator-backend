@@ -2,11 +2,11 @@
   "components": {
     "1": {
       "type": "FormOutput",
-      "formId": "a1da1b9a-95a8-49eb-a7f4-54aeec78ea1b"
+      "formId": "5656470b-08ee-46b8-aa4f-5f9efcfd042c"
     },
     "2": {
       "type": "UDF",
-      "code": "def run(x):\n    print(x)\n    return x['date']",
+      "code": "def run(x):\n    return x['date']",
       "outputTypeHint": "Date",
       "stream": "1"
     },

@@ -4,8 +4,9 @@ import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 
 final case class UserInfo(
+  id: String,
   username: String,
-  perms: String
+  group: String
 )
 
 object UserInfo {

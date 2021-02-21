@@ -1,6 +1,6 @@
 package app.api
 
-import app.auth.UserInfo
+import app.auth.{Permissions, UserInfo}
 import app.flows.FlowRunner
 import app.forms.FormElement.{TextField, _}
 import app.forms._
@@ -14,7 +14,7 @@ import java.time.LocalDate
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 
-final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends KorolevEndpoint[R] {
+final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env](mountPath: String) extends KorolevEndpoint[R] {
   import GeneratedFormsEndpoint.internal._
 
   def makeService(implicit effect: Effect[RTask], ec: ExecutionContext): KorolevService[RTask] = {
@@ -24,6 +24,7 @@ final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends Koro
     import ctx._
 
     val config = KorolevServiceConfig[RIO[R, *], State, Any](
+      rootPath = s"${mountPath}/",
       stateLoader = authedStateLoader {
         case (_, request, userInfo) =>
           request.pq match {
@@ -33,14 +34,14 @@ final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends Koro
                 formWithId <- FormsRepository.get(formId).flatMap {
                                 _.fold[Task[FormWithId]](notFound)(ZIO.succeed(_))
                               }
+                _          <- formWithId.perms.fold[RTask[Unit]](ZIO.unit)(Permissions.authorize(userInfo, _))
               } yield State.Working(formId, formWithId, userInfo)
             case _                                =>
               notFound
           }
       },
       document = {
-        case State.Working(_, formDefinition, userInfo) =>
-          println(userInfo)
+        case State.Working(_, formDefinition, _) =>
           val formId      = elementId()
           val definitions = formDefinition.elements.map(e => (elementId(), e))
           optimize {
@@ -131,7 +132,7 @@ final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends Koro
 }
 
 object GeneratedFormsEndpoint {
-  type Env = FormsRepository with FlowRunner with KorolevEndpoint.Env
+  type Env = FormsRepository with FlowRunner with Permissions with KorolevEndpoint.Env
 
   private[GeneratedFormsEndpoint] object internal {
     sealed trait State

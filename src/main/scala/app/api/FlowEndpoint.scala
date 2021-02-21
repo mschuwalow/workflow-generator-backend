@@ -1,6 +1,6 @@
 package app.api
 
-import app.auth.UserInfo
+import app.auth.{Permissions, Scope, UserInfo}
 import app.flows.{FlowId, FlowRepository, FlowService, unresolved}
 import tsec.authentication._
 import tsec.mac.jca.HMACSHA256
@@ -10,15 +10,17 @@ final class FlowEndpoint[R <: FlowEndpoint.Env] extends Endpoint[R] {
   import dsl._
 
   val authedRoutes = TSecAuthService[UserInfo, AugmentedJWT[HMACSHA256, UserInfo], RTask] {
-    case req @ POST -> Root asAuthed _        =>
+    case req @ POST -> Root asAuthed user        =>
       for {
+        _        <- Permissions.authorize(user, Scope.Flows)
         body     <- req.request.as[unresolved.Graph]
         result   <- FlowService.add(body)
         response <- Created(result)
       } yield response
 
-    case GET -> Root / UUIDVar(id) asAuthed _ =>
+    case GET -> Root / UUIDVar(id) asAuthed user =>
       for {
+        _        <- Permissions.authorize(user, Scope.Flows)
         flow     <- FlowRepository.getById(FlowId(id))
         response <- Ok(flow)
       } yield response
@@ -26,5 +28,5 @@ final class FlowEndpoint[R <: FlowEndpoint.Env] extends Endpoint[R] {
 }
 
 object FlowEndpoint {
-  type Env = FlowService with FlowRepository
+  type Env = FlowService with FlowRepository with Permissions
 }

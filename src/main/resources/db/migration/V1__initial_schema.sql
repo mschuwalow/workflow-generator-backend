@@ -3,6 +3,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE forms (
   form_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   elements JSONB NOT NULL,
+  perms JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

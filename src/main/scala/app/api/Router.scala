@@ -15,7 +15,7 @@ object Router {
     val healthEndpoint         = new HealthEndpoint[R]()
     val flowEndpoint           = new FlowEndpoint[R]()
     val formsEndpoint          = new FormsEndpoint[R]()
-    val generatedFormsEndpoint = new GeneratedFormsEndpoint[R]()
+    val generatedFormsEndpoint = new GeneratedFormsEndpoint[R]("/generated")
     val authEndpoint           = new AuthEndpoint[R]()
 
     val normalRoutes = Http4sRouter(

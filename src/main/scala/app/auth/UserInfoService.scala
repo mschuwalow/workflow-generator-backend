@@ -47,7 +47,7 @@ object UserInfoService {
     ) {
 
       def toUserInto: UserInfo =
-        UserInfo(username, perms)
+        UserInfo(user_id, username, perms)
 
     }
 
