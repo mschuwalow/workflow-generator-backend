@@ -8,7 +8,7 @@ object Dependencies {
     val doobie                 = "0.9.4"
     val flyway                 = "7.3.1"
     val http4s                 = "0.21.13"
-    val jawn                   = "1.0.1"
+    val jawn                   = "1.0.3"
     val kindProjector          = "0.11.1"
     val korolev                = "0.17.0"
     val log4j                  = "2.14.0"
