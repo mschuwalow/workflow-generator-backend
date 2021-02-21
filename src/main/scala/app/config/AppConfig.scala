@@ -25,7 +25,7 @@ object AppConfig {
     all >>> (
       ZLayer.fromFunction((_: Has[Config]).get.http) ++
         ZLayer.fromFunction((_: Has[Config]).get.database) ++
-          ZLayer.fromFunction((_: Has[Config]).get.auth)
+        ZLayer.fromFunction((_: Has[Config]).get.auth)
     )
   }
 }
