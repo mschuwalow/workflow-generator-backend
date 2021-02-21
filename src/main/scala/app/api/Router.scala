@@ -10,7 +10,7 @@ object Router {
 
   type Env = FlowEndpoint.Env with GeneratedFormsEndpoint.Env with FormsEndpoint.Env
 
-  def makeApp[R <: Env]: URIO[R, HttpApp[RIO[R, ?]]] = {
+  def makeApp[R <: Env]: URIO[R, HttpApp[RIO[R, *]]] = {
     val healthEndpoint         = new HealthEndpoint[R]()
     val flowEndpoint           = new FlowEndpoint[R]()
     val formsEndpoint          = new FormsEndpoint[R]()

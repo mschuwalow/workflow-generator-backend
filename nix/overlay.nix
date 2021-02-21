@@ -5,10 +5,10 @@ with prev; {
 
     jar = sbt.mkDerivation rec {
       pname = "workflow-generator-backend-jar";
-      version = "0.0.1";
+      version = "unknown";
 
       # depsSha256 = "0000000000000000000000000000000000000000000000000000";
-      depsSha256 = "74yc8FitUd7HgXGF0QuDqNMotSdXdMCmYYQLFYxlqN4=";
+      depsSha256 = "MayKpjtSM9lVd1egggRthUk+9blohRTN4FEdSW+ElVM=";
 
       src = ../.;
 
@@ -33,7 +33,7 @@ with prev; {
 
     app = stdenv.mkDerivation {
       pname = "workflow-generator-backend";
-      version = "0.0.1";
+      version = "unknown";
 
       buildInputs = [ makeWrapper ];
 
