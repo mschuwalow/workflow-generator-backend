@@ -3,6 +3,7 @@ package app.api
 import cats.syntax.semigroupk._
 import org.http4s._
 import org.http4s.implicits._
+import org.http4s.server.{Router => Http4sRouter}
 import zio._
 import zio.interop.catz._
 
@@ -17,14 +18,23 @@ object Router {
     val generatedFormsEndpoint = new GeneratedFormsEndpoint[R]()
     val authEndpoint           = new AuthEndpoint[R]()
 
-    val normalRoutes = healthEndpoint.routes <+> authEndpoint.routes
+    val normalRoutes = Http4sRouter(
+      "/health" -> healthEndpoint.routes,
+      "/auth"   -> authEndpoint.routes
+    )
 
     val securedRoutes = for {
       authenticator        <- Auth.getTSecAuthenticator[R]
       flowRoutes            = flowEndpoint.authedRoutes
       formsRoutes           = formsEndpoint.authedRoutes
       generatedFormsRoutes <- generatedFormsEndpoint.authedRoutes
-    } yield AuthMiddleware(authenticator)(flowRoutes <+> formsRoutes <+> generatedFormsRoutes)
+    } yield AuthMiddleware(authenticator)(
+      TSecRouter(
+        "/workflows" -> flowRoutes,
+        "/forms"     -> formsRoutes,
+        "/generated" -> generatedFormsRoutes
+      )
+    )
 
     for {
       secured <- securedRoutes

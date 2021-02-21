@@ -1,15 +1,15 @@
 package app.api
 
 import cats.Monad
-import cats.data.{Kleisli, OptionT}
-import org.http4s.{Request, Response, Status}
-import tsec.authentication.{Authenticator, SecuredRequest, TSecMiddleware}
+import cats.data.Kleisli
+import org.http4s.{HttpRoutes, Request, Response, Status}
+import tsec.authentication.{Authenticator, TSecMiddleware}
 
 object AuthMiddleware {
 
   def apply[F[_]: Monad, I, V, A](authenticator: Authenticator[F, I, V, A])(
-    k: Kleisli[OptionT[F, *], SecuredRequest[F, V, A], Response[F]]
-  ): Kleisli[OptionT[F, *], Request[F], Response[F]] = {
+    k: SecuredRoutes[F, V, A]
+  ): HttpRoutes[F] = {
     val middleware = TSecMiddleware(
       Kleisli(authenticator.extractAndValidate),
       (_: Request[F]) => Monad[F].point(Response[F](Status.Unauthorized))

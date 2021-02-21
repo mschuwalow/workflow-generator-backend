@@ -1,5 +1,6 @@
 package app.api
 
+import app.auth.UserInfo
 import app.flows.FlowRunner
 import app.forms.FormElement.{TextField, _}
 import app.forms._
@@ -12,10 +13,8 @@ import zio._
 import java.time.LocalDate
 import java.util.UUID
 import scala.concurrent.ExecutionContext
-import app.auth.UserInfo
 
 final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends KorolevEndpoint[R] {
-  import KorolevEndpoint._
   import GeneratedFormsEndpoint.internal._
 
   def makeService(implicit effect: Effect[RTask], ec: ExecutionContext): KorolevService[RTask] = {
@@ -28,15 +27,15 @@ final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends Koro
       stateLoader = authedStateLoader {
         case (_, request, userInfo) =>
           request.pq match {
-            case korolev.Root / "generated" / id if id.nonEmpty =>
+            case korolev.Root / id if id.nonEmpty =>
               for {
-                formId     <- Task(FormId(UUID.fromString(id))).mapError(_ => NotFound)
+                formId     <- Task(FormId(UUID.fromString(id))).orElse(notFound)
                 formWithId <- FormsRepository.get(formId).flatMap {
-                                _.fold[IO[NotFound.type, FormWithId]](ZIO.fail(NotFound))(ZIO.succeed(_))
+                                _.fold[Task[FormWithId]](notFound)(ZIO.succeed(_))
                               }
               } yield State.Working(formId, formWithId, userInfo)
-            case _                                              =>
-              ZIO.fail(NotFound)
+            case _                                =>
+              notFound
           }
       },
       document = {
@@ -114,7 +113,7 @@ final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env] extends Koro
               )
             )
           }
-        case State.Submitted                  =>
+        case State.Submitted                            =>
           optimize {
             Html(
               body(

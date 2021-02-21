@@ -10,14 +10,14 @@ final class FlowEndpoint[R <: FlowEndpoint.Env] extends Endpoint[R] {
   import dsl._
 
   val authedRoutes = TSecAuthService[UserInfo, AugmentedJWT[HMACSHA256, UserInfo], RTask] {
-    case req @ POST -> Root / "workflows" asAuthed _        =>
+    case req @ POST -> Root asAuthed _        =>
       for {
         body     <- req.request.as[unresolved.Graph]
         result   <- FlowService.add(body)
         response <- Created(result)
       } yield response
 
-    case GET -> Root / "workflows" / UUIDVar(id) asAuthed _ =>
+    case GET -> Root / UUIDVar(id) asAuthed _ =>
       for {
         flow     <- FlowRepository.getById(FlowId(id))
         response <- Ok(flow)

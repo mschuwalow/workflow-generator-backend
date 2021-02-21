@@ -10,14 +10,14 @@ final class FormsEndpoint[R <: FormsEndpoint.Env] extends Endpoint[R] {
   import dsl._
 
   val authedRoutes = TSecAuthService[UserInfo, AugmentedJWT[HMACSHA256, UserInfo], RTask] {
-    case req @ POST -> Root / "forms" asAuthed _        =>
+    case req @ POST -> Root asAuthed _        =>
       for {
         body     <- req.request.as[Form]
         result   <- FormsRepository.store(body)
         response <- Created(result)
       } yield response
 
-    case GET -> Root / "forms" / UUIDVar(id) asAuthed _ =>
+    case GET -> Root / UUIDVar(id) asAuthed _ =>
       for {
         flow     <- FormsRepository.get(FormId(id))
         response <- Ok(flow)

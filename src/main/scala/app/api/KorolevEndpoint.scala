@@ -4,11 +4,14 @@ import app.auth.UserInfo
 import cats.effect.ConcurrentEffect
 import cats.syntax.functor._
 import fs2.{Chunk, Pipe, Stream => FS2Stream}
+import io.circe.parser.{parse => parseJson}
+import io.circe.syntax._
 import korolev.data.Bytes
 import korolev.effect.{Effect, Queue, Stream => KStream}
 import korolev.fs2._
 import korolev.scodec._
-import korolev.server.{HttpRequest => KorolevHttpRequest, KorolevService}
+import korolev.server.{HttpRequest => KorolevHttpRequest, KorolevService, StateLoader}
+import korolev.web.Request.Head
 import korolev.web.{PathAndQuery => PQ, Request => KorolevRequest, Response => KorolevResponse}
 import korolev.zio.zioEffectInstance
 import org.http4s.headers.Cookie
@@ -21,12 +24,9 @@ import tsec.authentication._
 import tsec.mac.jca.HMACSHA256
 import zio.interop.catz._
 import zio.{Chunk => _, _}
-import io.circe.syntax._
+
 import scala.concurrent.ExecutionContext
 import scala.util.control.NoStackTrace
-import korolev.server.StateLoader
-import korolev.web.Request.Head
-import io.circe.parser.{parse => parseJson}
 
 abstract class KorolevEndpoint[R <: KorolevEndpoint.Env] extends Endpoint[R] {
   import KorolevEndpoint._
@@ -34,10 +34,14 @@ abstract class KorolevEndpoint[R <: KorolevEndpoint.Env] extends Endpoint[R] {
 
   protected def makeService(implicit effect: Effect[RTask], ec: ExecutionContext): KorolevService[RTask]
 
+  protected def notFound: Task[Nothing] =
+    ZIO.fail(NotFoundMarker)
+
   protected def authedStateLoader[S](f: (String, Head, UserInfo) => RTask[S]): StateLoader[RTask, S] =
-    StateLoader { case (deviceId, request) =>
-      val userInfo = parseJson(request.header(UserInfoHeader).get).flatMap(_.as[UserInfo]).toOption.get
-      f(deviceId, request, userInfo)
+    StateLoader {
+      case (deviceId, request) =>
+        val userInfo = parseJson(request.header(UserInfoHeader).get).flatMap(_.as[UserInfo]).toOption.get
+        f(deviceId, request, userInfo)
     }
 
   final def authedRoutes =
@@ -117,7 +121,10 @@ abstract class KorolevEndpoint[R <: KorolevEndpoint.Env] extends Endpoint[R] {
     (sink, queue.stream)
   }
 
-  private[this] def mkKorolevRequest[F[_], A](securedRequest: SecuredRequest[RTask,UserInfo,AugmentedJWT[HMACSHA256,UserInfo]], body: A): KorolevRequest[A] = {
+  private[this] def mkKorolevRequest[F[_], A](
+    securedRequest: SecuredRequest[RTask, UserInfo, AugmentedJWT[HMACSHA256, UserInfo]],
+    body: A
+  ): KorolevRequest[A] = {
     val request = securedRequest.request
     val cookies = request.headers.get(Cookie).map(x => x.value)
     KorolevRequest(
@@ -145,7 +152,7 @@ object KorolevEndpoint {
 
   final val UserInfoHeader = "internal-user-info"
 
-  case object NotFound extends NoStackTrace
+  case object NotFoundMarker extends NoStackTrace
 
   object NotFoundHandler {
     import cats.data.{Kleisli, OptionT}
@@ -163,7 +170,7 @@ object KorolevEndpoint {
       Kleisli { req =>
         OptionT {
           k.run(req).value.catchSome {
-            case NotFound => ZIO.succeed(None)
+            case NotFoundMarker => ZIO.succeed(None)
           }
         }
       }

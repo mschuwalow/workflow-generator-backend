@@ -11,7 +11,7 @@ final class AuthEndpoint[R <: AuthEndpoint.Env] extends Endpoint[R] {
   import dsl._
 
   val routes: HttpRoutes[RIO[R, *]] = HttpRoutes.of {
-    case req @ POST -> Root / "auth" / "login" =>
+    case req @ POST -> Root / "login" =>
       for {
         body          <- req.as[LoginRequest]
         token         <- Auth.auth(body.username, body.password)
