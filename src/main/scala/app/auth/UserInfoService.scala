@@ -1,5 +1,6 @@
 package app.auth
 
+import app.Error
 import app.config.AuthConfig
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
@@ -29,10 +30,10 @@ object UserInfoService {
                           .response(asJson[internal.GetUserInfoResponse])
             response <- SttpClient.send(request).catchAll { err =>
                           log.warn(s"User info query failed with: ${err.getMessage}") *> ZIO.fail(
-                            app.Error.AuthorizationFailed
+                            Error.AuthorizationFailed
                           )
                         }
-            result   <- response.body.fold(ZIO.die(_), ZIO.succeed(_))
+            result   <- ZIO.fromEither(response.body).mapError(_ => Error.AuthorizationFailed)
           } yield result.toUserInto
         }.provide(env)
       }
