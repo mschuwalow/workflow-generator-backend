@@ -1,5 +1,5 @@
-final: prev:
-with prev; {
+self: super:
+with super; {
 
   workflow-generator-backend = rec {
 
@@ -10,7 +10,7 @@ with prev; {
       # depsSha256 = "0000000000000000000000000000000000000000000000000000";
       depsSha256 = "5vtg/gD/tbslltqtqOLYSFSv7vw79I2mt9rgeKo9kSo=";
 
-      src = ../.;
+      src = ../app;
 
       buildPhase = ''
         sbt 'set test in assembly := {}' assembly
@@ -50,7 +50,7 @@ with prev; {
     docker = dockerTools.buildImage {
       name = "workflow-generator-backend";
       tag = "latest";
-      contents = [ app ];
+      contents = [ app super.bash super.cat ];
       config = { Cmd = [ "/bin/workflow-generator-backend" ]; };
     };
   };
