@@ -22,13 +22,13 @@ jobs:
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
     - name: Lint
       run: |
-        nix develop --command sbt fixCheck
+        nix develop --command sh -c "cd app; sbt fixCheck"
     - name: Start docker-compose
       run: |
         docker-compose up -d
     - name: Run tests
       run: |
-        nix develop --command sbt test
+        nix develop --command sh -c "cd app; sbt test"
     - name: Stop docker-compose
       run: |
         docker-compose down

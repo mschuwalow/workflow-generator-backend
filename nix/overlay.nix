@@ -50,7 +50,7 @@ with super; {
     docker = dockerTools.buildImage {
       name = "workflow-generator-backend";
       tag = "latest";
-      contents = [ app super.bash super.cat ];
+      contents = [ app ];
       config = { Cmd = [ "/bin/workflow-generator-backend" ]; };
     };
   };
