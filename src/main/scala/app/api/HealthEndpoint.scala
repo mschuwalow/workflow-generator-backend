@@ -8,7 +8,7 @@ final class HealthEndpoint[R] extends Endpoint[R] {
   import dsl._
 
   val routes: HttpRoutes[RIO[R, *]] = HttpRoutes.of {
-    case GET -> Root / "health" =>
+    case GET -> Root =>
       Ok()
   }
 }

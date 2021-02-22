@@ -1,10 +1,12 @@
 package app.forms
 
+import app.auth.Scope
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 
 final case class Form(
-  elements: UniqueFormElements
+  elements: UniqueFormElements,
+  perms: Option[Scope]
 )
 
 object Form {

@@ -20,7 +20,7 @@ object FormsRepository extends MetaInstances {
       new Service {
         def get(id: FormId): Task[Option[FormWithId]] = {
           val query =
-            sql"""SELECT form_id, elements
+            sql"""SELECT form_id, elements, perms
                  |FROM forms
                  |WHERE form_id = $id
                  |""".stripMargin
@@ -35,11 +35,11 @@ object FormsRepository extends MetaInstances {
 
         def store(form: Form): Task[FormWithId] = {
           val query =
-            sql"""INSERT INTO forms (elements)
-                 |VALUES (${form.elements})""".stripMargin
+            sql"""INSERT INTO forms (elements, perms)
+                 |VALUES (${form.elements}, ${form.perms})""".stripMargin
           query.update
             .withUniqueGeneratedKeys[FormId]("form_id")
-            .map(id => FormWithId(id, form.elements))
+            .map(id => FormWithId(id, form.elements, form.perms))
             .transact(xa)
         }
       }

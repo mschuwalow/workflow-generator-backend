@@ -8,7 +8,7 @@ with prev; {
       version = "latest";
 
       # depsSha256 = "0000000000000000000000000000000000000000000000000000";
-      depsSha256 = "MayKpjtSM9lVd1egggRthUk+9blohRTN4FEdSW+ElVM=";
+      depsSha256 = "5vtg/gD/tbslltqtqOLYSFSv7vw79I2mt9rgeKo9kSo=";
 
       src = ../.;
 

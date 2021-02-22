@@ -7,6 +7,28 @@ import zio.test.{Gen, Sized}
 
 object gens {
 
+  object auth {
+    import app.auth._
+
+    val scope: Gen[Random with Sized, Scope] = {
+      import Scope._
+
+      val admin = Gen.const(Admin)
+
+      val flows = Gen.const(Flows)
+
+      val forms = Gen.const(Forms)
+
+      val users = Gen.setOf(Gen.anyString).map(ForUsers(_))
+
+      val perms = Gen.setOf(Gen.anyString).map(ForGroups(_))
+
+      Gen.oneOf(admin, flows, forms, users, perms)
+
+    }
+
+  }
+
   object flows {
     import app.flows._
 
@@ -176,7 +198,8 @@ object gens {
     val form: Gen[Random with Sized, Form] =
       for {
         elements      <- Gen.listOf(formElement)
+        scope         <- Gen.option(auth.scope)
         uniqueElements = UniqueFormElements.make(elements.distinctBy(_.id)).runEither.toOption.get
-      } yield Form(uniqueElements)
+      } yield Form(uniqueElements, scope)
   }
 }

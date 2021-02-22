@@ -1,24 +1,26 @@
 package app.api
 
+import app.auth.{Permissions, Scope, UserInfo}
 import app.flows.{FlowId, FlowRepository, FlowService, unresolved}
-import org.http4s.HttpRoutes
-import zio.RIO
+import tsec.authentication._
+import tsec.mac.jca.HMACSHA256
 import zio.interop.catz._
-import zio.logging.Logging
 
 final class FlowEndpoint[R <: FlowEndpoint.Env] extends Endpoint[R] {
   import dsl._
 
-  val routes: HttpRoutes[RIO[R, *]] = HttpRoutes.of {
-    case req @ POST -> Root / "workflows"        =>
+  val authedRoutes = TSecAuthService[UserInfo, AugmentedJWT[HMACSHA256, UserInfo], RTask] {
+    case req @ POST -> Root asAuthed user        =>
       for {
-        body     <- req.as[unresolved.Graph]
+        _        <- Permissions.authorize(user, Scope.Flows)
+        body     <- req.request.as[unresolved.Graph]
         result   <- FlowService.add(body)
         response <- Created(result)
       } yield response
 
-    case GET -> Root / "workflows" / UUIDVar(id) =>
+    case GET -> Root / UUIDVar(id) asAuthed user =>
       for {
+        _        <- Permissions.authorize(user, Scope.Flows)
         flow     <- FlowRepository.getById(FlowId(id))
         response <- Ok(flow)
       } yield response
@@ -26,5 +28,5 @@ final class FlowEndpoint[R <: FlowEndpoint.Env] extends Endpoint[R] {
 }
 
 object FlowEndpoint {
-  type Env = Logging with FlowService with FlowRepository
+  type Env = FlowService with FlowRepository with Permissions
 }

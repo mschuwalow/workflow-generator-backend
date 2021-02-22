@@ -39,3 +39,10 @@ lazy val root = (project in file("."))
     testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
     libraryDependencies ++= Dependencies.App
   )
+
+assemblyMergeStrategy in assembly := {
+  case x if x.endsWith("/module-info.class") => MergeStrategy.discard
+  case x                                     =>
+    val oldStrategy = (assemblyMergeStrategy in assembly).value
+    oldStrategy(x)
+}

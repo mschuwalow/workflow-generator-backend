@@ -1,9 +1,9 @@
 package app
 
-import org.http4s.Response
 import org.http4s.dsl.Http4sDsl
-import zio.RIO
+import org.http4s.{Response, Status}
 import zio.interop.catz._
+import zio.{RIO, ZIO}
 
 import scala.util.control.NoStackTrace
 
@@ -12,12 +12,20 @@ sealed abstract class Error extends NoStackTrace {
 }
 
 object Error {
-
   final case class GraphValidationFailed(reason: String) extends Error {
     def httpResponse[R](dsl: Http4sDsl[RIO[R, *]]) = {
       import dsl._
       dsl.BadRequest(s"checking the graph failed: $reason")
     }
+  }
+
+  case object AuthorizationFailed extends Error {
+    def httpResponse[R](dsl: Http4sDsl[RIO[R, *]]) =
+      ZIO.succeed(
+        Response(
+          status = Status.Unauthorized
+        )
+      )
   }
 
   case object NotFound extends Error {
