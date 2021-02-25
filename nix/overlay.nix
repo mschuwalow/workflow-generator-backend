@@ -1,5 +1,6 @@
 self: super:
-with super; {
+with super;
+with lib; {
 
   workflow-generator-backend = rec {
 
@@ -10,7 +11,7 @@ with super; {
       # depsSha256 = "0000000000000000000000000000000000000000000000000000";
       depsSha256 = "5vtg/gD/tbslltqtqOLYSFSv7vw79I2mt9rgeKo9kSo=";
 
-      src = ../.;
+      src = sources.sourceByRegex ../. [ "^build.sbt$" "^project.*" "^src.*" ];
 
       buildPhase = ''
         sbt 'set test in assembly := {}' assembly
