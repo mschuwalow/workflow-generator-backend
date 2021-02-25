@@ -12,25 +12,31 @@ object FormsRepositorySpec extends BaseSpec with DatabaseAspect {
     suite("Spec")(
       testM("can save and get forms") {
         checkM(gens.form) { form =>
-          for {
-            r1 <- FormsRepository.store(form)
-            r2 <- FormsRepository.get(r1.id)
-          } yield assert(r2)(isSome(equalTo(r1))) && assert(r1.elements)(equalTo(form.elements))
+          db {
+            for {
+              r1 <- FormsRepository.store(form)
+              r2 <- FormsRepository.get(r1.id)
+            } yield assert(r2)(isSome(equalTo(r1))) && assert(r1.elements)(equalTo(form.elements))
+          }
         }
       },
       testM("can save and get forms without option") {
         checkM(gens.form) { form =>
-          for {
-            r1 <- FormsRepository.store(form)
-            r2 <- FormsRepository.getById(r1.id)
-          } yield assert(r2)(equalTo(r1)) && assert(r1.elements)(equalTo(form.elements))
+          db {
+            for {
+              r1 <- FormsRepository.store(form)
+              r2 <- FormsRepository.getById(r1.id)
+            } yield assert(r2)(equalTo(r1)) && assert(r1.elements)(equalTo(form.elements))
+          }
         }
       },
       testM("fails when getting a nonexistant form") {
         checkM(gens.formId) { formId =>
-          for {
-            result <- FormsRepository.getById(formId).run
-          } yield assert(result)(fails(equalTo(app.Error.NotFound)))
+          db {
+            for {
+              result <- FormsRepository.getById(formId).run
+            } yield assert(result)(fails(equalTo(app.Error.NotFound)))
+          }
         }
       }
     )

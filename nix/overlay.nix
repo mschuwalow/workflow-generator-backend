@@ -10,7 +10,7 @@ with super; {
       # depsSha256 = "0000000000000000000000000000000000000000000000000000";
       depsSha256 = "5vtg/gD/tbslltqtqOLYSFSv7vw79I2mt9rgeKo9kSo=";
 
-      src = ../app;
+      src = ../.;
 
       buildPhase = ''
         sbt 'set test in assembly := {}' assembly

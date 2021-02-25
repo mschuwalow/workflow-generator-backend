@@ -12,39 +12,46 @@ object FlowRepositorySpec extends BaseSpec with DatabaseAspect {
     suite("Spec")(
       testM("Can save and get flows") {
         checkM(gens.typed.flow) { flow =>
-          for {
-            r1 <- FlowRepository.save(flow)
-            r2 <- FlowRepository.getById(r1.id)
-          } yield assert(r1.streams)(equalTo(flow.streams)) && assert(r2.streams)(equalTo(flow.streams)) && assert(
-            r1.id
-          )(equalTo(r2.id))
+          db {
+            for {
+              r1 <- FlowRepository.save(flow)
+              r2 <- FlowRepository.getById(r1.id)
+            } yield assert(r1.streams)(equalTo(flow.streams)) && assert(r2.streams)(equalTo(flow.streams)) && assert(
+              r1.id
+            )(equalTo(r2.id))
+          }
         }
       },
       testM("Can get all flows") {
         checkM(gens.typed.flow) { flow =>
-          for {
-            r1     <- FlowRepository.save(flow)
-            result <- FlowRepository.getAll
-          } yield assert(result)(hasSameElements(List(r1)))
+          db {
+            for {
+              r1     <- FlowRepository.save(flow)
+              result <- FlowRepository.getAll
+            } yield assert(result)(hasSameElements(List(r1)))
+          }
         }
       },
       testM("Can delete flows") {
         checkM(gens.typed.flow) { flow =>
-          for {
-            r1   <- FlowRepository.save(flow)
-            _    <- FlowRepository.delete(r1.id)
-            exit <- FlowRepository.getById(r1.id).run
-          } yield assert(exit)(fails(anything))
+          db {
+            for {
+              r1   <- FlowRepository.save(flow)
+              _    <- FlowRepository.delete(r1.id)
+              exit <- FlowRepository.getById(r1.id).run
+            } yield assert(exit)(fails(anything))
+          }
         }
       },
       testM("can set state") {
-        checkM(gens.typed.flow, gens.flowState) {
-          case (flow, state) =>
+        checkM(gens.typed.flow, gens.flowState) { (flow, state) =>
+          db {
             for {
               r1 <- FlowRepository.save(flow)
               _  <- FlowRepository.setState(r1.id, state)
               r2 <- FlowRepository.getById(r1.id)
             } yield assert(r2.state)(equalTo(state))
+          }
         }
       }
     )
