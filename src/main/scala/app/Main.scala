@@ -2,6 +2,7 @@ package app
 
 import app.api.Router
 import app.config._
+import app.postgres.Database
 import cats.effect._
 import fs2.Stream.Compiler._
 import org.http4s.HttpApp
@@ -17,10 +18,11 @@ object Main extends App {
   override def run(args: List[String]): ZIO[ZEnv, Nothing, ZExitCode] = {
     val prog =
       for {
+        _       <- Database.migrate
         httpCfg <- HttpConfig.get
         httpApp <- Router.makeApp[AppEnvironment]
         _       <- runHttp(httpApp, httpCfg.port)
-      } yield ZExitCode.success
+      } yield ()
 
     prog
       .provideSomeLayer[ZEnv](layers.prod)

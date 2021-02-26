@@ -12,13 +12,9 @@ object DatabaseTestManager {
     ZLayer.fromFunction { env =>
       new Service {
         def managed[R, E, A](zio: ZIO[R, E, A]) = {
-          val clean = Database.getFlyway.flatMap { flyway =>
-            Task {
-              flyway.clean()
-              flyway.migrate()
-            }
-          }.orDie.provide(env)
-          dbLock.withPermit(clean *> zio)
+          val setup    = Database.migrate.orDie.provide(env)
+          val teardown = Database.getFlyway.flatMap(fw => Task(fw.clean())).orDie.provide(env)
+          DbLock.withPermit(ZIO.bracket(setup)(_ => teardown)(_ => zio))
         }
       }
     }
@@ -34,5 +30,5 @@ object DatabaseTestManager {
   def managed[R <: Has[Service], E, A](zio: ZIO[R, E, A]): ZIO[R, E, A] =
     ZIO.accessM(_.get.managed(zio))
 
-  private val dbLock = Runtime.default.unsafeRun(Semaphore.make(1))
+  val DbLock = Runtime.default.unsafeRun(Semaphore.make(1))
 }

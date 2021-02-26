@@ -12,7 +12,7 @@ trait DatabaseAspect extends Constants {
   type DatabaseTestManager = Has[DatabaseTestManager.Service]
 
   final def database: TestAspect[Nothing, TestEnvironment, Nothing, Any] =
-    sequential >>> repeats(1) >>> retries(2) >>> samples(3) >>> shrinks(0)
+    sequential >>> repeats(2) >>> retries(2) >>> samples(3) >>> shrinks(0)
 
   def db[R <: DatabaseTestManager, E, A](zio: ZIO[R, E, A]): ZIO[R, E, A] =
     DatabaseTestManager.managed(zio)

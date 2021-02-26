@@ -5,6 +5,7 @@ import cats.effect.Blocker
 import doobie.hikari._
 import doobie.util.transactor.Transactor
 import org.flywaydb.core.Flyway
+import org.flywaydb.core.api.output.MigrateResult
 import zio._
 import zio.blocking.Blocking
 import zio.interop.catz._
@@ -17,14 +18,12 @@ object Database {
   }
 
   val live: ZLayer[DatabaseConfig with Blocking, Throwable, Database] = {
-    def initDb(cfg: DatabaseConfig.Config): Task[Flyway] =
+    def mkFlyway(cfg: DatabaseConfig.Config): Task[Flyway] =
       Task {
-        val fw = Flyway
+        Flyway
           .configure()
           .dataSource(cfg.url, cfg.user, cfg.password)
           .load()
-        fw.migrate()
-        fw
       }
 
     def mkTransactor(
@@ -55,7 +54,7 @@ object Database {
     ZLayer.fromManaged {
       for {
         cfg        <- DatabaseConfig.get.toManaged_
-        fw         <- initDb(cfg).toManaged_
+        fw         <- mkFlyway(cfg).toManaged_
         transactor <- mkTransactor(cfg)
       } yield new Service {
         val getTransactor = UIO(transactor)
@@ -69,4 +68,7 @@ object Database {
 
   val getFlyway: URIO[Database, Flyway] =
     ZIO.accessM(_.get.getFlyway)
+
+  val migrate: RIO[Database, MigrateResult] =
+    getFlyway.flatMap(fw => Task(fw.migrate()))
 }

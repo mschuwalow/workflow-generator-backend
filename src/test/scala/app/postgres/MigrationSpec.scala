@@ -7,8 +7,10 @@ import zio.test._
 object PostgresMigrationSpec extends BaseSpec with DatabaseAspect {
   def spec =
     suite("Migrations")(
-      test("succeed") {
-        assert(())(anything)
+      testM("should succeed") {
+        DatabaseTestManager.DbLock.withPermit {
+          assertM(Database.migrate.run)(succeeds(anything))
+        }
       } @@ database
     ).provideCustomLayerShared(DatabaseLayer)
 }
