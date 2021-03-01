@@ -27,5 +27,6 @@
       ];
       overlay = ./nix/overlay.nix;
       shell = ./nix/shell.nix;
+      systems = [ "x86_64-darwin" "x86_64-linux" ];
     };
 }
