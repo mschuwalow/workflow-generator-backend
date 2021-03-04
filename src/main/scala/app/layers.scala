@@ -21,7 +21,7 @@ object layers {
       HttpClientZioBackend.layer() >+>
       UserInfoService.live >+>
       Auth.live >+>
-      Database.live >+>
+      Database.migrated >+>
       FlowRepository.doobie >+>
       FormsRepository.doobie >+>
       Sys.live >+>

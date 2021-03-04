@@ -63,6 +63,9 @@ object Database {
     }
   }
 
+  val migrated: ZLayer[DatabaseConfig with Blocking, Throwable, Database] =
+    live.tap(_.get.getFlyway.flatMap(fw => Task(fw.migrate())))
+
   val getTransactor: URIO[Database, Transactor[Task]] =
     ZIO.accessM(_.get.getTransactor)
 
