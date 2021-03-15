@@ -34,6 +34,7 @@ object typed {
 
   sealed trait Sink {
     def id: ComponentId
+    def source: Stream
   }
 
   object Sink {

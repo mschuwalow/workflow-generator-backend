@@ -20,6 +20,7 @@ object Dependencies {
     val tsec                   = "0.2.1"
     val zio                    = "1.0.4-2"
     val zioInteropCats         = "2.3.1.0"
+    val zioKafka               = "0.14.0"
     val zioLogging             = "0.5.6"
     val zioPrelude             = "1.0.0-RC2"
   }
@@ -31,6 +32,7 @@ object Dependencies {
       "com.softwaremill.sttp.client" %% "httpclient-backend-zio"   % sttp,
       "com.softwaremill.sttp.client" %% "circe"                    % sttp,
       "dev.zio"                      %% "zio-interop-cats"         % zioInteropCats,
+      "dev.zio"                      %% "zio-kafka"                % zioKafka,
       "dev.zio"                      %% "zio-logging-slf4j"        % zioLogging,
       "dev.zio"                      %% "zio-logging"              % zioLogging,
       "dev.zio"                      %% "zio-prelude"              % zioPrelude,

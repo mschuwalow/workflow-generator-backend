@@ -11,3 +11,18 @@ services:
     ports:
       - "5432:5432"
     restart: always
+  zookeeper:
+    image: 'docker.io/bitnami/zookeeper:3-debian-10'
+    ports:
+      - '2181:2181'
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+  kafka:
+    image: 'docker.io/bitnami/kafka:2-debian-10'
+    ports:
+      - '9092:9092'
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zookeeper
