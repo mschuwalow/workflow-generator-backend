@@ -16,6 +16,7 @@ object Dependencies {
     val pureConfig             = "0.14.0"
     val py4j                   = "0.10.9.1"
     val scalaParserCombinators = "1.1.2"
+    val silencer               = "1.7.0"
     val sttp                   = "2.2.9"
     val tsec                   = "0.2.1"
     val zio                    = "1.0.4-2"
@@ -61,8 +62,8 @@ object Dependencies {
       "org.tpolecat"                 %% "doobie-postgres-circe"    % doobie,
       "org.tpolecat"                 %% "doobie-postgres"          % doobie,
       "org.typelevel"                %% "jawn-parser"              % jawn,
-      compilerPlugin("com.olegpy" %% "better-monadic-for" % betterMonadicFor),
-      compilerPlugin("org.typelevel" % "kind-projector" % kindProjector).cross(CrossVersion.full)
+      compilerPlugin("com.olegpy"   %% "better-monadic-for" % betterMonadicFor),
+      compilerPlugin("org.typelevel" % "kind-projector"     % kindProjector cross CrossVersion.full)
     )
 
   val ScalaFix =
