@@ -29,8 +29,7 @@ object FlowService {
                       .setState(flow.id, FlowState.Failed(e.getMessage())),
                   _ => FlowRepository.setState(flow.id, FlowState.Done)
                 ) *> state.update(_ - flow.id)
-                task.fork
-                  .flatMap(f => state.update(_ + (flow.id -> f)) *> latch.succeed(()))
+                task.fork.flatMap(f => state.update(_ + (flow.id -> f)) *> latch.succeed(())).uninterruptible
               }
             for {
               all <- FlowRepository.getAll

@@ -10,6 +10,7 @@ import app.postgres.Database
 import sttp.client.httpclient.zio.HttpClientZioBackend
 import zio._
 import zio.logging.slf4j.Slf4jLogger
+import app.flows.kafka.KafkaStreamsManager
 
 object layers {
 
@@ -17,6 +18,7 @@ object layers {
     ZLayer.identity[ZEnv] >+>
       AppConfig.live >+>
       Slf4jLogger.make((_, msg) => msg) >+>
+      KafkaStreamsManager.layer >+>
       Permissions.live >+>
       HttpClientZioBackend.layer() >+>
       UserInfoService.live >+>
