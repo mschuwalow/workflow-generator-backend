@@ -8,27 +8,41 @@ package app
 // import app.forms.FormsRepository
 // import app.postgres.Database
 // import sttp.client.httpclient.zio.HttpClientZioBackend
-import zio._
+// import zio._
 // import zio.logging.slf4j.Slf4jLogger
 // import app.flows.kafka.KafkaStreamsManager
 // import app.postgres._
+// import zio.magic._
+// import app.config.{AllConfigs, configLayer}
+// import app.config.HttpConfig
+import app.auth.{LiveJWTAuth, LivePermissions, StudIpUserInfoService}
+import app.config.ConfigLayer
+import app.flows.udf.{LivePython, LiveSys, PythonUDFRunner}
+import app.flows.{InMemoryFlowRunner, LiveFlowService}
+import app.postgres.{Database, PostgresFlowRepository, PostgresFormsRepository}
+import sttp.client.httpclient.zio.HttpClientZioBackend
+import zio._
+import zio.logging.slf4j.Slf4jLogger
+import zio.magic._
+
 object layers {
 
-  val prod: ZLayer[ZEnv, Throwable, AppEnvironment] = ???
-    // ZLayer.identity[ZEnv] >+>
-    //   AppConfig.live >+>
-    //   Slf4jLogger.make((_, msg) => msg) >+>
-    //   KafkaStreamsManager.layer >+>
-    //   Permissions.live >+>
-    //   HttpClientZioBackend.layer() >+>
-    //   UserInfoService.live >+>
-    //   Auth.live >+>
-    //   Database.migrated >+>
-    //   PostgresFlowRepository.layer >+>
-    //   PostgresFormsRepository.layer >+>
-    //   LiveSys.layer >+>
-    //   LivePython.layer >+>
-    //   PythonUDFRunner.layer(workers = 5) >+>
-    //   FlowRunner.stream >+>
-    //   FlowService.live
+  val prod: ZLayer[Any, Throwable, AppEnvironment] =
+    ZLayer.fromMagic[AppEnvironment](
+      ConfigLayer,
+      Database.migrated,
+      HttpClientZioBackend.layer(),
+      InMemoryFlowRunner.layer,
+      LiveFlowService.layer,
+      LiveJWTAuth.layer,
+      LivePermissions.layer,
+      LivePython.layer,
+      LiveSys.layer,
+      PostgresFlowRepository.layer,
+      PostgresFormsRepository.layer,
+      PythonUDFRunner.layer(4),
+      Slf4jLogger.makeWithAllAnnotationsAsMdc(),
+      StudIpUserInfoService.layer,
+      ZEnv.live
+    )
 }

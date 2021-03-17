@@ -1,22 +1,21 @@
 package app.postgres
 
-import app.forms.FormsRepository
 import app.Error
+import app.forms.{Form, FormId, FormWithId, FormsRepository}
 import app.postgres.{Database, MetaInstances}
 import doobie.implicits._
 import doobie.postgres.implicits._
 import zio._
 import zio.interop.catz._
-import app.forms.{FormId, FormWithId, Form}
 
 private final class PostgresFormsRepository(xa: TaskTransactor) extends FormsRepository with MetaInstances {
 
   def get(id: FormId): Task[Option[FormWithId]] = {
     val query =
       sql"""SELECT form_id, elements, perms
-            |FROM forms
-            |WHERE form_id = $id
-            |""".stripMargin
+           |FROM forms
+           |WHERE form_id = $id
+           |""".stripMargin
     query.query[FormWithId].option.transact(xa)
   }
 
@@ -29,7 +28,7 @@ private final class PostgresFormsRepository(xa: TaskTransactor) extends FormsRep
   def store(form: Form): Task[FormWithId] = {
     val query =
       sql"""INSERT INTO forms (elements, perms)
-            |VALUES (${form.elements}, ${form.perms})""".stripMargin
+           |VALUES (${form.elements}, ${form.perms})""".stripMargin
     query.update
       .withUniqueGeneratedKeys[FormId]("form_id")
       .map(id => FormWithId(id, form.elements, form.perms))

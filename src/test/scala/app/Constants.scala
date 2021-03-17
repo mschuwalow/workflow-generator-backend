@@ -1,7 +1,5 @@
 package app
 
-import app.config._
-
 trait Constants {
-  final val ConfigLayer = AppConfig.live
+  final val ConfigLayer = app.config.ConfigLayer
 }

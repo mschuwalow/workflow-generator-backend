@@ -1,22 +1,19 @@
 package app.postgres
 
 import app.Error
-import app.flows.FlowRepository
-import app.flows.{typed, FlowState}
-import app.flows.FlowId
-import zio.Task
+import app.flows.typed.FlowWithId
+import app.flows.{FlowId, FlowRepository, FlowState, typed}
 import doobie.implicits._
 import doobie.postgres.implicits._
-import zio._
 import zio.interop.catz._
-import app.flows.typed.FlowWithId
+import zio.{Task, _}
 
 final class PostgresFlowRepository(xa: TaskTransactor) extends FlowRepository with MetaInstances {
 
   def save(flow: typed.Flow): Task[typed.FlowWithId] = {
     val query =
       sql"""INSERT INTO flows (streams, state)
-            |VALUES (${flow.streams}, ${FlowState.Running: FlowState})""".stripMargin
+           |VALUES (${flow.streams}, ${FlowState.Running: FlowState})""".stripMargin
 
     query.update
       .withUniqueGeneratedKeys[FlowId]("flow_id")

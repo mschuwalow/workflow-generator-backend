@@ -2,7 +2,7 @@ package app.forms
 
 import app.BaseSpec
 import app.gens.{forms => gens}
-import app.postgres.DatabaseAspect
+import app.postgres.{DatabaseAspect, PostgresFormsRepository}
 import zio.test.Assertion._
 import zio.test._
 
@@ -48,6 +48,6 @@ object FormsRepositorySpec extends BaseSpec with DatabaseAspect {
       ).provideCustomLayerShared(PostgresLayer)
     )
 
-  val PostgresLayer = DatabaseLayer >+> FormsRepository.doobie
+  val PostgresLayer = DatabaseLayer >+> PostgresFormsRepository.layer
 
 }

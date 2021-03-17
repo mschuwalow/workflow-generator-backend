@@ -132,7 +132,7 @@ final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env](mountPath: S
 }
 
 object GeneratedFormsEndpoint {
-  type Env = Has[FormsRepository] with FlowRunner with Has[Permissions] with KorolevEndpoint.Env
+  type Env = Has[FormsRepository] with Has[FlowRunner] with Has[Permissions] with KorolevEndpoint.Env
 
   private object internal {
     sealed trait State

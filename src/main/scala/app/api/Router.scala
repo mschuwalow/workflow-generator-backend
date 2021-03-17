@@ -1,12 +1,12 @@
 package app.api
 
+import app.auth.JWTAuth
 import cats.syntax.semigroupk._
 import org.http4s._
 import org.http4s.implicits._
 import org.http4s.server.{Router => Http4sRouter}
 import zio._
 import zio.interop.catz._
-import app.auth.JWTAuth
 
 object Router {
 

@@ -1,14 +1,13 @@
 package app.api
 
-import app.auth.{UserInfo, JWTAuth}
+import app.auth.{JWTAuth, UserInfo}
 import io.circe.Decoder
 import io.circe.generic.semiauto.deriveDecoder
 import org.http4s.{HttpRoutes, Response, Status}
 import tsec.authentication._
 import tsec.mac.jca.HMACSHA256
-import zio.RIO
 import zio.interop.catz._
-import zio.Has
+import zio.{Has, RIO}
 
 final class AuthEndpoint[R <: AuthEndpoint.Env] extends Endpoint[R] {
   import AuthEndpoint._

@@ -2,14 +2,13 @@ package app.auth
 
 import app.auth.{UserInfo, UserInfoService}
 import tsec.authentication.JWTAuthenticator
-import tsec.mac.jca.HMACSHA256
+import tsec.mac.jca.{HMACSHA256, MacSigningKey}
 import zio._
 import zio.interop.catz._
 
 import scala.concurrent.duration._
-import tsec.mac.jca.MacSigningKey
 
-private final class LiveJWTAuth(signingKey: MacSigningKey[HMACSHA256], env: LiveAuth.Env) extends JWTAuth {
+private final class LiveJWTAuth(signingKey: MacSigningKey[HMACSHA256], env: LiveJWTAuth.Env) extends JWTAuth {
 
   def auth(username: String, password: String) = {
     for {
@@ -27,12 +26,12 @@ private final class LiveJWTAuth(signingKey: MacSigningKey[HMACSHA256], env: Live
     )
 }
 
-object LiveAuth {
+object LiveJWTAuth {
   type Env = Has[UserInfoService]
 
   val layer: RLayer[Env, Has[JWTAuth]] = {
     for {
-      env <- ZIO.environment[Env]
+      env        <- ZIO.environment[Env]
       signingKey <- HMACSHA256.generateKey[Task]
     } yield new LiveJWTAuth(signingKey, env)
   }.toLayer

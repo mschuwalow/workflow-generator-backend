@@ -1,8 +1,8 @@
 package app.auth
 
-import zio._
 import app.Error
 import app.config.AuthConfig
+import zio._
 
 final class LivePermissions(
   config: AuthConfig
@@ -33,7 +33,7 @@ object LivePermissions {
 
   type Env = Has[AuthConfig]
 
-  val layer: URLayer[Env, Has[LivePermissions]] = {
+  val layer: URLayer[Env, Has[Permissions]] = {
     for {
       config <- AuthConfig.get
     } yield new LivePermissions(config)

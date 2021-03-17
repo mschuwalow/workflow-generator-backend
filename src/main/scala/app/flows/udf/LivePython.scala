@@ -52,7 +52,6 @@ private final class LivePython(
       }
     }
 
-
     def cast(client: ClientServer): Managed[Throwable, A] =
       ZManaged.make {
         ZIO.effect {

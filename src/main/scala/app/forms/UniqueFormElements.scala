@@ -10,6 +10,6 @@ object UniqueFormElements extends SubtypeSmart[List[FormElement]](hasField("elem
     Encoder[List[FormElement]].contramap(unwrap)
 
   implicit val decoder: Decoder[UniqueFormElements] =
-    Decoder[List[FormElement]].emap(make(_).runEither)
+    Decoder[List[FormElement]].emap(make(_).toEither[String].left.map(_.mkString(", ")))
 
 }

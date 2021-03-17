@@ -9,7 +9,6 @@ import zio.logging.{Logging, log}
 import java.io.{Closeable, FileOutputStream, InputStream}
 import java.lang.{Runtime => JRuntime}
 import java.net.ServerSocket
-
 import java.nio.file.{Files, Path}
 
 private final class LiveSys(
@@ -64,7 +63,7 @@ private final class LiveSys(
         (blocking.effectBlocking(p.waitFor()) *> ZIO.effect(
           p.exitValue()
         )).catchAll(e => log.warn(s"Command failed with ${e.toString()}").as(1))
-        .provide(env),
+          .provide(env),
         blocking
           .effectBlocking(p.destroy())
           .unit
@@ -93,14 +92,14 @@ private final class LiveSys(
       resourcePath = dir.resolve("resource")
       os          <- fromCloseable(new FileOutputStream(resourcePath.toFile()))
       _           <- ZIO.effect {
-                        val buffer = new Array[Byte](2048)
-                        var length = 0
+                       val buffer = new Array[Byte](2048)
+                       var length = 0
 
-                        while ({ length = is.read(buffer); length } != -1)
-                          os.write(buffer, 0, length);
-                        os.close()
-                        is.close()
-                      }.toManaged_
+                       while ({ length = is.read(buffer); length } != -1)
+                         os.write(buffer, 0, length);
+                       os.close()
+                       is.close()
+                     }.toManaged_
     } yield resourcePath
   }.provide(env)
 
@@ -135,7 +134,7 @@ object LiveSys {
 
   val layer: URLayer[Env, Has[Sys]] = {
     for {
-      env      <- ZIO.environment[Env]
+      env <- ZIO.environment[Env]
     } yield new LiveSys(env)
   }.toLayer
 

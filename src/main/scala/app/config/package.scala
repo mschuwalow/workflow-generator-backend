@@ -1,12 +1,13 @@
 package app
 
-import zio._
 import pureconfig._
+import zio._
 
 package object config {
-  type AllConfigs = Has[AppConfig] with Has[DatabaseConfig] with Has[AuthConfig] with Has[KafkaConfig]
+  type AllConfigs =
+    Has[AppConfig] with Has[DatabaseConfig] with Has[AuthConfig] with Has[KafkaConfig] with Has[HttpConfig]
 
-  val configLayer: ZLayer[Any, IllegalStateException, AllConfigs] = {
+  val ConfigLayer: ZLayer[Any, IllegalStateException, AllConfigs] = {
     val app = ZLayer.fromEffect {
       ZIO
         .fromEither(ConfigSource.default.load[AppConfig])

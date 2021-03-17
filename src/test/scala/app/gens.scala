@@ -199,7 +199,7 @@ object gens {
       for {
         elements      <- Gen.listOf(formElement)
         scope         <- Gen.option(auth.scope)
-        uniqueElements = UniqueFormElements.make(elements.distinctBy(_.id)).runEither.toOption.get
+        uniqueElements = UniqueFormElements.make(elements.distinctBy(_.id)).toOption.get
       } yield Form(uniqueElements, scope)
   }
 }

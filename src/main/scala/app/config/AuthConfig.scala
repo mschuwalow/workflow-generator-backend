@@ -15,7 +15,7 @@ object AuthConfig {
   private implicit val uriConvert: ConfigConvert[Uri] =
     ConfigConvert[String].xemap(s => Uri.parse(s).left.map(e => CannotConvert(s, "Uri", e)), _.toString())
 
-  implicit val convert: ConfigConvert[AuthConfig]         = deriveConvert
+  implicit val convert: ConfigConvert[AuthConfig] = deriveConvert
 
   def constLayer(studIpAuthUrl: Uri, adminUsers: Set[String]): ULayer[Has[AuthConfig]] =
     ZLayer.succeed(AuthConfig(studIpAuthUrl, adminUsers))
