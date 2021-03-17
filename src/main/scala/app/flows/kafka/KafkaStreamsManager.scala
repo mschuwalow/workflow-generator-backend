@@ -58,8 +58,9 @@ private final class KafkaStreamsManager(
 }
 
 object KafkaStreamsManager {
+  type Env = Has[KafkaConfig] with Blocking with Clock
 
-  val layer: ZLayer[KafkaConfig with Blocking with Clock, Throwable, Has[StreamsManager]] =
+  val layer: ZLayer[Env, Throwable, Has[StreamsManager]] =
     ZLayer.fromManaged {
       val makeAdminClient = for {
         config <- KafkaConfig.get.toManaged_

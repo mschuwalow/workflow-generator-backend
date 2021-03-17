@@ -4,34 +4,25 @@ import pureconfig._
 import pureconfig.generic.semiauto._
 import zio._
 
+final case class AppConfig(
+  http: HttpConfig,
+  database: DatabaseConfig,
+  auth: AuthConfig,
+  kafka: KafkaConfig
+)
+
 object AppConfig {
 
-  final private case class Config(
-    http: HttpConfig.Config,
-    database: DatabaseConfig.Config,
-    auth: AuthConfig.Config,
-    kafka: KafkaConfig.Config
-  )
+  implicit val convert: ConfigConvert[AppConfig] = deriveConvert
 
-  private object Config {
-    implicit val convert: ConfigConvert[Config] = deriveConvert
-  }
+  def constLayer(
+    http: HttpConfig,
+    database: DatabaseConfig,
+    auth: AuthConfig,
+    kafka: KafkaConfig
+  ): ULayer[Has[AppConfig]] =
+    ZLayer.succeed(AppConfig(http, database, auth, kafka))
 
-  val live: ZLayer[Any, IllegalStateException, AppConfig] = {
-    val all = ZLayer.fromEffect {
-      ZIO
-        .fromEither(ConfigSource.default.load[Config])
-        .mapError(failures =>
-          new IllegalStateException(
-            s"Error loading configuration: $failures"
-          )
-        )
-    }
-    all >>> (
-      ZLayer.fromFunction((_: Has[Config]).get.http) ++
-        ZLayer.fromFunction((_: Has[Config]).get.database) ++
-        ZLayer.fromFunction((_: Has[Config]).get.auth) ++
-        ZLayer.fromFunction((_: Has[Config]).get.kafka)
-    )
-  }
+  val get: URIO[Has[AppConfig], AppConfig] =
+    ZIO.access(_.get)
 }

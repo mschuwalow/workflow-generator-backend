@@ -5,6 +5,7 @@ import app.flows.{FlowId, FlowRepository, FlowService, unresolved}
 import tsec.authentication._
 import tsec.mac.jca.HMACSHA256
 import zio.interop.catz._
+import zio.Has
 
 final class FlowEndpoint[R <: FlowEndpoint.Env] extends Endpoint[R] {
   import dsl._
@@ -28,5 +29,5 @@ final class FlowEndpoint[R <: FlowEndpoint.Env] extends Endpoint[R] {
 }
 
 object FlowEndpoint {
-  type Env = FlowService with FlowRepository with Permissions
+  type Env = FlowService with Has[FlowRepository] with Has[Permissions]
 }

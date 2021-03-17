@@ -6,10 +6,11 @@ import org.http4s.implicits._
 import org.http4s.server.{Router => Http4sRouter}
 import zio._
 import zio.interop.catz._
+import app.auth.JWTAuth
 
 object Router {
 
-  type Env = FlowEndpoint.Env with GeneratedFormsEndpoint.Env with FormsEndpoint.Env with Auth
+  type Env = FlowEndpoint.Env with GeneratedFormsEndpoint.Env with FormsEndpoint.Env with Has[JWTAuth]
 
   def makeApp[R <: Env]: URIO[R, HttpApp[RIO[R, *]]] = {
     val healthEndpoint         = new HealthEndpoint[R]()
@@ -24,7 +25,7 @@ object Router {
     )
 
     val securedRoutes = for {
-      authenticator        <- Auth.getTSecAuthenticator[R]
+      authenticator        <- JWTAuth.getTSecAuthenticator[R]
       authRoutes            = authEndpoint.authedRoutes
       flowRoutes            = flowEndpoint.authedRoutes
       formsRoutes           = formsEndpoint.authedRoutes

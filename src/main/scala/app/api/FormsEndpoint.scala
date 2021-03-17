@@ -5,6 +5,7 @@ import app.forms.{Form, FormId, FormsRepository}
 import tsec.authentication._
 import tsec.mac.jca.HMACSHA256
 import zio.interop.catz._
+import zio.Has
 
 final class FormsEndpoint[R <: FormsEndpoint.Env] extends Endpoint[R] {
   import dsl._
@@ -28,5 +29,5 @@ final class FormsEndpoint[R <: FormsEndpoint.Env] extends Endpoint[R] {
 }
 
 object FormsEndpoint {
-  type Env = FormsRepository with Permissions
+  type Env = Has[FormsRepository] with Has[Permissions]
 }

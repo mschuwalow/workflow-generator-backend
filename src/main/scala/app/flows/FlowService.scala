@@ -6,15 +6,15 @@ import zio._
 
 object FlowService {
 
-  trait Service extends Serializable {
+  trait Service {
     def add(graph: unresolved.Graph): Task[typed.FlowWithId]
     def check(graph: unresolved.Graph): Task[typed.Flow]
     def delete(id: FlowId): Task[Unit]
   }
 
-  val live: ZLayer[FlowRunner with FlowRepository with FormsRepository, Throwable, FlowService] =
+  val live: ZLayer[FlowRunner with Has[FlowRepository] with Has[FormsRepository], Throwable, FlowService] =
     ZLayer.fromManaged {
-      ZManaged.environment[FlowRunner with FlowRepository with FormsRepository].flatMap { env =>
+      ZManaged.environment[FlowRunner with Has[FlowRepository] with Has[FormsRepository]].flatMap { env =>
         Ref
           .make(Map.empty[FlowId, Fiber[Throwable, Unit]])
           .toManaged {
