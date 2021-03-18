@@ -3,6 +3,7 @@ package app.flows
 import app.Error
 import app.forms.FormsRepository
 import zio._
+import StreamsManager.topicForFlow
 
 private final class LiveFlowService(
   state: LiveFlowService.internal.State,
@@ -28,18 +29,20 @@ private final class LiveFlowService(
 
   def delete(id: FlowId) = {
     for {
-      f <- state.modify(old => (old.get(id), old - id))
-      _ <- f.fold[IO[Throwable, Unit]](ZIO.fail(Error.NotFound))(
-             _.interrupt.unit
-           )
-      _ <- FlowRepository.delete(id)
+      f       <- state.modify(old => (old.get(id), old - id))
+      _       <- f.fold[IO[Throwable, Unit]](ZIO.fail(Error.NotFound))(
+                   _.interrupt.unit
+                 )
+      flow    <- FlowRepository.delete(id)
+      terminal = flow.streams.map(s => (flow.id, s.id)).toSet
+      _       <- ZIO.foreach_(terminal) { case (id, cid) => StreamsManager.deleteStream(topicForFlow(id, cid)) }
     } yield ()
   }.provide(env)
 }
 
 object LiveFlowService {
 
-  type Env = Has[FlowRunner] with Has[FlowRepository] with Has[FormsRepository]
+  type Env = Has[FlowRunner] with Has[FlowRepository] with Has[FormsRepository] with Has[StreamsManager]
 
   val layer: ZLayer[Env, Throwable, Has[FlowService]] = {
     for {
@@ -60,14 +63,23 @@ object LiveFlowService {
     type State = Ref[Map[FlowId, Fiber[Throwable, Unit]]]
 
     def run(state: State, flow: typed.FlowWithId) =
-      Promise.make[Nothing, Unit].flatMap { latch =>
-        val task = (latch.await *> FlowRunner.run(flow)).foldM(
-          e =>
-            FlowRepository
-              .setState(flow.id, FlowState.Failed(e.getMessage())),
-          _ => FlowRepository.setState(flow.id, FlowState.Done)
-        ) *> state.update(_ - flow.id)
-        task.fork.flatMap(f => state.update(_ + (flow.id -> f)) *> latch.succeed(())).uninterruptible
+      ZIO.uninterruptibleMask { restore =>
+        for {
+          latch   <- Promise.make[Nothing, Unit]
+          task     = (latch.await *> FlowRunner.run(flow)).foldM(
+                       e =>
+                         FlowRepository
+                           .setState(flow.id, FlowState.Failed(e.getMessage())),
+                       _ => FlowRepository.setState(flow.id, FlowState.Done)
+                     ) *> state.update(_ - flow.id)
+          terminal = flow.streams.map(s => (flow.id, s.id)).toSet
+          _       <- restore {
+                       ZIO.foreach_(terminal) { case (id, cid) => StreamsManager.createStream(topicForFlow(id, cid)) }
+                     }
+          f       <- task.fork
+          _       <- state.update(_ + (flow.id -> f))
+          _       <- latch.succeed(())
+        } yield ()
       }
   }
 }

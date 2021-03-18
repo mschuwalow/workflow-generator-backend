@@ -13,7 +13,7 @@ trait FlowRepository {
     state: FlowState
   ): Task[Unit]
 
-  def delete(id: FlowId): Task[Unit]
+  def delete(id: FlowId): Task[typed.FlowWithId]
 }
 
 object FlowRepository {
@@ -32,5 +32,5 @@ object FlowRepository {
     state: FlowState
   ): RIO[Has[FlowRepository], Unit] = ZIO.accessM(_.get.setState(id, state))
 
-  def delete(id: FlowId): RIO[Has[FlowRepository], Unit] = ZIO.accessM(_.get.delete(id))
+  def delete(id: FlowId): RIO[Has[FlowRepository], typed.FlowWithId] = ZIO.accessM(_.get.delete(id))
 }

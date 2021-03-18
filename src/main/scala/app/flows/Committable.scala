@@ -1,3 +1,5 @@
 package app.flows
 
-final case class Committable[+A](value: A)
+import zio.UIO
+
+final case class Committable[+A](value: A, commit: UIO[Unit])

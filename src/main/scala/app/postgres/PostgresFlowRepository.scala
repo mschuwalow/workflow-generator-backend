@@ -45,10 +45,12 @@ final class PostgresFlowRepository(xa: TaskTransactor) extends FlowRepository wi
     query.update.run.transact(xa).filterOrFail(_ > 0)(Error.NotFound).unit
   }
 
-  def delete(id: FlowId): Task[Unit] = {
+  def delete(id: FlowId): Task[FlowWithId] = {
     val query =
-      sql"DELETE FROM flows WHERE flow_id = $id"
-    query.update.run.transact(xa).filterOrFail(_ > 0)(Error.NotFound).unit
+      sql"""DELETE FROM flows
+           |WHERE flow_id = $id
+           |RETURNING (flow_id, streams, state)""".stripMargin
+    query.query[FlowWithId].option.transact(xa).someOrFail(Error.NotFound)
   }
 }
 

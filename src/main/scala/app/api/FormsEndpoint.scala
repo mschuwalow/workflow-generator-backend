@@ -6,6 +6,7 @@ import tsec.authentication._
 import tsec.mac.jca.HMACSHA256
 import zio.Has
 import zio.interop.catz._
+import app.forms.FormsService
 
 final class FormsEndpoint[R <: FormsEndpoint.Env] extends Endpoint[R] {
   import dsl._
@@ -15,7 +16,7 @@ final class FormsEndpoint[R <: FormsEndpoint.Env] extends Endpoint[R] {
       for {
         _        <- Permissions.authorize(user, Scope.Forms)
         body     <- req.request.as[Form]
-        result   <- FormsRepository.store(body)
+        result   <- FormsService.create(body)
         response <- Created(result)
       } yield response
 
@@ -29,5 +30,5 @@ final class FormsEndpoint[R <: FormsEndpoint.Env] extends Endpoint[R] {
 }
 
 object FormsEndpoint {
-  type Env = Has[FormsRepository] with Has[Permissions]
+  type Env = Has[FormsRepository] with Has[Permissions] with Has[FormsService]
 }
