@@ -45,7 +45,7 @@ private final class LiveFlowRunner(
       .flatMap { offset =>
         val streamName = topicForFlow(flowId, stream.id)
 
-        interpretStream(flowId, stream).zipWithIndex
+        interpretStream(flowId, stream, None).zipWithIndex
           .foldM(offset) {
             case (offset, (e, i)) =>
               if (offset.value > i)
@@ -62,13 +62,14 @@ private final class LiveFlowRunner(
 
   def interpretStream(
     flowId: FlowId,
-    stream: typed.Stream
+    stream: typed.Stream,
+    child: Option[ComponentId]
   ): ZStream[Has[UDFRunner] with Has[StreamsManager], Throwable, stream.elementType.Scala] = {
     import typed.Stream._
     val anyStream: ZStream[Has[UDFRunner] with Has[StreamsManager], Throwable, Any] = stream match {
-      case InnerJoin(_, stream1, stream2)     =>
-        interpretStream(flowId, stream1)
-          .mergeEither(interpretStream(flowId, stream2))
+      case InnerJoin(cid, stream1, stream2)    =>
+        interpretStream(flowId, stream1, Some(cid))
+          .mergeEither(interpretStream(flowId, stream2, Some(cid)))
           .mapAccum(
             (None: Option[stream1.elementType.Scala], None: Option[stream2.elementType.Scala])
           ) {
@@ -83,17 +84,17 @@ private final class LiveFlowRunner(
             case (Some(l), Some(r)) =>
               ((l, r))
           }
-      case UDF(_, code, stream, elementType)  =>
-        interpretStream(flowId, stream).mapM { element =>
+      case UDF(cid, code, stream, elementType) =>
+        interpretStream(flowId, stream, Some(cid)).mapM { element =>
           UDFRunner.runPython(code, stream.elementType, elementType)(element)
         }
-      case Numbers(_, values)                 =>
+      case Numbers(_, values)                  =>
         Stream.fromIterable(values)
-      case Never(_, _)                        =>
+      case Never(_, _)                         =>
         ZStream.never
-      case LeftJoin(_, stream1, stream2)      =>
-        interpretStream(flowId, stream1)
-          .mergeEither(interpretStream(flowId, stream2))
+      case LeftJoin(cid, stream1, stream2)     =>
+        interpretStream(flowId, stream1, Some(cid))
+          .mergeEither(interpretStream(flowId, stream2, Some(cid)))
           .mapAccum(
             (None: Option[stream1.elementType.Scala], None: Option[stream2.elementType.Scala])
           ) {
@@ -108,11 +109,15 @@ private final class LiveFlowRunner(
             case (Some(l), r) =>
               ((l, r))
           }
-      case Merge(_, stream1, stream2)         =>
-        interpretStream(flowId, stream1).mergeEither(interpretStream(flowId, stream2))
+      case Merge(cid, stream1, stream2)        =>
+        interpretStream(flowId, stream1, Some(cid)).mergeEither(interpretStream(flowId, stream2, Some(cid)))
       case FormOutput(id, formId, elementType) =>
         StreamsManager
-          .consumeStream(topicForForm(formId), elementType, Some(s"${flowId.value}-${id.value}"))
+          .consumeStream(
+            topicForForm(formId),
+            elementType,
+            Some(s"${flowId.value}-${id.value}${child.fold("")(cid => s"-${cid.value}")}")
+          )
           .map(_.value)
     }
     anyStream.asInstanceOf[Stream[Throwable, stream.elementType.Scala]]
@@ -123,7 +128,7 @@ private final class LiveFlowRunner(
     StreamsManager
       .consumeStream(topicForFlow(flowId, source.id), source.elementType, Some(sink.id.value))
       .tap(e => f(e.value))
-      .map(_.commit)
+      .tap(_.commit)
       .runDrain
   }
 

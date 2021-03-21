@@ -4,6 +4,8 @@ import app.config.KafkaConfig
 import app.flows.{Committable, StreamsManager, Type}
 import io.circe.parser.{parse => parseJson}
 import io.circe.syntax._
+import org.apache.kafka.clients.consumer.ConsumerConfig
+import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException
 import zio._
 import zio.blocking.Blocking
@@ -13,8 +15,6 @@ import zio.kafka.consumer.{Consumer, ConsumerSettings, Subscription}
 import zio.kafka.producer.{Producer, ProducerSettings}
 import zio.kafka.serde.Serde
 import zio.stream.ZStream
-import org.apache.kafka.clients.producer.ProducerConfig
-import org.apache.kafka.clients.consumer.ConsumerConfig
 
 private final class KafkaStreamsManager(
   adminClient: AdminClient,
@@ -70,7 +70,8 @@ private final class KafkaStreamsManager(
   def makeConsumer(groupId: Option[String]) =
     for {
       config           <- KafkaConfig.get.toManaged_
-      settings          = ConsumerSettings(config.bootstrapServers).withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+      settings          =
+        ConsumerSettings(config.bootstrapServers).withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
       settingsWithGroup = groupId.fold(settings)(settings.withGroupId)
       consumer         <- Consumer.make(settingsWithGroup)
     } yield consumer

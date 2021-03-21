@@ -15,22 +15,22 @@ object layers {
 
   val prod: ZLayer[Any, Throwable, AppEnvironment] =
     ZEnv.live >+>
-    ConfigLayer >+>
-    Slf4jLogger.makeWithAllAnnotationsAsMdc() >+>
-    Database.migrated >+>
-    PostgresFlowOffsetRepository.layer >+>
-    PostgresFlowRepository.layer >+>
-    PostgresFormsRepository.layer >+>
-    KafkaStreamsManager.layer >+>
-    HttpClientZioBackend.layer() >+>
-    StudIpUserInfoService.layer >+>
-    LiveJWTAuth.layer >+>
-    LivePermissions.layer >+>
-    LiveSys.layer >+>
-    LivePython.layer >+>
-    LiveFormsService.layer >+>
-    PythonUDFRunner.layer(4) >+>
-    LiveFlowRunner.layer >+>
-    LiveFlowService.layer
+      ConfigLayer >+>
+      Slf4jLogger.makeWithAllAnnotationsAsMdc() >+>
+      Database.migrated >+>
+      PostgresFlowOffsetRepository.layer >+>
+      PostgresFlowRepository.layer >+>
+      PostgresFormsRepository.layer >+>
+      KafkaStreamsManager.layer >+>
+      HttpClientZioBackend.layer() >+>
+      StudIpUserInfoService.layer >+>
+      LiveJWTAuth.layer >+>
+      LivePermissions.layer >+>
+      LiveSys.layer >+>
+      LivePython.layer >+>
+      LiveFormsService.layer >+>
+      PythonUDFRunner.layer(4) >+>
+      LiveFlowRunner.layer >+>
+      LiveFlowService.layer
 
 }
