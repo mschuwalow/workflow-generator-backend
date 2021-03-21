@@ -49,7 +49,7 @@ final class PostgresFlowRepository(xa: TaskTransactor) extends FlowRepository wi
     val query =
       sql"""DELETE FROM flows
            |WHERE flow_id = $id
-           |RETURNING (flow_id, streams, state)""".stripMargin
+           |RETURNING flow_id, streams, state""".stripMargin
     query.query[FlowWithId].option.transact(xa).someOrFail(Error.NotFound)
   }
 }

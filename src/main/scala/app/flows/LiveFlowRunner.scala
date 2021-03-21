@@ -1,11 +1,11 @@
 package app.flows
 
+import app.flows.StreamsManager.{topicForFlow, topicForForm}
 import app.flows.udf.UDFRunner
 import app.forms.FormId
 import zio._
 import zio.logging.{Logger, log}
 import zio.stream._
-import StreamsManager.{topicForFlow, topicForForm}
 
 private final class LiveFlowRunner(
   env: LiveFlowRunner.Env
@@ -35,7 +35,7 @@ private final class LiveFlowRunner(
   def interpretStream(
     flowId: FlowId,
     stream: typed.Stream
-  ): ZStream[Has[UDFRunner], Throwable, stream.elementType.Scala] =  ???
+  ): ZStream[Has[UDFRunner], Throwable, stream.elementType.Scala] = ???
 
 }
 
@@ -45,7 +45,7 @@ object LiveFlowRunner {
 
   val layer: URLayer[Env, Has[FlowRunner]] = {
     for {
-      env   <- ZIO.environment[Env]
+      env <- ZIO.environment[Env]
     } yield new LiveFlowRunner(env)
   }.toLayer
 

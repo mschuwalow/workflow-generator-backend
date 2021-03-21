@@ -13,17 +13,17 @@ trait DatabaseAspect extends Constants {
   final def database: TestAspect[Nothing, TestEnvironment, Nothing, Any] =
     sequential >>> repeats(2) >>> retries(2) >>> samples(3) >>> shrinks(0)
 
-  def db[R <: Has[DatabaseTestManager], E, A](zio: ZIO[R, E, A]): ZIO[R, E, A] =
-    DatabaseTestManager.managed(zio)
+  def db[R <: Has[DatabaseScope], E, A](zio: ZIO[R, E, A]): ZIO[R, E, A] =
+    DatabaseScope.managed(zio)
 
   final def DatabaseLayer =
     Blocking.live >+>
       Clock.live >+>
       ConfigLayer.orDie >+>
       Database.layer.orDie >+>
-      DatabaseTestManager.live
+      DatabaseScope.postgres
 
   final def NoDatabaseLayer =
-    DatabaseTestManager.fake
+    DatabaseScope.noop
 
 }

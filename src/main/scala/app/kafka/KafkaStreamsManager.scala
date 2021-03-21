@@ -4,6 +4,7 @@ import app.config.KafkaConfig
 import app.flows.{Committable, StreamsManager, Type}
 import io.circe.parser.{parse => parseJson}
 import io.circe.syntax._
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException
 import zio._
 import zio.blocking.Blocking
 import zio.clock.Clock
@@ -11,7 +12,6 @@ import zio.kafka.admin.{AdminClient, AdminClientSettings}
 import zio.kafka.consumer.{Consumer, ConsumerSettings, Subscription}
 import zio.kafka.producer.{Producer, ProducerSettings}
 import zio.kafka.serde.Serde
-import org.apache.kafka.common.errors.UnknownTopicOrPartitionException
 import zio.stream.ZStream
 
 private final class KafkaStreamsManager(
@@ -20,13 +20,19 @@ private final class KafkaStreamsManager(
   env: KafkaStreamsManager.Env
 ) extends StreamsManager {
 
-  def createStream(topicName: String) = {
-    adminClient.createTopic(AdminClient.NewTopic(topicName, 1, 1)).unlessM(topicExists(topicName))
-  }.provide(env).orDie
+  def createStream(topicName: String) =
+    adminClient
+      .createTopic(AdminClient.NewTopic(topicName, 1, 1))
+      .unlessM(topicExists(topicName))
+      .provide(env)
+      .orDie
 
-  def deleteStream(topicName: String) = {
-    adminClient.deleteTopic(topicName).whenM(topicExists(topicName))
-  }.provide(env).orDie
+  def deleteStream(topicName: String) =
+    adminClient
+      .deleteTopic(topicName)
+      .whenM(topicExists(topicName))
+      .provide(env)
+      .orDie
 
   def publishToStream(topicName: String, elementType: Type)(elements: Chunk[elementType.Scala]) = {
     implicit val encoder = elementType.deriveEncoder
@@ -39,16 +45,19 @@ private final class KafkaStreamsManager(
   def consumeStream(topicName: String, elementType: Type, consumerId: String) = {
     implicit val decoder = elementType.deriveDecoder
 
-    ZStream.managed(makeConsumer(consumerId)).flatMap { consumer =>
-      consumer
-        .subscribeAnd(Subscription.topics(topicName))
-        .plainStream(Serde.int, Serde.string)
-        .mapM(c =>
-          ZIO
-            .fromEither(parseJson(c.value).flatMap(_.as[elementType.Scala]))
-            .map(e => Committable(e, c.offset.commit.orDie))
-        )
-    }.refineOrDie(PartialFunction.empty)
+    ZStream
+      .managed(makeConsumer(consumerId))
+      .flatMap { consumer =>
+        consumer
+          .subscribeAnd(Subscription.topics(topicName))
+          .plainStream(Serde.int, Serde.string)
+          .mapM(c =>
+            ZIO
+              .fromEither(parseJson(c.value).flatMap(_.as[elementType.Scala]))
+              .map(e => Committable(e, c.offset.commit.orDie))
+          )
+      }
+      .refineOrDie(PartialFunction.empty)
   }.provide(env)
 
   def topicExists(topicName: String) =
@@ -57,10 +66,10 @@ private final class KafkaStreamsManager(
     }
 
   def makeConsumer(groupId: String) =
-  for {
-    config   <- KafkaConfig.get.toManaged_
-    consumer <- Consumer.make(ConsumerSettings(config.bootstrapServers).withGroupId(groupId))
-  } yield consumer
+    for {
+      config   <- KafkaConfig.get.toManaged_
+      consumer <- Consumer.make(ConsumerSettings(config.bootstrapServers).withGroupId(groupId))
+    } yield consumer
 }
 
 object KafkaStreamsManager {

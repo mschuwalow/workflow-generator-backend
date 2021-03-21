@@ -1,12 +1,11 @@
 package app.api
 
 import app.auth.{Permissions, Scope, UserInfo}
-import app.forms.{Form, FormId, FormsRepository}
+import app.forms.{Form, FormId, FormsRepository, FormsService}
 import tsec.authentication._
 import tsec.mac.jca.HMACSHA256
 import zio.Has
 import zio.interop.catz._
-import app.forms.FormsService
 
 final class FormsEndpoint[R <: FormsEndpoint.Env] extends Endpoint[R] {
   import dsl._

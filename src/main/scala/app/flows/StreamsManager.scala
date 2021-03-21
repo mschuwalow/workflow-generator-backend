@@ -1,9 +1,9 @@
 package app.flows
 
 import app.flows.Type
+import app.forms.FormId
 import zio._
 import zio.stream._
-import app.forms.FormId
 
 trait StreamsManager {
 
@@ -13,7 +13,11 @@ trait StreamsManager {
 
   def publishToStream(topicName: String, elementType: Type)(elements: Chunk[elementType.Scala]): UIO[Unit]
 
-  def consumeStream(topicName: String, elementType: Type, consumerId: String): Stream[Nothing, Committable[elementType.Scala]]
+  def consumeStream(
+    topicName: String,
+    elementType: Type,
+    consumerId: String
+  ): Stream[Nothing, Committable[elementType.Scala]]
 
 }
 
@@ -31,10 +35,16 @@ object StreamsManager {
   def deleteStream(streamName: String): URIO[Has[StreamsManager], Unit] =
     ZIO.accessM(_.get.deleteStream(streamName))
 
-  def publishToStream(streamName: String, elementType: Type)(elements: Chunk[elementType.Scala]): URIO[Has[StreamsManager], Unit] =
+  def publishToStream(streamName: String, elementType: Type)(
+    elements: Chunk[elementType.Scala]
+  ): URIO[Has[StreamsManager], Unit] =
     ZIO.accessM(_.get.publishToStream(streamName, elementType)(elements))
 
-  def consumeStream(streamName: String, elementType: Type, consumerId: String): ZStream[Has[StreamsManager], Nothing, Committable[elementType.Scala]] =
+  def consumeStream(
+    streamName: String,
+    elementType: Type,
+    consumerId: String
+  ): ZStream[Has[StreamsManager], Nothing, Committable[elementType.Scala]] =
     ZStream.accessStream(_.get.consumeStream(streamName, elementType, consumerId))
 
 }

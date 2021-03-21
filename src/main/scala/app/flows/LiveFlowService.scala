@@ -1,9 +1,9 @@
 package app.flows
 
 import app.Error
+import app.flows.StreamsManager.topicForFlow
 import app.forms.FormsRepository
 import zio._
-import StreamsManager.topicForFlow
 
 private final class LiveFlowService(
   state: LiveFlowService.internal.State,

@@ -2,4 +2,4 @@ package app
 
 import zio.test._
 
-abstract class BaseSpec extends DefaultRunnableSpec
+abstract class BaseSpec extends DefaultRunnableSpec with GensSyntax
