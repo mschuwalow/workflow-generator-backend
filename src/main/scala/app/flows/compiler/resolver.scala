@@ -5,7 +5,7 @@ import app.forms.FormsRepository
 import zio._
 
 object resolver {
-  type Env = FormsRepository
+  type Env = Has[FormsRepository]
 
   def resolve(input: unresolved.Graph): RIO[Env, resolved.Graph] = {
     val out = ZIO.foreach(input.components) { case (k, v) => resolveComponent(v).map((k, _)) }

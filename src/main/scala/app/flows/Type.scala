@@ -1,6 +1,10 @@
 package app.flows
 
-import io.circe.{Decoder, Encoder}
+import cats.instances.either._
+import cats.instances.list._
+import cats.syntax.traverse._
+import io.circe.syntax._
+import io.circe.{Decoder, Encoder, Json}
 import zio.Chunk
 
 import java.time.LocalDate
@@ -9,6 +13,9 @@ import scala.util.parsing.combinator.syntactical._
 
 sealed abstract class Type { self =>
   type Scala
+
+  val deriveEncoder: Encoder[Scala]
+  val deriveDecoder: Decoder[Scala]
 
   def show: String = {
     import Type._
@@ -31,47 +38,128 @@ sealed abstract class Type { self =>
 }
 
 object Type {
+
   type TDate = TDate.type
   object TDate extends Type {
     type Scala = LocalDate
+
+    val deriveEncoder = Encoder[LocalDate]
+
+    val deriveDecoder = Decoder[LocalDate]
   }
 
   type TBool = TBool.type
 
   case object TBool extends Type {
     type Scala = Boolean
+
+    val deriveEncoder = Encoder[Boolean]
+
+    val deriveDecoder = Decoder[Boolean]
   }
 
   type TString = TString.type
 
   case object TString extends Type {
-    type Scala = Boolean
+    type Scala = String
+
+    val deriveEncoder = Encoder[String]
+
+    val deriveDecoder = Decoder[String]
   }
 
   type TNumber = TNumber.type
 
   case object TNumber extends Type {
     type Scala = Long
+
+    val deriveEncoder = Encoder[Long]
+
+    val deriveDecoder = Decoder[Long]
   }
 
   final case class TArray(elementType: Type) extends Type {
     type Scala = Chunk[elementType.Scala]
+
+    val deriveEncoder = {
+      implicit val elementEncoder = elementType.deriveEncoder
+      Encoder[List[elementType.Scala]].contramap(_.toList)
+    }
+
+    val deriveDecoder = {
+      implicit val elementDecoder = elementType.deriveDecoder
+      Decoder[List[elementType.Scala]].map(Chunk.fromIterable)
+    }
   }
 
   final case class TObject(fields: List[(String, Type)]) extends Type {
     type Scala = Map[String, Any]
+
+    val deriveEncoder =
+      Encoder.instance { a =>
+        Json.obj(
+          fields.map {
+            case (field, fieldType) =>
+              implicit val encoder = fieldType.deriveEncoder
+              (field, a(field).asInstanceOf[fieldType.Scala].asJson)
+          }: _*
+        )
+      }
+
+    val deriveDecoder =
+      Decoder.instance { cursor =>
+        fields.traverse {
+          case (field, fieldType) =>
+            implicit val decoder = fieldType.deriveDecoder
+            cursor.get[fieldType.Scala](field).map((field, _))
+        }.map(_.toMap)
+      }
   }
 
   final case class TOption(value: Type) extends Type {
     type Scala = Option[value.Scala]
+
+    val deriveEncoder = {
+      implicit val valueEncoder = value.deriveEncoder
+      Encoder[Option[value.Scala]]
+    }
+
+    val deriveDecoder = {
+      implicit val valueDecoder = value.deriveDecoder
+      Decoder[Option[value.Scala]]
+    }
   }
 
   final case class TTuple(left: Type, right: Type) extends Type {
     type Scala = (left.Scala, right.Scala)
+
+    val deriveEncoder = {
+      implicit val leftEncoder  = left.deriveEncoder
+      implicit val rightEncoder = right.deriveEncoder
+      Encoder[(left.Scala, right.Scala)]
+    }
+
+    val deriveDecoder = {
+      implicit val leftDecoder  = left.deriveDecoder
+      implicit val rightDecoder = right.deriveDecoder
+      Decoder[(left.Scala, right.Scala)]
+    }
   }
 
   final case class TEither(left: Type, right: Type) extends Type {
     type Scala = Either[left.Scala, right.Scala]
+
+    val deriveEncoder = {
+      implicit val leftEncoder  = left.deriveEncoder
+      implicit val rightEncoder = right.deriveEncoder
+      Encoder.encodeEither("left", "right")
+    }
+
+    val deriveDecoder = {
+      implicit val leftDecoder  = left.deriveDecoder
+      implicit val rightDecoder = right.deriveDecoder
+      Decoder.decodeEither("left", "right")
+    }
   }
 
   def fromString(s: String): Either[String, Type] = parsing.parse(s)

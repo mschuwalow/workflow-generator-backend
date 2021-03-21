@@ -1,8 +1,8 @@
 import app.api.Router
 import app.config.HttpConfig
-import app.postgres.Database
+import zio.Has
 import zio.clock.Clock
 
 package object app {
-  type AppEnvironment = HttpConfig with Router.Env with Clock with Database
+  type AppEnvironment = Router.Env with Clock with Has[HttpConfig]
 }

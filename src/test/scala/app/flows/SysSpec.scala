@@ -39,6 +39,6 @@ object SysSpec extends BaseSpec {
         }
       )
     ).provideSomeLayer(
-      (ZLayer.identity[Environment] ++ Logging.ignore) >>> Sys.live
+      (ZLayer.identity[Environment] ++ Logging.ignore) >>> LiveSys.layer
     )
 }

@@ -97,6 +97,13 @@ object gens {
         for {
           streams <- Gen.listOfBounded(0, 2)(sink)
         } yield Flow(streams)
+
+      val flowWithId: Gen[Random with Sized, FlowWithId] =
+        for {
+          id    <- flowId
+          flow  <- flow
+          state <- flowState
+        } yield FlowWithId(id, flow.streams, state)
     }
 
     def componentId: Gen[Random with Sized, ComponentId] =
@@ -175,6 +182,18 @@ object gens {
 
     def anyType0: Gen[Random with Sized, Type] =
       anyType.map(_._2)
+
+    def flowOffsetForFlow(flowId: FlowId): Gen[Random with Sized, FlowOffset] =
+      for {
+        componentId <- componentId
+        offset      <- Gen.anyLong
+      } yield FlowOffset(flowId, componentId, offset)
+
+    def flowOffset: Gen[Random with Sized, FlowOffset] =
+      for {
+        flowId <- flowId
+        offset <- flowOffsetForFlow(flowId)
+      } yield offset
   }
 
   object forms {
@@ -199,7 +218,7 @@ object gens {
       for {
         elements      <- Gen.listOf(formElement)
         scope         <- Gen.option(auth.scope)
-        uniqueElements = UniqueFormElements.make(elements.distinctBy(_.id)).runEither.toOption.get
+        uniqueElements = UniqueFormElements.make(elements.distinctBy(_.id)).toOption.get
       } yield Form(uniqueElements, scope)
   }
 }

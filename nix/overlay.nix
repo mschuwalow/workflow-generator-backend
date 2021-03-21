@@ -8,8 +8,8 @@ with lib; {
       pname = "workflow-generator-backend-jar";
       version = "latest";
 
-      # depsSha256 = "0000000000000000000000000000000000000000000000000000";
-      depsSha256 = "5vtg/gD/tbslltqtqOLYSFSv7vw79I2mt9rgeKo9kSo=";
+      depsSha256 = "9bbvUINI1p69xdWRY2N7ULOvw3NxtXLI37qz+bxbEdI=";
+      # depsSha256 = "5vtg/gD/tbslltqtqOLYSFSv7vw79I2mt9rgeKo9kSo=";
 
       src = sources.sourceByRegex ../. [ "^build.sbt$" "^project.*" "^src.*" ];
 

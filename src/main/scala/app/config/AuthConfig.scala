@@ -8,19 +8,19 @@ import zio._
 
 import scala.annotation.unused
 
+final case class AuthConfig(studipAuthUrl: Uri, adminUsers: Set[String])
+
 object AuthConfig {
-  final case class Config(studipAuthUrl: Uri, adminUsers: Set[String])
+  @unused
+  private implicit val uriConvert: ConfigConvert[Uri] =
+    ConfigConvert[String].xemap(s => Uri.parse(s).left.map(e => CannotConvert(s, "Uri", e)), _.toString())
 
-  object Config {
-    @unused
-    private implicit val uriConvert: ConfigConvert[Uri] =
-      ConfigConvert[String].xemap(s => Uri.parse(s).left.map(e => CannotConvert(s, "Uri", e)), _.toString())
-    implicit val convert: ConfigConvert[Config]         = deriveConvert
-  }
+  implicit val convert: ConfigConvert[AuthConfig] = deriveConvert
 
-  def const(studIpAuthUrl: Uri, adminUsers: Set[String]): ULayer[AuthConfig] =
-    ZLayer.succeed(Config(studIpAuthUrl, adminUsers))
+  def constLayer(studIpAuthUrl: Uri, adminUsers: Set[String]): ULayer[Has[AuthConfig]] =
+    ZLayer.succeed(AuthConfig(studIpAuthUrl, adminUsers))
 
-  val get: URIO[AuthConfig, Config] =
+  val get: URIO[Has[AuthConfig], AuthConfig] =
     ZIO.access(_.get)
+
 }

@@ -1,32 +1,36 @@
 package app
 
-import app.api.Auth
-import app.auth.{Permissions, UserInfoService}
-import app.config._
-import app.flows.udf.{Python, Sys, UDFRunner}
-import app.flows.{FlowRepository, FlowRunner, FlowService}
-import app.forms.FormsRepository
-import app.postgres.Database
+import app.auth.{LiveJWTAuth, LivePermissions, StudIpUserInfoService}
+import app.config.ConfigLayer
+import app.flows.udf.{LivePython, LiveSys, PythonUDFRunner}
+import app.flows.{LiveFlowRunner, LiveFlowService}
+import app.forms.LiveFormsService
+import app.kafka.KafkaStreamsManager
+import app.postgres.{Database, PostgresFlowOffsetRepository, PostgresFlowRepository, PostgresFormsRepository}
 import sttp.client.httpclient.zio.HttpClientZioBackend
 import zio._
 import zio.logging.slf4j.Slf4jLogger
 
 object layers {
 
-  val prod: ZLayer[ZEnv, Throwable, AppEnvironment] =
-    ZLayer.identity[ZEnv] >+>
-      AppConfig.live >+>
-      Slf4jLogger.make((_, msg) => msg) >+>
-      Permissions.live >+>
-      HttpClientZioBackend.layer() >+>
-      UserInfoService.live >+>
-      Auth.live >+>
+  val prod: ZLayer[Any, Throwable, AppEnvironment] =
+    ZEnv.live >+>
+      ConfigLayer >+>
+      Slf4jLogger.makeWithAllAnnotationsAsMdc() >+>
       Database.migrated >+>
-      FlowRepository.doobie >+>
-      FormsRepository.doobie >+>
-      Sys.live >+>
-      Python.live >+>
-      UDFRunner.live(workers = 5) >+>
-      FlowRunner.stream >+>
-      FlowService.live
+      PostgresFlowOffsetRepository.layer >+>
+      PostgresFlowRepository.layer >+>
+      PostgresFormsRepository.layer >+>
+      KafkaStreamsManager.layer >+>
+      HttpClientZioBackend.layer() >+>
+      StudIpUserInfoService.layer >+>
+      LiveJWTAuth.layer >+>
+      LivePermissions.layer >+>
+      LiveSys.layer >+>
+      LivePython.layer >+>
+      LiveFormsService.layer >+>
+      PythonUDFRunner.layer(4) >+>
+      LiveFlowRunner.layer >+>
+      LiveFlowService.layer
+
 }

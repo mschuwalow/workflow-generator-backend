@@ -8,7 +8,7 @@ object PostgresMigrationSpec extends BaseSpec with DatabaseAspect {
   def spec =
     suite("Migrations")(
       testM("should succeed") {
-        DatabaseTestManager.DbLock.withPermit {
+        DatabaseScope.DbLock.withPermit {
           assertM(Database.migrate.run)(succeeds(anything))
         }
       } @@ database

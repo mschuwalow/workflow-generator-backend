@@ -3,7 +3,6 @@ package app.flows.compiler
 import app.Error
 import app.flows.Type._
 import app.flows.{ComponentId, Type, resolved, typed}
-import cats.Monad
 import cats.instances.list._
 import cats.syntax.apply._
 import cats.syntax.flatMap._
@@ -17,9 +16,9 @@ object semantic {
       case (id, component) if component.isSink => id
     }.toList
 
-    val checkResult = Transform.context.flatMap { ctx =>
+    val checkResult = context.flatMap { ctx =>
       // we don't rewrite graphs in this phase
-      Transform.require(
+      require(
         (ctx.in.size - sinks.size) == ctx.out.size,
         "Not all components were connected to sinks."
       )
@@ -35,125 +34,72 @@ object semantic {
     result.left.map(Error.GraphValidationFailed(_))
   }
 
-  final private[compiler] case class Context(
+  private[semantic] type Run[A] = Check[Context, String, A]
+
+  final private[semantic] case class Context(
     in: Map[ComponentId, resolved.Component],
     out: Map[ComponentId, typed.Stream],
     enclosing: Option[ComponentId]
   )
 
-  private[compiler] object Context {
+  private[semantic] object Context {
 
     def initial(in: Map[ComponentId, resolved.Component]): Context =
       Context(in, Map.empty, None)
   }
 
-  // state monad with error collection
-  private[compiler] trait Transform[+A] { self =>
-    import Transform._
-    def run(ctx: Context): Either[String, (Context, A)]
+  private[semantic] val context: Run[Context] =
+    Check.getState[Context]
 
-    def map[B](f: A => B): Transform[B] =
-      transform {
-        run(_).map { case (ctx, a) => (ctx, f(a)) }
-      }
+  private[semantic] def updateContext(f: Context => Context) =
+    Check.updateState(f)
 
-    def flatMap[B](f: A => Transform[B]) =
-      transform {
-        run(_).flatMap {
-          case (ctx, a) =>
-            f(a).run(ctx)
-        }
-      }
-  }
-
-  private[compiler] object Transform {
-
-    val unit: Transform[Unit] = transform { ctx =>
-      Right((ctx, ()))
+  private[semantic] def fail(msg: String): Run[Nothing] =
+    context.flatMap { ctx =>
+      Check.fail(s"${ctx.enclosing.fold("")(id => s"[${id.value}]: ")}$msg")
     }
 
-    val context: Transform[Context] = transform { ctx =>
-      Right((ctx, ctx))
+  private[semantic] def pure[A](a: A): Run[A] =
+    Check.done(a)
+
+  private[semantic] def require(
+    bool: Boolean,
+    msg: String
+  ): Run[Unit] = if (bool) Check.unit else fail(msg)
+
+  private[semantic] def askRaw(id: ComponentId): Run[Option[resolved.Component]] =
+    context.map(_.in.get(id))
+
+  private[semantic] def askTyped(id: ComponentId): Run[Option[typed.Stream]] =
+    context.map(_.out.get(id))
+
+  private[semantic] def putTyped(
+    id: ComponentId,
+    value: typed.Stream
+  ): Run[Unit] =
+    updateContext { ctx =>
+      ctx.copy(out = ctx.out + (id -> value))
     }
 
-    def fail(msg: String): Transform[Nothing] =
-      transform { ctx =>
-        Left(s"${ctx.enclosing.fold("")(id => s"[${id.value}]: ")}$msg")
-      }
-
-    def require(
-      bool: Boolean,
-      msg: String
-    ): Transform[Unit] = if (bool) unit else fail(msg)
-
-    def askRaw(id: ComponentId): Transform[Option[resolved.Component]] =
-      context.map(_.in.get(id))
-
-    def askTyped(id: ComponentId): Transform[Option[typed.Stream]] =
-      context.map(_.out.get(id))
-
-    def putTyped(
-      id: ComponentId,
-      value: typed.Stream
-    ): Transform[Unit] =
-      transform { ctx =>
-        Right((ctx.copy(out = ctx.out + (id -> value)), ()))
-      }
-
-    def setEnclosing(id: Option[ComponentId]): Transform[Unit] =
-      transform { ctx =>
-        Right((ctx.copy(enclosing = id), ()))
-      }
-
-    val getEnclosing: Transform[Option[ComponentId]] = transform { ctx =>
-      Right((ctx, ctx.enclosing))
+  private[semantic] def setEnclosing(id: Option[ComponentId]) =
+    updateContext { ctx =>
+      ctx.copy(enclosing = id)
     }
 
-    def withEnclosing[A](id: ComponentId)(nested: Transform[A]): Transform[A] =
-      for {
-        old <- getEnclosing
-        _   <- setEnclosing(Some(id))
-        a   <- nested
-        _   <- setEnclosing(old)
-      } yield a
+  private[semantic] val getEnclosing =
+    context.map(_.enclosing)
 
-    def pure[A](a: => A): Transform[A] =
-      transform { ctx =>
-        Right((ctx, a))
-      }
+  private[semantic] def withEnclosing[A](id: ComponentId)(nested: Run[A]): Run[A] =
+    for {
+      old <- getEnclosing
+      _   <- setEnclosing(Some(id))
+      a   <- nested
+      _   <- setEnclosing(old)
+    } yield a
 
-    def transform[A](f: Context => Either[String, (Context, A)]) =
-      new Transform[A] {
-        def run(ctx: Context): Either[String, (Context, A)] = f(ctx)
-      }
-
-    implicit val monad: Monad[Transform] =
-      new Monad[Transform] {
-
-        override def flatMap[A, B](
-          fa: Transform[A]
-        )(
-          f: A => Transform[B]
-        ): Transform[B] = fa.flatMap(f)
-
-        override def tailRecM[A, B](
-          a: A
-        )(
-          f: A => Transform[Either[A, B]]
-        ): Transform[B] =
-          f(a).flatMap {
-            case Left(a)  => tailRecM(a)(f)
-            case Right(b) => pure(b)
-          }
-
-        override def pure[A](x: A): Transform[A] = Transform.pure(x)
-      }
-  }
-  import Transform._
-
-  private[compiler] def typeCheckSink(
+  private[semantic] def typeCheckSink(
     id: ComponentId
-  ): Transform[typed.Sink] = {
+  ): Run[typed.Sink] = {
     import resolved.Component._
     withEnclosing(id) {
       askRaw(id).flatMap {
@@ -171,17 +117,17 @@ object semantic {
     }
   }
 
-  private[compiler] def typeCheckStream(
+  private[semantic] def typeCheckStream(
     id: ComponentId,
     hint: Option[Type] // downstream type expectation.
-  ): Transform[typed.Stream] = {
-    def check(comp: resolved.Component): Transform[typed.Stream] = {
+  ): Run[typed.Stream] = {
+    def check(comp: resolved.Component): Run[typed.Stream] = {
       import resolved.Component._
       comp match {
         case Never(elementType)                               =>
           elementType
             .orElse(hint)
-            .fold[Transform[typed.Stream]](
+            .fold[Run[typed.Stream]](
               fail("Type could not be determined. Try adding a type hint.")
             )(t => pure(typed.Stream.Never(id, t)))
         case Numbers(values)                                  =>
@@ -193,7 +139,7 @@ object semantic {
             // if they do not match typechecking will fail later.
             myType <- outputTypeHint
                         .orElse(hint)
-                        .fold[Transform[Type]](
+                        .fold[Run[Type]](
                           fail(
                             "Type could not be determined. Try adding a type hint"
                           )

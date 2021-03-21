@@ -10,15 +10,15 @@ import zio._
 import zio.blocking.Blocking
 import zio.interop.catz._
 
+trait Database {
+  def getTransactor: UIO[Transactor[Task]]
+  def getFlyway: UIO[Flyway]
+}
+
 object Database {
 
-  trait Service extends Serializable {
-    def getTransactor: UIO[Transactor[Task]]
-    def getFlyway: UIO[Flyway]
-  }
-
-  val live: ZLayer[DatabaseConfig with Blocking, Throwable, Database] = {
-    def mkFlyway(cfg: DatabaseConfig.Config): Task[Flyway] =
+  val layer: ZLayer[Has[DatabaseConfig] with Blocking, Throwable, Has[Database]] = {
+    def mkFlyway(cfg: DatabaseConfig): Task[Flyway] =
       Task {
         Flyway
           .configure()
@@ -27,7 +27,7 @@ object Database {
       }
 
     def mkTransactor(
-      cfg: DatabaseConfig.Config
+      cfg: DatabaseConfig
     ): ZManaged[Blocking, Throwable, HikariTransactor[Task]] =
       ZIO.runtime[Blocking].toManaged_.flatMap { implicit rt =>
         for {
@@ -56,22 +56,22 @@ object Database {
         cfg        <- DatabaseConfig.get.toManaged_
         fw         <- mkFlyway(cfg).toManaged_
         transactor <- mkTransactor(cfg)
-      } yield new Service {
+      } yield new Database {
         val getTransactor = UIO(transactor)
         val getFlyway     = UIO(fw)
       }
     }
   }
 
-  val migrated: ZLayer[DatabaseConfig with Blocking, Throwable, Database] =
-    live.tap(_.get.getFlyway.flatMap(fw => Task(fw.migrate())))
+  val migrated: ZLayer[Has[DatabaseConfig] with Blocking, Throwable, Has[Database]] =
+    layer.tap(_.get.getFlyway.flatMap(fw => Task(fw.migrate())))
 
-  val getTransactor: URIO[Database, Transactor[Task]] =
+  val getTransactor: URIO[Has[Database], Transactor[Task]] =
     ZIO.accessM(_.get.getTransactor)
 
-  val getFlyway: URIO[Database, Flyway] =
+  val getFlyway: URIO[Has[Database], Flyway] =
     ZIO.accessM(_.get.getFlyway)
 
-  val migrate: RIO[Database, MigrateResult] =
+  val migrate: RIO[Has[Database], MigrateResult] =
     getFlyway.flatMap(fw => Task(fw.migrate()))
 }

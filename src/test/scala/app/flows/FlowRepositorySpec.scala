@@ -2,7 +2,7 @@ package app.flows
 
 import app.BaseSpec
 import app.gens.{flows => gens}
-import app.postgres.DatabaseAspect
+import app.postgres.{DatabaseAspect, PostgresFlowRepository}
 import zio.test.Assertion._
 import zio.test._
 
@@ -10,7 +10,7 @@ object FlowRepositorySpec extends BaseSpec with DatabaseAspect {
 
   def baseSpec =
     suite("Spec")(
-      testM("Can save and get flows") {
+      testM("can save and get flows") {
         checkM(gens.typed.flow) { flow =>
           db {
             for {
@@ -22,7 +22,7 @@ object FlowRepositorySpec extends BaseSpec with DatabaseAspect {
           }
         }
       },
-      testM("Can get all flows") {
+      testM("can get all flows") {
         checkM(gens.typed.flow) { flow =>
           db {
             for {
@@ -32,7 +32,7 @@ object FlowRepositorySpec extends BaseSpec with DatabaseAspect {
           }
         }
       },
-      testM("Can delete flows") {
+      testM("can delete flows") {
         checkM(gens.typed.flow) { flow =>
           db {
             for {
@@ -63,6 +63,6 @@ object FlowRepositorySpec extends BaseSpec with DatabaseAspect {
       ).provideCustomLayerShared(PostgresLayer)
     )
 
-  val PostgresLayer = DatabaseLayer >+> FlowRepository.doobie
+  val PostgresLayer = DatabaseLayer >+> PostgresFlowRepository.layer
 
 }

@@ -1,7 +1,10 @@
 package app
 
-import zio.Has
+import doobie.util.transactor.Transactor
+import zio.Task
 
 package object postgres {
-  type Database = Has[Database.Service]
+
+  type TaskTransactor = Transactor[Task]
+
 }
