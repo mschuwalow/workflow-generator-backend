@@ -13,6 +13,8 @@ import zio.kafka.consumer.{Consumer, ConsumerSettings, Subscription}
 import zio.kafka.producer.{Producer, ProducerSettings}
 import zio.kafka.serde.Serde
 import zio.stream.ZStream
+import org.apache.kafka.clients.producer.ProducerConfig
+import org.apache.kafka.clients.consumer.ConsumerConfig
 
 private final class KafkaStreamsManager(
   adminClient: AdminClient,
@@ -42,7 +44,7 @@ private final class KafkaStreamsManager(
     } yield ()
   }.provide(env).orDie
 
-  def consumeStream(topicName: String, elementType: Type, consumerId: String) = {
+  def consumeStream(topicName: String, elementType: Type, consumerId: Option[String]) = {
     implicit val decoder = elementType.deriveDecoder
 
     ZStream
@@ -65,10 +67,12 @@ private final class KafkaStreamsManager(
       case _: UnknownTopicOrPartitionException => ZIO.succeed(true)
     }
 
-  def makeConsumer(groupId: String) =
+  def makeConsumer(groupId: Option[String]) =
     for {
-      config   <- KafkaConfig.get.toManaged_
-      consumer <- Consumer.make(ConsumerSettings(config.bootstrapServers).withGroupId(groupId))
+      config           <- KafkaConfig.get.toManaged_
+      settings          = ConsumerSettings(config.bootstrapServers).withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+      settingsWithGroup = groupId.fold(settings)(settings.withGroupId)
+      consumer         <- Consumer.make(settingsWithGroup)
     } yield consumer
 }
 
@@ -84,7 +88,9 @@ object KafkaStreamsManager {
 
       val makeProducer = for {
         config   <- KafkaConfig.get.toManaged_
-        producer <- Producer.make(ProducerSettings(config.bootstrapServers), Serde.int, Serde.string)
+        settings  = ProducerSettings(config.bootstrapServers)
+                      .withProperty(ProducerConfig.LINGER_MS_CONFIG, java.lang.Long.valueOf(config.producerLingerMillis))
+        producer <- Producer.make(settings, Serde.int, Serde.string)
       } yield producer
 
       for {

@@ -28,7 +28,7 @@ object FlowOffsetRepositorySpec extends BaseSpec with DatabaseAspect {
             for {
               flowWithId <- FlowRepository.save(flow)
               original   <- gens.flowOffsetForFlow(flowWithId.id).get
-              updated     = original.copy(offset = original.offset + 1)
+              updated     = original.copy(value = original.value + 1)
               _          <- FlowOffsetRepository.put(original)
               _          <- FlowOffsetRepository.put(updated)
               r          <- FlowOffsetRepository.get(updated.flowId, updated.componentId)

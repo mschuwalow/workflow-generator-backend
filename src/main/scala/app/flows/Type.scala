@@ -101,7 +101,7 @@ object Type {
           fields.map {
             case (field, fieldType) =>
               implicit val encoder = fieldType.deriveEncoder
-              (field, a.get(field).asInstanceOf[fieldType.Scala].asJson)
+              (field, a(field).asInstanceOf[fieldType.Scala].asJson)
           }: _*
         )
       }

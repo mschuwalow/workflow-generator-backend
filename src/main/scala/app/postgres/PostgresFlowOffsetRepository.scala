@@ -11,7 +11,7 @@ final class PostgresFlowOffsetRepository(xa: TaskTransactor) extends FlowOffsetR
   def put(offset: FlowOffset) = {
     val query =
       sql"""INSERT INTO flow_offsets (flow_id, component_id, stream_offset)
-           |VALUES (${offset.flowId}, ${offset.componentId}, ${offset.offset})
+           |VALUES (${offset.flowId}, ${offset.componentId}, ${offset.value})
            |ON CONFLICT (flow_id, component_id) DO UPDATE
            |SET stream_offset = EXCLUDED.stream_offset
            |""".stripMargin

@@ -16,7 +16,7 @@ trait StreamsManager {
   def consumeStream(
     topicName: String,
     elementType: Type,
-    consumerId: String
+    consumerId: Option[String] = None
   ): Stream[Nothing, Committable[elementType.Scala]]
 
 }
@@ -43,7 +43,7 @@ object StreamsManager {
   def consumeStream(
     streamName: String,
     elementType: Type,
-    consumerId: String
+    consumerId: Option[String] = None
   ): ZStream[Has[StreamsManager], Nothing, Committable[elementType.Scala]] =
     ZStream.accessStream(_.get.consumeStream(streamName, elementType, consumerId))
 

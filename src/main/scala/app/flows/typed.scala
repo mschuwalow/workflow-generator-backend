@@ -34,7 +34,7 @@ object typed {
 
   sealed trait Sink {
     def id: ComponentId
-    def source: Stream
+    val source: Stream
   }
 
   object Sink {
@@ -64,7 +64,7 @@ object typed {
     final case class Never(id: ComponentId, elementType: Type) extends Stream
 
     final case class Numbers(id: ComponentId, values: List[Long]) extends Stream {
-      val elementType: Type = Type.TNumber
+      val elementType = Type.TNumber
     }
 
     final case class InnerJoin(id: ComponentId, stream1: Stream, stream2: Stream) extends Stream {
@@ -76,7 +76,7 @@ object typed {
     }
 
     final case class Merge(id: ComponentId, stream1: Stream, stream2: Stream) extends Stream {
-      val elementType: TEither = TEither(stream1.elementType, stream2.elementType)
+      val elementType = TEither(stream1.elementType, stream2.elementType)
     }
 
     final case class UDF(id: ComponentId, code: String, stream: Stream, elementType: Type) extends Stream
