@@ -1,6 +1,6 @@
 package app.flows
 
-import app.flows.StreamsManager.{topicForFlow, topicForForm}
+import app.flows.StreamsManager.topicForForm
 import app.flows.udf.UDFRunner
 import app.forms.FormId
 import app.utils.StreamSyntax
@@ -31,31 +31,21 @@ private final class LiveFlowRunner(
         }
         for {
           sources <- sourcesM
-          started <- ZManaged.foreach(terminal) { t =>
-                       Promise.makeManaged[Nothing, Unit].flatMap { started =>
-                         runTerminal(flow.id, t, sources, started.succeed(()).unit).toManaged_.fork.as(started)
-                       }
-                     }
-          _       <- ZIO.foreach(started)(_.await).toManaged_
-          _       <- startConsuming.succeed(()).toManaged_
-          f2      <- ZManaged.foreach(flow.streams)(runSink(flow.id, _).toManaged_.fork)
-          _       <- ZIO.foreach(f2)(_.join).toManaged_
+          fibers <- ZManaged.foreach(flow.streams) { s =>
+                      Promise.makeManaged[Nothing, Unit].flatMap { started =>
+                        runStream(flow.id, s, sources, started.succeed(()).unit).toManaged_.fork.map((_, started))
+                      }
+                    }
+          _      <- ZIO.foreach(fibers)(_._2.await).toManaged_
+          _      <- startConsuming.succeed(()).toManaged_
+          _      <- ZIO.foreach(fibers)(_._1.join).toManaged_
         } yield ()
       }
       .useNow
-  }.provide(env)
-
-  def runSink(flowId: FlowId, sink: typed.Sink) = {
-    import typed.Sink._
-    consumeSinkStream(flowId, sink) { e =>
-      sink match {
-        case Void(id, _) =>
-          log.info(s"${flowId.value}/${id.value}: Discarded element $e")
-      }
-    }
+      .provide(env)
   }
 
-  def collectSources(
+  private def collectSources(
     stream: typed.Stream,
     flowId: FlowId,
     promise: Promise[Nothing, Unit],
@@ -87,7 +77,7 @@ private final class LiveFlowRunner(
                   .consumeStream(topicForForm(formId), elementType, Some(s"${flowId.value}-${id.value}"))
               )
               .map(_.value)
-              .broadcastDynamic(32)
+              .broadcastDynamic(Int.MaxValue)
               .map { s =>
                 acc + (id -> s)
               }
@@ -97,35 +87,49 @@ private final class LiveFlowRunner(
     go(stream, sources)
   }
 
-  def runTerminal(
+  private def runStream(
     flowId: FlowId,
-    stream: typed.Stream,
+    sink: typed.Sink,
     sources: SourcesStreamMap,
     onStart: UIO[Unit]
   ) =
-    FlowOffsetRepository
-      .get(flowId, stream.id)
-      .map(_.getOrElse(FlowOffset.initial(flowId, stream.id)))
-      .flatMap { offset =>
-        val streamName = topicForFlow(flowId, stream.id)
-        interpretStream(stream, sources)
-          .onFirstPull(onStart)
-          .zipWithIndex
-          .foldM(offset) {
-            case (offset, (e, i)) =>
-              if (offset.value > i)
-                ZIO.succeed(offset)
-              else
-                for {
-                  _         <- StreamsManager.publishToStream(streamName, stream.elementType)(Chunk.single(e))
-                  nextOffset = offset.copy(value = offset.value + 1)
-                  _         <- FlowOffsetRepository.put(nextOffset)
-                } yield nextOffset
-          }
-          .unit
-      }
+    interpretSink(flowId, sink).use { push =>
+      FlowOffsetRepository
+        .get(flowId, sink.id)
+        .flatMap { offset =>
+          interpretStream(sink.source, sources)
+            .onFirstPull(onStart)
+            .zipWithIndex
+            .foldM(offset) {
+              case (offset, (e, i)) =>
+                if (offset.value > i)
+                  ZIO.succeed(offset)
+                else
+                  for {
+                    _         <- push(e)
+                    nextOffset = offset.copy(value = offset.value + 1)
+                    _         <- FlowOffsetRepository.put(nextOffset)
+                  } yield nextOffset
+            }
+        }
+    }
 
-  def interpretStream(
+  private def interpretSink(
+    flowId: FlowId,
+    sink: typed.Sink
+  ): Managed[Nothing, sink.source.elementType.Scala => UIO[Unit]] = {
+    import typed.Sink._
+    sink match {
+      case Void(id, _) =>
+        ZManaged.succeed { e =>
+          log
+            .info(s"${flowId.value}/${id.value}: Discarded element $e")
+            .provide(env)
+        }
+    }
+  }
+
+  private def interpretStream(
     stream: typed.Stream,
     sources: SourcesStreamMap
   ): ZStream[Has[UDFRunner] with Has[StreamsManager], Throwable, stream.elementType.Scala] = {
@@ -185,16 +189,6 @@ private final class LiveFlowRunner(
     }
     go(stream)
   }
-
-  def consumeSinkStream[R, E, A](flowId: FlowId, sink: typed.Sink)(f: sink.source.elementType.Scala => ZIO[R, E, A]) = {
-    val source: sink.source.type = sink.source
-    StreamsManager
-      .consumeStream(topicForFlow(flowId, source.id), source.elementType, Some(sink.id.value))
-      .tap(e => f(e.value))
-      .tap(_.commit)
-      .runDrain
-  }
-
 }
 
 object LiveFlowRunner {
