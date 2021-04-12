@@ -1,7 +1,6 @@
 package app.flows
 
 import app.Error
-import app.flows.StreamsManager.topicForFlow
 import app.forms.FormsRepository
 import zio._
 
@@ -29,33 +28,30 @@ private final class LiveFlowService(
 
   def delete(id: FlowId) = {
     for {
-      f       <- state.modify(old => (old.get(id), old - id))
-      _       <- f.fold[IO[Throwable, Unit]](ZIO.fail(Error.NotFound))(
-                   _.interrupt.unit
-                 )
-      flow    <- FlowRepository.delete(id)
-      terminal = flow.streams.map(s => (flow.id, s.id)).toSet
-      _       <- ZIO.foreach_(terminal) { case (id, cid) => StreamsManager.deleteStream(topicForFlow(id, cid)) }
+      f <- state.modify(old => (old.get(id), old - id))
+      _ <- f.fold[IO[Throwable, Unit]](ZIO.fail(Error.NotFound))(
+             _.interrupt.unit
+           )
+      _ <- FlowRepository.delete(id)
     } yield ()
   }.provide(env)
 }
 
 object LiveFlowService {
 
-  type Env = Has[FlowRunner] with Has[FlowRepository] with Has[FormsRepository] with Has[StreamsManager]
+  type Env = Has[FlowRunner] with Has[FlowRepository] with Has[FormsRepository]
 
   val layer: ZLayer[Env, Throwable, Has[FlowService]] = {
     for {
-      env   <- ZManaged.environment[Env]
-      state <- Ref
-                 .make(Map.empty[FlowId, Fiber[Throwable, Unit]])
-                 .toManaged {
-                   _.get.flatMap(state => ZIO.foreach(state.values)(_.interrupt))
-                 }
-      all   <- FlowRepository.getAll
-                 .map(_.filter(_.state == FlowState.Running))
-                 .toManaged_
-      _     <- ZIO.foreach_(all)(internal.run(state, _)).toManaged_
+      env     <- ZManaged.environment[Env]
+      state   <- Ref.make(Map.empty[FlowId, Fiber[Throwable, Unit]])
+                   .toManaged {
+                     _.get.flatMap(state => ZIO.foreach(state.values)(_.interrupt))
+                   }
+      running <- FlowRepository.getAll
+                   .map(_.filter(_.state == FlowState.Running))
+                   .toManaged_
+      _       <- ZIO.foreach_(running)(internal.run(state, _)).toManaged_
     } yield new LiveFlowService(state, env)
   }.toLayer
 
@@ -65,20 +61,20 @@ object LiveFlowService {
     def run(state: State, flow: typed.FlowWithId) =
       ZIO.uninterruptibleMask { restore =>
         for {
-          latch   <- Promise.make[Nothing, Unit]
-          task     = (latch.await *> FlowRunner.run(flow)).foldM(
-                       e =>
-                         FlowRepository
-                           .setState(flow.id, FlowState.Failed(e.getMessage())),
-                       _ => FlowRepository.setState(flow.id, FlowState.Done)
-                     ) *> state.update(_ - flow.id)
-          terminal = flow.streams.map(s => (flow.id, s.id)).toSet
-          _       <- restore {
-                       ZIO.foreach_(terminal) { case (id, cid) => StreamsManager.createStream(topicForFlow(id, cid)) }
-                     }
-          f       <- task.fork
-          _       <- state.update(_ + (flow.id -> f))
-          _       <- latch.succeed(())
+          latch <- Promise.make[Nothing, Unit]
+          task   = restore {
+                     latch.await *>
+                       FlowRunner
+                         .run(flow)
+                         .foldM(
+                           e => FlowRepository.setState(flow.id, FlowState.Failed(e.getMessage())),
+                           _ => FlowRepository.setState(flow.id, FlowState.Done)
+                         )
+                         .ensuring(state.update(_ - flow.id))
+                   }
+          f     <- task.fork
+          _     <- state.update(_ + (flow.id -> f))
+          _     <- latch.succeed(())
         } yield ()
       }
   }
