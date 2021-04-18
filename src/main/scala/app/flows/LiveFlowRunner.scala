@@ -77,7 +77,7 @@ private final class LiveFlowRunner(
                   .consumeStream(topicForForm(formId), elementType, Some(s"${flowId.value}-${id.value}"))
               )
               .map(_.value)
-              .broadcastDynamic(Int.MaxValue)
+              .broadcastDynamic(256)
               .map { s =>
                 acc + (id -> s)
               }
@@ -183,7 +183,7 @@ private final class LiveFlowRunner(
         case Merge(_, stream1, stream2)        =>
           go(stream1).mergeEither(go(stream2))
         case FormOutput(id, _, _)              =>
-          ZStream.fromEffect(sources(id))
+          ZStream.fromEffect(sources(id)).flatten
       }
       anyStream.asInstanceOf[ZStream[Has[UDFRunner] with Has[StreamsManager], Throwable, stream.elementType.Scala]]
     }

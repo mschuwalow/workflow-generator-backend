@@ -44,10 +44,9 @@ object LiveFlowService {
   val layer: ZLayer[Env, Throwable, Has[FlowService]] = {
     for {
       env     <- ZManaged.environment[Env]
-      state   <- Ref.make(Map.empty[FlowId, Fiber[Throwable, Unit]])
-                   .toManaged {
-                     _.get.flatMap(state => ZIO.foreach(state.values)(_.interrupt))
-                   }
+      state   <- Ref.make(Map.empty[FlowId, Fiber[Throwable, Unit]]).toManaged {
+                   _.get.flatMap(state => ZIO.foreach(state.values)(_.interrupt))
+                 }
       running <- FlowRepository.getAll
                    .map(_.filter(_.state == FlowState.Running))
                    .toManaged_

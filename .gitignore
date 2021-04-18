@@ -21,3 +21,4 @@ website/i18n/en.json
 # nix
 result
 .direnv
+.nix
