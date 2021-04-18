@@ -26,9 +26,6 @@ object StreamsManager {
   def topicForForm(formId: FormId): String =
     s"forms-${formId.value}"
 
-  def topicForFlow(flowId: FlowId, componentId: ComponentId): String =
-    s"flow-${flowId.value}-${componentId.value}"
-
   def createStream(streamName: String): URIO[Has[StreamsManager], Unit] =
     ZIO.accessM(_.get.createStream(streamName))
 

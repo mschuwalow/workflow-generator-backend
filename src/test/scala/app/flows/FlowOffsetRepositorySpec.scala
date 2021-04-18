@@ -18,7 +18,7 @@ object FlowOffsetRepositorySpec extends BaseSpec with DatabaseAspect {
               offset     <- gens.flowOffsetForFlow(flowWithId.id).get
               _          <- FlowOffsetRepository.put(offset)
               r          <- FlowOffsetRepository.get(offset.flowId, offset.componentId)
-            } yield assert(r)(isSome(equalTo(offset)))
+            } yield assert(r)(equalTo(offset))
           }
         }
       },
@@ -32,7 +32,7 @@ object FlowOffsetRepositorySpec extends BaseSpec with DatabaseAspect {
               _          <- FlowOffsetRepository.put(original)
               _          <- FlowOffsetRepository.put(updated)
               r          <- FlowOffsetRepository.get(updated.flowId, updated.componentId)
-            } yield assert(r)(isSome(equalTo(updated)))
+            } yield assert(r)(equalTo(updated))
           }
         }
       }

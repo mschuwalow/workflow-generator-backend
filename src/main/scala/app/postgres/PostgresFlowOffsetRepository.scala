@@ -33,6 +33,7 @@ final class PostgresFlowOffsetRepository(xa: TaskTransactor) extends FlowOffsetR
       .query[FlowOffset]
       .option
       .transact(xa)
+      .map(_.getOrElse(FlowOffset.initial(flowId, componentId)))
       .orDie
   }
 }

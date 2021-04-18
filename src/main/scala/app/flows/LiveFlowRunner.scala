@@ -1,15 +1,19 @@
 package app.flows
 
-import app.flows.StreamsManager.{topicForFlow, topicForForm}
+import app.flows.StreamsManager.topicForForm
 import app.flows.udf.UDFRunner
 import app.forms.FormId
+import app.utils.StreamSyntax
 import zio._
 import zio.logging.{Logger, log}
 import zio.stream._
 
 private final class LiveFlowRunner(
   env: LiveFlowRunner.Env
-) extends FlowRunner {
+) extends FlowRunner
+    with StreamSyntax {
+
+  type SourcesStreamMap = Map[ComponentId, UIO[ZStream[Any, Nothing, Any]]]
 
   def emitFormOutput(formId: FormId, elementType: Type)(element: elementType.Scala): Task[Unit] = {
     val topicName = topicForForm(formId)
@@ -18,120 +22,173 @@ private final class LiveFlowRunner(
 
   def run(flow: typed.FlowWithId): Task[Unit] = {
     val terminal = flow.streams.map(_.source).distinct
-    for {
-      f1 <- ZIO.forkAll(terminal.map(runTerminal(flow.id, _)))
-      f2 <- ZIO.forkAll(flow.streams.map(runSink(flow.id, _)))
-      _  <- f1.join *> f2.join // autointerruption will take care if we get interrupted
-    } yield ()
-  }.provide(env)
-
-  def runSink(flowId: FlowId, sink: typed.Sink) = {
-    import typed.Sink._
-    consumeSinkStream(flowId, sink) { e =>
-      sink match {
-        case Void(id, _) =>
-          log.info(s"${flowId.value}/${id.value}: Discarded element $e")
+    Promise
+      .makeManaged[Nothing, Unit]
+      .flatMap { startConsuming =>
+        val sourcesM = ZManaged.foldLeft(terminal)(Map.empty: SourcesStreamMap) {
+          case (acc, s) =>
+            collectSources(s, flow.id, startConsuming, acc)
+        }
+        for {
+          sources <- sourcesM
+          fibers <- ZManaged.foreach(flow.streams) { s =>
+                      Promise.makeManaged[Nothing, Unit].flatMap { started =>
+                        runStream(flow.id, s, sources, started.succeed(()).unit).toManaged_.fork.map((_, started))
+                      }
+                    }
+          _      <- ZIO.foreach(fibers)(_._2.await).toManaged_
+          _      <- startConsuming.succeed(()).toManaged_
+          _      <- ZIO.foreach(fibers)(_._1.join).toManaged_
+        } yield ()
       }
+      .useNow
+      .provide(env)
+  }
+
+  private def collectSources(
+    stream: typed.Stream,
+    flowId: FlowId,
+    promise: Promise[Nothing, Unit],
+    sources: SourcesStreamMap
+  ): Managed[Nothing, SourcesStreamMap] = {
+    import typed.Stream._
+    def go(stream: typed.Stream, acc: SourcesStreamMap): Managed[Nothing, SourcesStreamMap] =
+      stream match {
+        case InnerJoin(_, stream1, stream2)      =>
+          go(stream1, acc).flatMap(go(stream2, _))
+        case UDF(_, _, stream, _)                =>
+          go(stream, acc)
+        case Numbers(_, _)                       =>
+          ZManaged.succeed(acc)
+        case Never(_, _)                         =>
+          ZManaged.succeed(acc)
+        case LeftJoin(_, stream1, stream2)       =>
+          go(stream1, acc).flatMap(go(stream2, _))
+        case Merge(_, stream1, stream2)          =>
+          go(stream1, acc).flatMap(go(stream2, _))
+        case FormOutput(id, formId, elementType) =>
+          if (acc.contains(id))
+            ZManaged.succeed(acc)
+          else
+            Stream
+              .fromEffect(promise.await)
+              .crossRight(
+                StreamsManager
+                  .consumeStream(topicForForm(formId), elementType, Some(s"${flowId.value}-${id.value}"))
+              )
+              .map(_.value)
+              .broadcastDynamic(256)
+              .map { s =>
+                acc + (id -> s)
+              }
+              .provide(env)
+      }
+
+    go(stream, sources)
+  }
+
+  private def runStream(
+    flowId: FlowId,
+    sink: typed.Sink,
+    sources: SourcesStreamMap,
+    onStart: UIO[Unit]
+  ) =
+    interpretSink(flowId, sink).use { push =>
+      FlowOffsetRepository
+        .get(flowId, sink.id)
+        .flatMap { offset =>
+          interpretStream(sink.source, sources)
+            .onFirstPull(onStart)
+            .zipWithIndex
+            .foldM(offset) {
+              case (offset, (e, i)) =>
+                if (offset.value > i)
+                  ZIO.succeed(offset)
+                else
+                  for {
+                    _         <- push(e)
+                    nextOffset = offset.copy(value = offset.value + 1)
+                    _         <- FlowOffsetRepository.put(nextOffset)
+                  } yield nextOffset
+            }
+        }
+    }
+
+  private def interpretSink(
+    flowId: FlowId,
+    sink: typed.Sink
+  ): Managed[Nothing, sink.source.elementType.Scala => UIO[Unit]] = {
+    import typed.Sink._
+    sink match {
+      case Void(id, _) =>
+        ZManaged.succeed { e =>
+          log
+            .info(s"${flowId.value}/${id.value}: Discarded element $e")
+            .provide(env)
+        }
     }
   }
 
-  def runTerminal(
-    flowId: FlowId,
-    stream: typed.Stream
-  ) =
-    FlowOffsetRepository
-      .get(flowId, stream.id)
-      .map(_.getOrElse(FlowOffset.initial(flowId, stream.id)))
-      .flatMap { offset =>
-        val streamName = topicForFlow(flowId, stream.id)
-
-        interpretStream(flowId, stream, None).zipWithIndex
-          .foldM(offset) {
-            case (offset, (e, i)) =>
-              if (offset.value > i)
-                ZIO.succeed(offset)
-              else
-                for {
-                  _         <- StreamsManager.publishToStream(streamName, stream.elementType)(Chunk.single(e))
-                  nextOffset = offset.copy(value = offset.value + 1)
-                  _         <- FlowOffsetRepository.put(nextOffset)
-                } yield nextOffset
-          }
-          .unit
-      }
-
-  def interpretStream(
-    flowId: FlowId,
+  private def interpretStream(
     stream: typed.Stream,
-    child: Option[ComponentId]
+    sources: SourcesStreamMap
   ): ZStream[Has[UDFRunner] with Has[StreamsManager], Throwable, stream.elementType.Scala] = {
     import typed.Stream._
-    val anyStream: ZStream[Has[UDFRunner] with Has[StreamsManager], Throwable, Any] = stream match {
-      case InnerJoin(cid, stream1, stream2)    =>
-        interpretStream(flowId, stream1, Some(cid))
-          .mergeEither(interpretStream(flowId, stream2, Some(cid)))
-          .mapAccum(
-            (None: Option[stream1.elementType.Scala], None: Option[stream2.elementType.Scala])
-          ) {
-            case ((_, r), Left(l))  =>
-              val result = (Some(l), r)
-              (result, result)
-            case ((l, _), Right(r)) =>
-              val result = (l, Some(r))
-              (result, result)
+    def go(
+      stream: typed.Stream
+    ): ZStream[Has[UDFRunner] with Has[StreamsManager], Throwable, stream.elementType.Scala] = {
+      val anyStream: ZStream[Has[UDFRunner] with Has[StreamsManager], Throwable, Any] = stream match {
+        case InnerJoin(_, stream1, stream2)    =>
+          go(stream1)
+            .mergeEither(go(stream2))
+            .mapAccum(
+              (None: Option[stream1.elementType.Scala], None: Option[stream2.elementType.Scala])
+            ) {
+              case ((_, r), Left(l))  =>
+                val result = (Some(l), r)
+                (result, result)
+              case ((l, _), Right(r)) =>
+                val result = (l, Some(r))
+                (result, result)
+            }
+            .collect {
+              case (Some(l), Some(r)) =>
+                ((l, r))
+            }
+        case UDF(_, code, stream, elementType) =>
+          go(stream).mapM { element =>
+            UDFRunner.runPython(code, stream.elementType, elementType)(element)
           }
-          .collect {
-            case (Some(l), Some(r)) =>
-              ((l, r))
-          }
-      case UDF(cid, code, stream, elementType) =>
-        interpretStream(flowId, stream, Some(cid)).mapM { element =>
-          UDFRunner.runPython(code, stream.elementType, elementType)(element)
-        }
-      case Numbers(_, values)                  =>
-        Stream.fromIterable(values)
-      case Never(_, _)                         =>
-        ZStream.never
-      case LeftJoin(cid, stream1, stream2)     =>
-        interpretStream(flowId, stream1, Some(cid))
-          .mergeEither(interpretStream(flowId, stream2, Some(cid)))
-          .mapAccum(
-            (None: Option[stream1.elementType.Scala], None: Option[stream2.elementType.Scala])
-          ) {
-            case ((_, r), Left(l))  =>
-              val result = (Some(l), r)
-              (result, result)
-            case ((l, _), Right(r)) =>
-              val result = (l, Some(r))
-              (result, result)
-          }
-          .collect {
-            case (Some(l), r) =>
-              ((l, r))
-          }
-      case Merge(cid, stream1, stream2)        =>
-        interpretStream(flowId, stream1, Some(cid)).mergeEither(interpretStream(flowId, stream2, Some(cid)))
-      case FormOutput(id, formId, elementType) =>
-        StreamsManager
-          .consumeStream(
-            topicForForm(formId),
-            elementType,
-            Some(s"${flowId.value}-${id.value}${child.fold("")(cid => s"-${cid.value}")}")
-          )
-          .map(_.value)
+        case Numbers(_, values)                =>
+          Stream.fromIterable(values)
+        case Never(_, _)                       =>
+          ZStream.never
+        case LeftJoin(_, stream1, stream2)     =>
+          go(stream1)
+            .mergeEither(go(stream2))
+            .mapAccum(
+              (None: Option[stream1.elementType.Scala], None: Option[stream2.elementType.Scala])
+            ) {
+              case ((_, r), Left(l))  =>
+                val result = (Some(l), r)
+                (result, result)
+              case ((l, _), Right(r)) =>
+                val result = (l, Some(r))
+                (result, result)
+            }
+            .collect {
+              case (Some(l), r) =>
+                ((l, r))
+            }
+        case Merge(_, stream1, stream2)        =>
+          go(stream1).mergeEither(go(stream2))
+        case FormOutput(id, _, _)              =>
+          ZStream.fromEffect(sources(id)).flatten
+      }
+      anyStream.asInstanceOf[ZStream[Has[UDFRunner] with Has[StreamsManager], Throwable, stream.elementType.Scala]]
     }
-    anyStream.asInstanceOf[Stream[Throwable, stream.elementType.Scala]]
+    go(stream)
   }
-
-  def consumeSinkStream[R, E, A](flowId: FlowId, sink: typed.Sink)(f: sink.source.elementType.Scala => ZIO[R, E, A]) = {
-    val source: sink.source.type = sink.source
-    StreamsManager
-      .consumeStream(topicForFlow(flowId, source.id), source.elementType, Some(sink.id.value))
-      .tap(e => f(e.value))
-      .tap(_.commit)
-      .runDrain
-  }
-
 }
 
 object LiveFlowRunner {
