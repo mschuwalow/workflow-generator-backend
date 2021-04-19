@@ -20,7 +20,7 @@ object Dependencies {
     val sttp                   = "2.2.9"
     val tsec                   = "0.2.1"
     val zio                    = "1.0.5"
-    val zioInteropCats         = "2.3.1.0"
+    val zioInteropCats         = "2.4.0.0"
     val zioKafka               = "0.14.0"
     val zioLogging             = "0.5.6"
     val zioPrelude             = "1.0.0-RC1"
