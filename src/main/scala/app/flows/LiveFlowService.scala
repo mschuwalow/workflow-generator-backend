@@ -10,7 +10,7 @@ private final class LiveFlowService(
 ) extends FlowService {
   import LiveFlowService.internal._
 
-  def add(graph: unresolved.Graph) = {
+  def add(graph: unresolved.CreateFlowRequest) = {
     for {
       flow <- check(graph)
       flow <- FlowRepository.save(flow)
@@ -18,7 +18,7 @@ private final class LiveFlowService(
     } yield flow
   }.provide(env)
 
-  def check(graph: unresolved.Graph) = {
+  def check(graph: unresolved.CreateFlowRequest) = {
     for {
       graph <- ZIO.fromEither(compiler.syntactic.checkCycles(graph))
       graph <- compiler.resolver.resolve(graph)

@@ -22,14 +22,13 @@ final class AuthEndpoint[R <: AuthEndpoint.Env] extends Endpoint[R] {
       } yield response
   }
 
-  val routes: HttpRoutes[RIO[R, *]] = HttpRoutes.of {
-    case req @ POST -> Root / "login" =>
-      for {
-        body          <- req.as[LoginRequest]
-        token         <- JWTAuth.auth(body.username, body.password)
-        authenticator <- JWTAuth.getTSecAuthenticator[R]
-        response       = authenticator.embed(Response(Status.Ok), token)
-      } yield response
+  val routes: HttpRoutes[RIO[R, *]] = HttpRoutes.of { case req @ POST -> Root / "login" =>
+    for {
+      body          <- req.as[LoginRequest]
+      token         <- JWTAuth.auth(body.username, body.password)
+      authenticator <- JWTAuth.getTSecAuthenticator[R]
+      response       = authenticator.embed(Response(Status.Ok), token)
+    } yield response
   }
 }
 

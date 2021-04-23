@@ -1,11 +1,10 @@
 package app.api
 
-import org.http4s.HttpRoutes
+import cats.effect.Blocker
+import org.http4s.{HttpRoutes, StaticFile}
 import zio._
-import org.http4s.StaticFile
 import zio.blocking.Blocking
 import zio.interop.catz._
-import cats.effect.Blocker
 
 final class SwaggerEndpoint[R <: SwaggerEndpoint.Env] extends Endpoint[R] {
   import dsl._

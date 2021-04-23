@@ -14,8 +14,8 @@ import java.time.LocalDate
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 
-final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env](mountPath: String) extends KorolevEndpoint[R] {
-  import GeneratedFormsEndpoint.internal._
+final class RenderedFormsEndpoint[R <: RenderedFormsEndpoint.Env](mountPath: String) extends KorolevEndpoint[R] {
+  import RenderedFormsEndpoint.internal._
 
   def makeService(implicit effect: Effect[RTask], ec: ExecutionContext): KorolevService[RTask] = {
     val ctx = Context[RTask, State, Any]
@@ -128,7 +128,7 @@ final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env](mountPath: S
   }
 }
 
-object GeneratedFormsEndpoint {
+object RenderedFormsEndpoint {
   type Env = Has[FormsRepository] with Has[FlowRunner] with Has[Permissions] with KorolevEndpoint.Env
 
   private object internal {
@@ -136,7 +136,7 @@ object GeneratedFormsEndpoint {
 
     object State {
       final case class Working(id: FormId, form: Form, userInfo: UserInfo) extends State
-      case object Submitted                                                      extends State
+      case object Submitted                                                extends State
     }
   }
 }

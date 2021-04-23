@@ -11,7 +11,7 @@ import zio.interop.catz._
 object Router {
 
   type Env = FlowEndpoint.Env
-    with GeneratedFormsEndpoint.Env
+    with RenderedFormsEndpoint.Env
     with FormsEndpoint.Env
     with SwaggerEndpoint.Env
     with Has[JWTAuth]
@@ -20,7 +20,7 @@ object Router {
     val healthEndpoint         = new HealthEndpoint[R]()
     val flowEndpoint           = new FlowEndpoint[R]()
     val formsEndpoint          = new FormsEndpoint[R]()
-    val generatedFormsEndpoint = new GeneratedFormsEndpoint[R]("/generated")
+    val renderedFormsEndpoint = new RenderedFormsEndpoint[R]("/rendered")
     val authEndpoint           = new AuthEndpoint[R]()
     val swaggerEndpoint        = new SwaggerEndpoint[R]()
 
@@ -34,13 +34,13 @@ object Router {
       authRoutes            = authEndpoint.authedRoutes
       flowRoutes            = flowEndpoint.authedRoutes
       formsRoutes           = formsEndpoint.authedRoutes
-      generatedFormsRoutes <- generatedFormsEndpoint.authedRoutes
+      renderedFormsRoutes  <- renderedFormsEndpoint.authedRoutes
     } yield AuthMiddleware(authenticator)(
       TSecRouter(
         "/auth"      -> authRoutes,
-        "/workflows" -> flowRoutes,
+        "/flows"     -> flowRoutes,
         "/forms"     -> formsRoutes,
-        "/generated" -> generatedFormsRoutes
+        "/rendered"  -> renderedFormsRoutes
       )
     )
 

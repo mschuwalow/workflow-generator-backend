@@ -1,7 +1,7 @@
 package app.postgres
 
 import app.Error
-import app.forms.{CreateFormRequest, FormId, Form, FormsRepository}
+import app.forms.{CreateFormRequest, Form, FormId, FormsRepository}
 import app.postgres.{Database, MetaInstances}
 import doobie.implicits._
 import doobie.postgres.implicits._

@@ -14,7 +14,7 @@ final class FlowEndpoint[R <: FlowEndpoint.Env] extends Endpoint[R] {
     case req @ POST -> Root asAuthed user =>
       for {
         _        <- Permissions.authorize(user, Scope.Admin)
-        body     <- req.request.as[unresolved.Graph]
+        body     <- req.request.as[unresolved.CreateFlowRequest]
         result   <- FlowService.add(body)
         response <- Created(result)
       } yield response
