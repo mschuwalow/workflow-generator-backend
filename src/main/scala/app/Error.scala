@@ -14,7 +14,6 @@ sealed abstract class Error extends NoStackTrace {
 object Error {
   final case class GraphValidationFailed(reason: String) extends Error {
     def httpResponse[R](dsl: Http4sDsl[RIO[R, *]]) = {
-      import dsl._
       dsl.BadRequest(s"checking the graph failed: $reason")
     }
   }
@@ -30,7 +29,6 @@ object Error {
 
   case object NotFound extends Error {
     def httpResponse[R](dsl: Http4sDsl[RIO[R, *]]) = {
-      import dsl._
       dsl.NotFound()
     }
   }
