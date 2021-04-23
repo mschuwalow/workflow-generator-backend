@@ -7,8 +7,7 @@ import zio.interop.catz._
 final class HealthEndpoint[R] extends Endpoint[R] {
   import dsl._
 
-  val routes: HttpRoutes[RIO[R, *]] = HttpRoutes.of {
-    case GET -> Root =>
-      Ok()
+  val routes: HttpRoutes[RIO[R, *]] = HttpRoutes.of { case GET -> Root =>
+    Ok()
   }
 }
