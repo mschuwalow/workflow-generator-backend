@@ -38,10 +38,9 @@ abstract class KorolevEndpoint[R <: KorolevEndpoint.Env] extends Endpoint[R] {
     ZIO.fail(NotFoundMarker)
 
   protected def authedStateLoader[S](f: (String, Head, UserInfo) => RTask[S]): StateLoader[RTask, S] =
-    StateLoader {
-      case (deviceId, request) =>
-        val userInfo = parseJson(request.header(UserInfoHeader).get).flatMap(_.as[UserInfo]).toOption.get
-        f(deviceId, request, userInfo)
+    StateLoader { case (deviceId, request) =>
+      val userInfo = parseJson(request.header(UserInfoHeader).get).flatMap(_.as[UserInfo]).toOption.get
+      f(deviceId, request, userInfo)
     }
 
   final def authedRoutes =
@@ -69,12 +68,12 @@ abstract class KorolevEndpoint[R <: KorolevEndpoint.Env] extends Endpoint[R] {
             route    <- WebSocketBuilder[RTask].build(toClient, fromClient)
           } yield route
 
-        case req @ GET -> _ asAuthed _                                  =>
+        case req @ GET -> _ asAuthed _ =>
           val body           = KStream.empty[RTask, Bytes]
           val korolevRequest = mkKorolevRequest(req, body)
           handleHttpResponse(korolevServer, korolevRequest)
 
-        case req                                                        =>
+        case req =>
           for {
             stream        <- req.request.body.chunks.map(ch => Bytes.wrap(ch.toByteVector)).toKorolev()
             korolevRequest = mkKorolevRequest(req, stream)
@@ -88,19 +87,18 @@ abstract class KorolevEndpoint[R <: KorolevEndpoint.Env] extends Endpoint[R] {
     korolevServer: KorolevService[F],
     korolevRequest: KorolevHttpRequest[F]
   ) =
-    korolevServer.http(korolevRequest).map {
-      case KorolevResponse(status, stream, responseHeaders, _) =>
-        val headers = getContentTypeAndResponseHeaders(responseHeaders)
-        val body    = stream.toFs2.flatMap { bytes =>
-          val bv    = bytes.as[ByteVector]
-          val chunk = Chunk.byteVector(bv)
-          FS2Stream.chunk(chunk)
-        }
-        Response[F](
-          status = Status(status.code),
-          headers = Headers.of(headers: _*),
-          body = body
-        )
+    korolevServer.http(korolevRequest).map { case KorolevResponse(status, stream, responseHeaders, _) =>
+      val headers = getContentTypeAndResponseHeaders(responseHeaders)
+      val body    = stream.toFs2.flatMap { bytes =>
+        val bv    = bytes.as[ByteVector]
+        val chunk = Chunk.byteVector(bv)
+        FS2Stream.chunk(chunk)
+      }
+      Response[F](
+        status = Status(status.code),
+        headers = Headers.of(headers: _*),
+        body = body
+      )
     }
 
   private[this] def getContentTypeAndResponseHeaders(responseHeaders: Seq[(String, String)]) =
@@ -169,8 +167,8 @@ object KorolevEndpoint {
     ]] =
       Kleisli { req =>
         OptionT {
-          k.run(req).value.catchSome {
-            case NotFoundMarker => ZIO.succeed(None)
+          k.run(req).value.catchSome { case NotFoundMarker =>
+            ZIO.succeed(None)
           }
         }
       }

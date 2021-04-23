@@ -11,27 +11,27 @@ object FlowOffsetRepositorySpec extends BaseSpec with DatabaseAspect {
   def baseSpec =
     suite("Spec")(
       testM("can save and get offsets") {
-        checkM(gens.typed.flow) { flow =>
+        checkM(gens.typed.createFlowRequest) { request =>
           db {
             for {
-              flowWithId <- FlowRepository.save(flow)
-              offset     <- gens.flowOffsetForFlow(flowWithId.id).get
-              _          <- FlowOffsetRepository.put(offset)
-              r          <- FlowOffsetRepository.get(offset.flowId, offset.componentId)
+              flow   <- FlowRepository.create(request)
+              offset <- gens.flowOffsetForFlow(flow.id).get
+              _      <- FlowOffsetRepository.put(offset)
+              r      <- FlowOffsetRepository.get(offset.flowId, offset.componentId)
             } yield assert(r)(equalTo(offset))
           }
         }
       },
       testM("can override offsets") {
-        checkM(gens.typed.flow) { flow =>
+        checkM(gens.typed.createFlowRequest) { request =>
           db {
             for {
-              flowWithId <- FlowRepository.save(flow)
-              original   <- gens.flowOffsetForFlow(flowWithId.id).get
-              updated     = original.copy(value = original.value + 1)
-              _          <- FlowOffsetRepository.put(original)
-              _          <- FlowOffsetRepository.put(updated)
-              r          <- FlowOffsetRepository.get(updated.flowId, updated.componentId)
+              flow     <- FlowRepository.create(request)
+              original <- gens.flowOffsetForFlow(flow.id).get
+              updated   = original.copy(value = original.value + 1)
+              _        <- FlowOffsetRepository.put(original)
+              _        <- FlowOffsetRepository.put(updated)
+              r        <- FlowOffsetRepository.get(updated.flowId, updated.componentId)
             } yield assert(r)(equalTo(updated))
           }
         }

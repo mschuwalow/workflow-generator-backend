@@ -98,20 +98,18 @@ object Type {
     val deriveEncoder =
       Encoder.instance { a =>
         Json.obj(
-          fields.map {
-            case (field, fieldType) =>
-              implicit val encoder = fieldType.deriveEncoder
-              (field, a(field).asInstanceOf[fieldType.Scala].asJson)
+          fields.map { case (field, fieldType) =>
+            implicit val encoder = fieldType.deriveEncoder
+            (field, a(field).asInstanceOf[fieldType.Scala].asJson)
           }: _*
         )
       }
 
     val deriveDecoder =
       Decoder.instance { cursor =>
-        fields.traverse {
-          case (field, fieldType) =>
-            implicit val decoder = fieldType.deriveDecoder
-            cursor.get[fieldType.Scala](field).map((field, _))
+        fields.traverse { case (field, fieldType) =>
+          implicit val decoder = fieldType.deriveDecoder
+          cursor.get[fieldType.Scala](field).map((field, _))
         }.map(_.toMap)
       }
   }
@@ -201,35 +199,30 @@ object Type {
       TNumber
     }
 
-    lazy val tArray: PackratParser[TArray] = "[" ~ fullType ~ "]" ^^ {
-      case (_ ~ t ~ _) =>
-        TArray(t)
+    lazy val tArray: PackratParser[TArray] = "[" ~ fullType ~ "]" ^^ { case (_ ~ t ~ _) =>
+      TArray(t)
     }
 
     lazy val tObject: PackratParser[TObject] = "{" ~ repsep(
       stringLit ~ ":" ~ fullType,
       ","
-    ) ~ "}" ^^ {
-      case (_ ~ rawFields ~ _) =>
-        val fields = rawFields.map { case (name ~ _ ~ t) => (name, t) }
-        TObject(fields)
+    ) ~ "}" ^^ { case (_ ~ rawFields ~ _) =>
+      val fields = rawFields.map { case (name ~ _ ~ t) => (name, t) }
+      TObject(fields)
     }
 
-    lazy val tOption: PackratParser[TOption] = fullType ~ "?" ^^ {
-      case (t ~ _) =>
-        TOption(t)
+    lazy val tOption: PackratParser[TOption] = fullType ~ "?" ^^ { case (t ~ _) =>
+      TOption(t)
     }
 
     lazy val tTuple: PackratParser[TTuple] =
-      "(" ~ fullType ~ "," ~ fullType ~ ")" ^^ {
-        case (_ ~ t1 ~ _ ~ t2 ~ _) =>
-          TTuple(t1, t2)
+      "(" ~ fullType ~ "," ~ fullType ~ ")" ^^ { case (_ ~ t1 ~ _ ~ t2 ~ _) =>
+        TTuple(t1, t2)
       }
 
     lazy val tEither: PackratParser[TEither] =
-      "(" ~ fullType ~ "|" ~ fullType ~ ")" ^^ {
-        case (_ ~ t1 ~ _ ~ t2 ~ _) =>
-          TEither(t1, t2)
+      "(" ~ fullType ~ "|" ~ fullType ~ ")" ^^ { case (_ ~ t1 ~ _ ~ t2 ~ _) =>
+        TEither(t1, t2)
       }
 
     lazy val fullType: PackratParser[Type] =
