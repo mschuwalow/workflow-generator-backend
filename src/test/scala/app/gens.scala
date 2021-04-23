@@ -15,15 +15,11 @@ object gens {
 
       val admin = Gen.const(Admin)
 
-      val flows = Gen.const(Flows)
-
-      val forms = Gen.const(Forms)
-
       val users = Gen.setOf(Gen.anyString).map(ForUsers(_))
 
       val perms = Gen.setOf(Gen.anyString).map(ForGroups(_))
 
-      Gen.oneOf(admin, flows, forms, users, perms)
+      Gen.oneOf(admin, users, perms)
 
     }
 
@@ -93,17 +89,17 @@ object gens {
         Gen.oneOf(void)
       }
 
-      val flow: Gen[Random with Sized, Flow] =
+      val createFlowRequest: Gen[Random with Sized, CreateFlowRequest] =
         for {
           streams <- Gen.listOfBounded(0, 2)(sink)
-        } yield Flow(streams)
+        } yield CreateFlowRequest(streams)
 
-      val flowWithId: Gen[Random with Sized, FlowWithId] =
+      val flow: Gen[Random with Sized, Flow] =
         for {
-          id    <- flowId
-          flow  <- flow
-          state <- flowState
-        } yield FlowWithId(id, flow.streams, state)
+          id      <- flowId
+          request <- createFlowRequest
+          state   <- flowState
+        } yield Flow(id, request.streams, state)
     }
 
     def componentId: Gen[Random with Sized, ComponentId] =
@@ -130,17 +126,15 @@ object gens {
     def primitiveType: Gen[Random, (String, Type)] = oneOf(tBool, tString, tNumber, tDate)
 
     def tArray: Gen[Random with Sized, (String, Type)] =
-      anyType.map {
-        case (s, t) =>
-          (s"[$s]", Type.TArray(t))
+      anyType.map { case (s, t) =>
+        (s"[$s]", Type.TArray(t))
       }
 
     def tObject: Gen[Random with Sized, (String, Type)] =
       Gen.listOfBounded(0, 3)(anyType).map { xs =>
-        val names  = xs.zipWithIndex.map {
-          case ((typeString, t), i) =>
-            val field = s"field_${i}"
-            (s""""$field": $typeString""", field, t)
+        val names  = xs.zipWithIndex.map { case ((typeString, t), i) =>
+          val field = s"field_${i}"
+          (s""""$field": $typeString""", field, t)
         }
         val string = names.map(_._1).mkString("{", ", ", "}")
         val t      = Type.TObject(names.map { case (_, f, t) => (f, t) })
@@ -160,9 +154,8 @@ object gens {
       } yield (s"($s1 | $s2)", Type.TEither(t1, t2))
 
     def tOption: Gen[Random with Sized, (String, Type)] =
-      anyType.map {
-        case (s, t) =>
-          (s"$s?", Type.TOption(t))
+      anyType.map { case (s, t) =>
+        (s"$s?", Type.TOption(t))
       }
 
     def anyType: Gen[Random with Sized, (String, Type)] =
@@ -214,11 +207,11 @@ object gens {
       Gen.oneOf(textField)
     }
 
-    val form: Gen[Random with Sized, Form] =
+    val createFormRequest: Gen[Random with Sized, CreateFormRequest] =
       for {
         elements      <- Gen.listOf(formElement)
         scope         <- Gen.option(auth.scope)
         uniqueElements = UniqueFormElements.make(elements.distinctBy(_.id)).toOption.get
-      } yield Form(uniqueElements, scope)
+      } yield CreateFormRequest(uniqueElements, scope)
   }
 }

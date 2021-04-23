@@ -45,9 +45,8 @@ object Check {
 
   final case class FlatMap[S, E, A, B](self: Check[S, E, A], cont: A => Check[S, E, B]) extends Check[S, E, B] {
     def run(state: S) =
-      self.run(state).flatMap {
-        case (s, a) =>
-          cont(a).run(s)
+      self.run(state).flatMap { case (s, a) =>
+        cont(a).run(s)
       }
   }
 
