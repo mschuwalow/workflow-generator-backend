@@ -15,15 +15,11 @@ object gens {
 
       val admin = Gen.const(Admin)
 
-      val flows = Gen.const(Flows)
-
-      val forms = Gen.const(Forms)
-
       val users = Gen.setOf(Gen.anyString).map(ForUsers(_))
 
       val perms = Gen.setOf(Gen.anyString).map(ForGroups(_))
 
-      Gen.oneOf(admin, flows, forms, users, perms)
+      Gen.oneOf(admin, users, perms)
 
     }
 
@@ -211,11 +207,11 @@ object gens {
       Gen.oneOf(textField)
     }
 
-    val form: Gen[Random with Sized, Form] =
+    val form: Gen[Random with Sized, CreateFormRequest] =
       for {
         elements      <- Gen.listOf(formElement)
         scope         <- Gen.option(auth.scope)
         uniqueElements = UniqueFormElements.make(elements.distinctBy(_.id)).toOption.get
-      } yield Form(uniqueElements, scope)
+      } yield CreateFormRequest(uniqueElements, scope)
   }
 }

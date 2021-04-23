@@ -8,7 +8,7 @@ private final class LiveFormsService(
   env: LiveFormsService.Env
 ) extends FormsService {
 
-  def create(form: Form): Task[FormWithId] = {
+  def create(form: CreateFormRequest): Task[Form] = {
     for {
       withId <- FormsRepository.store(form)
       _      <- StreamsManager.createStream(topicForForm(withId.id))

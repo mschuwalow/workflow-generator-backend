@@ -12,7 +12,8 @@ final class SwaggerEndpoint[R <: SwaggerEndpoint.Env] extends Endpoint[R] {
 
   val routes: HttpRoutes[RIO[R, *]] = HttpRoutes.of {
     case req @ GET -> Root / path if SwaggerEndpoint.fileNames.contains(path) =>
-      Blocker[RIO[R, *]].use { blocker =>
+      ZIO.service[Blocking.Service].flatMap { blocking =>
+        val blocker = Blocker.liftExecutionContext(blocking.blockingExecutor.asEC)
         StaticFile
           .fromResource("/api.yaml", blocker, Some(req))
           .getOrElseF(NotFound())

@@ -31,7 +31,7 @@ final class GeneratedFormsEndpoint[R <: GeneratedFormsEndpoint.Env](mountPath: S
             for {
               formId     <- Task(FormId(UUID.fromString(id))).orElse(notFound)
               formWithId <- FormsRepository.get(formId).flatMap {
-                              _.fold[Task[FormWithId]](notFound)(ZIO.succeed(_))
+                              _.fold[Task[Form]](notFound)(ZIO.succeed(_))
                             }
               _          <- formWithId.perms.fold[RTask[Unit]](ZIO.unit)(Permissions.authorize(userInfo, _))
             } yield State.Working(formId, formWithId, userInfo)
@@ -135,7 +135,7 @@ object GeneratedFormsEndpoint {
     sealed trait State
 
     object State {
-      final case class Working(id: FormId, form: FormWithId, userInfo: UserInfo) extends State
+      final case class Working(id: FormId, form: Form, userInfo: UserInfo) extends State
       case object Submitted                                                      extends State
     }
   }

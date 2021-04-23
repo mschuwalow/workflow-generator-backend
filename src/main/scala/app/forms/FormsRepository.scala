@@ -3,19 +3,19 @@ package app.forms
 import zio._
 
 trait FormsRepository {
-  def get(id: FormId): Task[Option[FormWithId]]
-  def getById(id: FormId): Task[FormWithId]
-  def store(form: Form): Task[FormWithId]
+  def get(id: FormId): Task[Option[Form]]
+  def getById(id: FormId): Task[Form]
+  def store(form: CreateFormRequest): Task[Form]
 }
 
 object FormsRepository {
 
-  def get(id: FormId): RIO[Has[FormsRepository], Option[FormWithId]] =
+  def get(id: FormId): RIO[Has[FormsRepository], Option[Form]] =
     ZIO.accessM(_.get.get(id))
 
-  def getById(id: FormId): RIO[Has[FormsRepository], FormWithId] =
+  def getById(id: FormId): RIO[Has[FormsRepository], Form] =
     ZIO.accessM(_.get.getById(id))
 
-  def store(form: Form): RIO[Has[FormsRepository], FormWithId] =
+  def store(form: CreateFormRequest): RIO[Has[FormsRepository], Form] =
     ZIO.accessM(_.get.store(form))
 }

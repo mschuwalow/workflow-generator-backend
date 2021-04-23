@@ -13,7 +13,7 @@ final class FlowEndpoint[R <: FlowEndpoint.Env] extends Endpoint[R] {
   val authedRoutes = TSecAuthService[UserInfo, AugmentedJWT[HMACSHA256, UserInfo], RTask] {
     case req @ POST -> Root asAuthed user =>
       for {
-        _        <- Permissions.authorize(user, Scope.Flows)
+        _        <- Permissions.authorize(user, Scope.Admin)
         body     <- req.request.as[unresolved.Graph]
         result   <- FlowService.add(body)
         response <- Created(result)
@@ -21,7 +21,7 @@ final class FlowEndpoint[R <: FlowEndpoint.Env] extends Endpoint[R] {
 
     case GET -> Root / UUIDVar(id) asAuthed user =>
       for {
-        _        <- Permissions.authorize(user, Scope.Flows)
+        _        <- Permissions.authorize(user, Scope.Admin)
         flow     <- FlowRepository.getById(FlowId(id))
         response <- Ok(flow)
       } yield response
