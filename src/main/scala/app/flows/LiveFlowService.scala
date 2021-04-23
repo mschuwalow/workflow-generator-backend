@@ -10,11 +10,11 @@ private final class LiveFlowService(
 ) extends FlowService {
   import LiveFlowService.internal._
 
-  def add(graph: unresolved.CreateFlowRequest) = {
+  def add(request: unresolved.CreateFlowRequest) = {
     for {
-      flow <- check(graph)
-      flow <- FlowRepository.save(flow)
-      _    <- run(state, flow)
+      request <- check(request)
+      flow    <- FlowRepository.create(request)
+      _       <- run(state, flow)
     } yield flow
   }.provide(env)
 
@@ -57,7 +57,7 @@ object LiveFlowService {
   private object internal {
     type State = Ref[Map[FlowId, Fiber[Throwable, Unit]]]
 
-    def run(state: State, flow: typed.FlowWithId) =
+    def run(state: State, flow: typed.Flow) =
       ZIO.uninterruptibleMask { restore =>
         for {
           latch <- Promise.make[Nothing, Unit]

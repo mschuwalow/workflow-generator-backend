@@ -10,7 +10,7 @@ import cats.syntax.traverse._
 
 object semantic {
 
-  def typecheck(graph: resolved.CreateFlowRequest): Either[Error.GraphValidationFailed, typed.Flow] = {
+  def typecheck(graph: resolved.CreateFlowRequest): Either[Error.GraphValidationFailed, typed.CreateFlowRequest] = {
     // all starting points to traverse the graph
     val sinks = graph.components.collect {
       case (id, component) if component.isSink => id
@@ -27,7 +27,7 @@ object semantic {
     val result = (sinks.traverse(typeCheckSink(_)) <* checkResult)
       .run(Context.initial(graph.components))
       .map { case (_, sinks) =>
-        typed.Flow(sinks)
+        typed.CreateFlowRequest(sinks)
       }
 
     result.left.map(Error.GraphValidationFailed(_))

@@ -25,7 +25,7 @@ private final class PostgresFormsRepository(xa: TaskTransactor) extends FormsRep
       case None       => ZIO.fail(Error.NotFound)
     }
 
-  def store(form: CreateFormRequest): Task[Form] = {
+  def create(form: CreateFormRequest): Task[Form] = {
     val query =
       sql"""INSERT INTO forms (elements, perms)
            |VALUES (${form.elements}, ${form.perms})""".stripMargin

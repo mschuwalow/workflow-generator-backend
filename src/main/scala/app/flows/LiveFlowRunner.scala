@@ -20,7 +20,7 @@ private final class LiveFlowRunner(
     StreamsManager.publishToStream(topicName, elementType)(Chunk.single(element))
   }.provide(env)
 
-  def run(flow: typed.FlowWithId): Task[Unit] = {
+  def run(flow: typed.Flow): Task[Unit] = {
     val terminal = flow.streams.map(_.source).distinct
     Promise
       .makeManaged[Nothing, Unit]

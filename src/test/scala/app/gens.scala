@@ -89,17 +89,17 @@ object gens {
         Gen.oneOf(void)
       }
 
-      val flow: Gen[Random with Sized, Flow] =
+      val createFlowRequest: Gen[Random with Sized, CreateFlowRequest] =
         for {
           streams <- Gen.listOfBounded(0, 2)(sink)
-        } yield Flow(streams)
+        } yield CreateFlowRequest(streams)
 
-      val flowWithId: Gen[Random with Sized, FlowWithId] =
+      val flow: Gen[Random with Sized, Flow] =
         for {
-          id    <- flowId
-          flow  <- flow
-          state <- flowState
-        } yield FlowWithId(id, flow.streams, state)
+          id      <- flowId
+          request <- createFlowRequest
+          state   <- flowState
+        } yield Flow(id, request.streams, state)
     }
 
     def componentId: Gen[Random with Sized, ComponentId] =
@@ -207,7 +207,7 @@ object gens {
       Gen.oneOf(textField)
     }
 
-    val form: Gen[Random with Sized, CreateFormRequest] =
+    val createFormRequest: Gen[Random with Sized, CreateFormRequest] =
       for {
         elements      <- Gen.listOf(formElement)
         scope         <- Gen.option(auth.scope)

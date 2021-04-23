@@ -17,12 +17,12 @@ object Router {
     with Has[JWTAuth]
 
   def makeApp[R <: Env]: URIO[R, HttpApp[RIO[R, *]]] = {
-    val healthEndpoint         = new HealthEndpoint[R]()
-    val flowEndpoint           = new FlowEndpoint[R]()
-    val formsEndpoint          = new FormsEndpoint[R]()
+    val healthEndpoint        = new HealthEndpoint[R]()
+    val flowEndpoint          = new FlowEndpoint[R]()
+    val formsEndpoint         = new FormsEndpoint[R]()
     val renderedFormsEndpoint = new RenderedFormsEndpoint[R]("/rendered")
-    val authEndpoint           = new AuthEndpoint[R]()
-    val swaggerEndpoint        = new SwaggerEndpoint[R]()
+    val authEndpoint          = new AuthEndpoint[R]()
+    val swaggerEndpoint       = new SwaggerEndpoint[R]()
 
     val normalRoutes = Http4sRouter(
       "/health" -> healthEndpoint.routes,
@@ -30,17 +30,17 @@ object Router {
     )
 
     val makeSecuredRoutes = for {
-      authenticator        <- JWTAuth.getTSecAuthenticator[R]
-      authRoutes            = authEndpoint.authedRoutes
-      flowRoutes            = flowEndpoint.authedRoutes
-      formsRoutes           = formsEndpoint.authedRoutes
-      renderedFormsRoutes  <- renderedFormsEndpoint.authedRoutes
+      authenticator       <- JWTAuth.getTSecAuthenticator[R]
+      authRoutes           = authEndpoint.authedRoutes
+      flowRoutes           = flowEndpoint.authedRoutes
+      formsRoutes          = formsEndpoint.authedRoutes
+      renderedFormsRoutes <- renderedFormsEndpoint.authedRoutes
     } yield AuthMiddleware(authenticator)(
       TSecRouter(
-        "/auth"      -> authRoutes,
-        "/flows"     -> flowRoutes,
-        "/forms"     -> formsRoutes,
-        "/rendered"  -> renderedFormsRoutes
+        "/auth"     -> authRoutes,
+        "/flows"    -> flowRoutes,
+        "/forms"    -> formsRoutes,
+        "/rendered" -> renderedFormsRoutes
       )
     )
 

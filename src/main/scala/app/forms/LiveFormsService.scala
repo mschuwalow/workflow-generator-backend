@@ -10,7 +10,7 @@ private final class LiveFormsService(
 
   def create(form: CreateFormRequest): Task[Form] = {
     for {
-      withId <- FormsRepository.store(form)
+      withId <- FormsRepository.create(form)
       _      <- StreamsManager.createStream(topicForForm(withId.id))
     } yield withId
   }.provide(env)

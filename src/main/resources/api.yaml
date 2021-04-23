@@ -124,7 +124,9 @@ paths:
         required: true
         schema:
           $ref: "#/components/schemas/FormId"
-      responses: {}
+      responses:
+        "200":
+          description: The rendered form
 components:
   securitySchemes:
     BearerAuth:
