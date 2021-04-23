@@ -46,12 +46,11 @@ object PythonUDFRunner {
             )
             .mapM { runner =>
               log.info("Started python worker.") *>
-                requests.take.flatMap {
-                  case internal.Request(function, input, cb) =>
-                    log.debug(s"running function: $function")
-                    ZIO.effect {
-                      runner.run_udf(function, input)
-                    }.to(cb)
+                requests.take.flatMap { case internal.Request(function, input, cb) =>
+                  log.debug(s"running function: $function")
+                  ZIO.effect {
+                    runner.run_udf(function, input)
+                  }.to(cb)
                 }.forever
             }
           ZManaged.collectAllPar_(List.fill(workers)(startWorker.fork)).as {

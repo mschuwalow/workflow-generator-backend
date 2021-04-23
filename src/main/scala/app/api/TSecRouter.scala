@@ -14,19 +14,18 @@ object TSecRouter {
   def define[F[_]: Monad, V, A](
     mappings: (String, Kleisli[OptionT[F, *], SecuredRequest[F, V, A], Response[F]])*
   )(default: SecuredRoutes[F, V, A]): SecuredRoutes[F, V, A] =
-    mappings.sortBy(_._1.length).foldLeft(default) {
-      case (acc, (prefix, routes)) =>
-        val prefixSegments = toSegments(prefix)
-        if (prefixSegments.isEmpty) routes <+> acc
-        else
-          Kleisli { req =>
-            (
-              if (toSegments(req.request.pathInfo).startsWith(prefixSegments))
-                routes.local(translate(prefix)) <+> acc
-              else
-                acc
-            )(req)
-          }
+    mappings.sortBy(_._1.length).foldLeft(default) { case (acc, (prefix, routes)) =>
+      val prefixSegments = toSegments(prefix)
+      if (prefixSegments.isEmpty) routes <+> acc
+      else
+        Kleisli { req =>
+          (
+            if (toSegments(req.request.pathInfo).startsWith(prefixSegments))
+              routes.local(translate(prefix)) <+> acc
+            else
+              acc
+          )(req)
+        }
     }
 
   private def translate[F[_]: Functor, V, A](prefix: String)(req: SecuredRequest[F, V, A]): SecuredRequest[F, V, A] = {

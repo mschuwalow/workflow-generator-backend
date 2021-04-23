@@ -10,7 +10,9 @@ import cats.syntax.traverse._
 
 object syntactic {
 
-  def checkCycles(graph: unresolved.Graph): Either[Error.GraphValidationFailed, unresolved.Graph] = {
+  def checkCycles(
+    graph: unresolved.CreateFlowRequest
+  ): Either[Error.GraphValidationFailed, unresolved.CreateFlowRequest] = {
     // all starting points to traverse the graph
     val sinks = graph.components.collect {
       case (id, component) if component.isSink =>
