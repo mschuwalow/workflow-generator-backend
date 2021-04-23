@@ -31,13 +31,11 @@ object Router {
 
     val makeSecuredRoutes = for {
       authenticator       <- JWTAuth.getTSecAuthenticator[R]
-      authRoutes           = authEndpoint.authedRoutes
       flowRoutes           = flowEndpoint.authedRoutes
       formsRoutes          = formsEndpoint.authedRoutes
       renderedFormsRoutes <- renderedFormsEndpoint.authedRoutes
     } yield AuthMiddleware(authenticator)(
       TSecRouter(
-        "/auth"     -> authRoutes,
         "/flows"    -> flowRoutes,
         "/forms"    -> formsRoutes,
         "/rendered" -> renderedFormsRoutes

@@ -1,26 +1,15 @@
 package app.api
 
-import app.auth.{JWTAuth, UserInfo}
+import app.auth.JWTAuth
 import io.circe.Decoder
 import io.circe.generic.semiauto.deriveDecoder
 import org.http4s.{HttpRoutes, Response, Status}
-import tsec.authentication._
-import tsec.mac.jca.HMACSHA256
 import zio.interop.catz._
 import zio.{Has, RIO}
 
 final class AuthEndpoint[R <: AuthEndpoint.Env] extends Endpoint[R] {
   import AuthEndpoint._
   import dsl._
-
-  val authedRoutes = TSecAuthService[UserInfo, AugmentedJWT[HMACSHA256, UserInfo], RTask] {
-    case req @ POST -> Root / "refresh" asAuthed _ =>
-      for {
-        authenticator <- JWTAuth.getTSecAuthenticator[R]
-        newToken      <- authenticator.refresh(req.authenticator)
-        response       = authenticator.embed(Response(Status.Ok), newToken)
-      } yield response
-  }
 
   val routes: HttpRoutes[RIO[R, *]] = HttpRoutes.of { case req @ POST -> Root / "login" =>
     for {

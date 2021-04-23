@@ -25,6 +25,13 @@ final class FlowEndpoint[R <: FlowEndpoint.Env] extends Endpoint[R] {
         flow     <- FlowRepository.getById(FlowId(id))
         response <- Ok(flow)
       } yield response
+
+    case DELETE -> Root / UUIDVar(id) asAuthed user =>
+      for {
+        _        <- Permissions.authorize(user, Scope.Admin)
+        _        <- FlowService.delete(FlowId(id))
+        response <- NoContent()
+      } yield response
   }
 }
 

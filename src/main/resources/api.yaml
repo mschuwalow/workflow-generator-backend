@@ -94,7 +94,7 @@ paths:
   /flows/{flowId}:
     get:
       tags:
-      - workfolws
+      - workflows
       summary: Get a flow by id
       security:
       - BearerAuth: []
@@ -111,6 +111,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Flow"
+    delete:
+      tags:
+      - workflows
+      summary: Delete a flow
+      security:
+      - BearerAuth: []
+      parameters:
+      - name: flowId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/FlowId"
+      responses:
+        "204":
+          description: Successfully deleted flow
   /rendered/{formId}:
     get:
       tags:
