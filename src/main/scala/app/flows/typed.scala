@@ -10,7 +10,7 @@ import io.circe.generic.semiauto._
 import scala.annotation.unused
 
 object typed {
-  final case class Flow(streams: List[Sink])
+  final case class Flow(id: FlowId, streams: List[Sink], state: FlowState)
 
   object Flow {
 
@@ -21,14 +21,14 @@ object typed {
       deriveDecoder
   }
 
-  final case class FlowWithId(id: FlowId, streams: List[Sink], state: FlowState)
+  final case class CreateFlowRequest(streams: List[Sink])
 
-  object FlowWithId {
+  object CreateFlowRequest {
 
-    implicit val encoder: Encoder[FlowWithId] =
+    implicit val encoder: Encoder[CreateFlowRequest] =
       deriveEncoder
 
-    implicit val decoder: Decoder[FlowWithId] =
+    implicit val decoder: Decoder[CreateFlowRequest] =
       deriveDecoder
   }
 

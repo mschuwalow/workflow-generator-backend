@@ -1,7 +1,7 @@
 package app.api
 
 import app.auth.{Permissions, Scope, UserInfo}
-import app.forms.{Form, FormId, FormsRepository, FormsService}
+import app.forms.{CreateFormRequest, FormId, FormsRepository, FormsService}
 import tsec.authentication._
 import tsec.mac.jca.HMACSHA256
 import zio.Has
@@ -11,17 +11,17 @@ final class FormsEndpoint[R <: FormsEndpoint.Env] extends Endpoint[R] {
   import dsl._
 
   val authedRoutes = TSecAuthService[UserInfo, AugmentedJWT[HMACSHA256, UserInfo], RTask] {
-    case req @ POST -> Root asAuthed user        =>
+    case req @ POST -> Root asAuthed user =>
       for {
-        _        <- Permissions.authorize(user, Scope.Forms)
-        body     <- req.request.as[Form]
+        _        <- Permissions.authorize(user, Scope.Admin)
+        body     <- req.request.as[CreateFormRequest]
         result   <- FormsService.create(body)
         response <- Created(result)
       } yield response
 
     case GET -> Root / UUIDVar(id) asAuthed user =>
       for {
-        _        <- Permissions.authorize(user, Scope.Forms)
+        _        <- Permissions.authorize(user, Scope.Admin)
         flow     <- FormsRepository.get(FormId(id))
         response <- Ok(flow)
       } yield response

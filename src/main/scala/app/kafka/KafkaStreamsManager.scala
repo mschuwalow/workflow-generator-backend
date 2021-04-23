@@ -63,8 +63,8 @@ private final class KafkaStreamsManager(
   }.provide(env)
 
   def topicExists(topicName: String) =
-    adminClient.describeTopics(List(topicName)).as(false).catchSome {
-      case _: UnknownTopicOrPartitionException => ZIO.succeed(true)
+    adminClient.describeTopics(List(topicName)).as(false).catchSome { case _: UnknownTopicOrPartitionException =>
+      ZIO.succeed(true)
     }
 
   def makeConsumer(groupId: Option[String]) =
