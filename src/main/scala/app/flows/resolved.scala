@@ -3,7 +3,7 @@ package app.flows
 import app.forms.FormId
 
 object resolved {
-  final case class Graph(components: Map[ComponentId, Component])
+  final case class CreateFlowRequest(components: Map[ComponentId, Component])
 
   sealed trait Component { self =>
     import Component._

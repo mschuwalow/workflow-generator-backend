@@ -22,10 +22,6 @@ object Scope {
 
   case object Admin extends Scope
 
-  case object Flows extends Scope
-
-  case object Forms extends Scope
-
   final case class ForGroups(groups: Set[String]) extends Scope
 
   final case class ForUsers(ids: Set[String]) extends Scope

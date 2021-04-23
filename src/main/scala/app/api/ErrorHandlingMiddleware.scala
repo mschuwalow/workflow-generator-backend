@@ -14,8 +14,8 @@ object ErrorHandlingMiddleware {
     val dsl = Http4sDsl.apply[RIO[R, *]]
     Kleisli { req =>
       OptionT {
-        k.run(req).value.catchSome {
-          case err: Error => err.httpResponse[R](dsl).map(Some(_))
+        k.run(req).value.catchSome { case err: Error =>
+          err.httpResponse[R](dsl).map(Some(_))
         }
       }
     }

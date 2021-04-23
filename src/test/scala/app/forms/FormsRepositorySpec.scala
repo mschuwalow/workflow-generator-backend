@@ -11,22 +11,22 @@ object FormsRepositorySpec extends BaseSpec with DatabaseAspect {
   def baseSpec =
     suite("Spec")(
       testM("can save and get forms") {
-        checkM(gens.form) { form =>
+        checkM(gens.createFormRequest) { request =>
           db {
             for {
-              r1 <- FormsRepository.store(form)
+              r1 <- FormsRepository.create(request)
               r2 <- FormsRepository.get(r1.id)
-            } yield assert(r2)(isSome(equalTo(r1))) && assert(r1.elements)(equalTo(form.elements))
+            } yield assert(r2)(isSome(equalTo(r1))) && assert(r1.elements)(equalTo(request.elements))
           }
         }
       },
       testM("can save and get forms without option") {
-        checkM(gens.form) { form =>
+        checkM(gens.createFormRequest) { request =>
           db {
             for {
-              r1 <- FormsRepository.store(form)
+              r1 <- FormsRepository.create(request)
               r2 <- FormsRepository.getById(r1.id)
-            } yield assert(r2)(equalTo(r1)) && assert(r1.elements)(equalTo(form.elements))
+            } yield assert(r2)(equalTo(r1)) && assert(r1.elements)(equalTo(request.elements))
           }
         }
       },
