@@ -20,8 +20,8 @@ private final class LiveJWTAuth(signingKey: MacSigningKey[HMACSHA256], env: Live
 
   def getTSecAuthenticator[R] =
     JWTAuthenticator.pstateless.inBearerToken[RIO[R, *], UserInfo, HMACSHA256](
-      20.minutes,
-      maxIdle = None,
+      21.days,
+      Some(7.days),
       signingKey
     )
 }

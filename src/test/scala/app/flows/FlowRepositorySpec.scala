@@ -11,32 +11,34 @@ object FlowRepositorySpec extends BaseSpec with DatabaseAspect {
   def baseSpec =
     suite("Spec")(
       testM("can save and get flows") {
-        checkM(gens.typed.flow) { flow =>
+        checkM(gens.typed.createFlowRequest) { request =>
           db {
             for {
-              r1 <- FlowRepository.save(flow)
+              r1 <- FlowRepository.create(request)
               r2 <- FlowRepository.getById(r1.id)
-            } yield assert(r1.streams)(equalTo(flow.streams)) && assert(r2.streams)(equalTo(flow.streams)) && assert(
+            } yield assert(r1.streams)(equalTo(request.streams)) && assert(r2.streams)(
+              equalTo(request.streams)
+            ) && assert(
               r1.id
             )(equalTo(r2.id))
           }
         }
       },
       testM("can get all flows") {
-        checkM(gens.typed.flow) { flow =>
+        checkM(gens.typed.createFlowRequest) { request =>
           db {
             for {
-              r1     <- FlowRepository.save(flow)
+              r1     <- FlowRepository.create(request)
               result <- FlowRepository.getAll
             } yield assert(result)(hasSameElements(List(r1)))
           }
         }
       },
       testM("can delete flows") {
-        checkM(gens.typed.flow) { flow =>
+        checkM(gens.typed.createFlowRequest) { request =>
           db {
             for {
-              r1   <- FlowRepository.save(flow)
+              r1   <- FlowRepository.create(request)
               _    <- FlowRepository.delete(r1.id)
               exit <- FlowRepository.getById(r1.id).run
             } yield assert(exit)(fails(anything))
@@ -44,10 +46,10 @@ object FlowRepositorySpec extends BaseSpec with DatabaseAspect {
         }
       },
       testM("can set state") {
-        checkM(gens.typed.flow, gens.flowState) { (flow, state) =>
+        checkM(gens.typed.createFlowRequest, gens.flowState) { (request, state) =>
           db {
             for {
-              r1 <- FlowRepository.save(flow)
+              r1 <- FlowRepository.create(request)
               _  <- FlowRepository.setState(r1.id, state)
               r2 <- FlowRepository.getById(r1.id)
             } yield assert(r2.state)(equalTo(state))

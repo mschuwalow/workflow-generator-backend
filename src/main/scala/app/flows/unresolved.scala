@@ -9,14 +9,14 @@ import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import scala.annotation.unused
 
 object unresolved {
-  final case class Graph(components: Map[ComponentId, Component])
+  final case class CreateFlowRequest(components: Map[ComponentId, Component])
 
-  object Graph {
+  object CreateFlowRequest {
 
-    implicit val decoder: Decoder[Graph] =
+    implicit val decoder: Decoder[CreateFlowRequest] =
       deriveDecoder
 
-    implicit val encoder: Encoder[Graph] =
+    implicit val encoder: Encoder[CreateFlowRequest] =
       deriveEncoder
   }
 

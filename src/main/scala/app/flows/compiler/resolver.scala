@@ -7,9 +7,9 @@ import zio._
 object resolver {
   type Env = Has[FormsRepository]
 
-  def resolve(input: unresolved.Graph): RIO[Env, resolved.Graph] = {
+  def resolve(input: unresolved.CreateFlowRequest): RIO[Env, resolved.CreateFlowRequest] = {
     val out = ZIO.foreach(input.components) { case (k, v) => resolveComponent(v).map((k, _)) }
-    out.map(resolved.Graph(_))
+    out.map(resolved.CreateFlowRequest)
   }
 
   private def resolveComponent(component: unresolved.Component): RIO[Env, resolved.Component] = {
