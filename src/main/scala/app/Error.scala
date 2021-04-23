@@ -15,17 +15,13 @@ object Error {
   final case class GraphValidationFailed(reason: String) extends Error {
     def httpResponse[R](dsl: Http4sDsl[RIO[R, *]]) = {
       import dsl._
-      dsl.BadRequest(s"checking the graph failed: $reason")
+      BadRequest(s"checking the graph failed: $reason")
     }
   }
 
   case object AuthorizationFailed extends Error {
     def httpResponse[R](dsl: Http4sDsl[RIO[R, *]]) =
-      ZIO.succeed(
-        Response(
-          status = Status.Unauthorized
-        )
-      )
+      ZIO.succeed(Response(status = Status.Unauthorized))
   }
 
   case object NotFound extends Error {
