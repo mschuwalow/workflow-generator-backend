@@ -14,21 +14,19 @@ sealed abstract class Error extends NoStackTrace {
 object Error {
   final case class GraphValidationFailed(reason: String) extends Error {
     def httpResponse[R](dsl: Http4sDsl[RIO[R, *]]) = {
-      dsl.BadRequest(s"checking the graph failed: $reason")
+      import dsl._
+      BadRequest(s"checking the graph failed: $reason")
     }
   }
 
   case object AuthorizationFailed extends Error {
     def httpResponse[R](dsl: Http4sDsl[RIO[R, *]]) =
-      ZIO.succeed(
-        Response(
-          status = Status.Unauthorized
-        )
-      )
+      ZIO.succeed(Response(status = Status.Unauthorized))
   }
 
   case object NotFound extends Error {
     def httpResponse[R](dsl: Http4sDsl[RIO[R, *]]) = {
+      import dsl._
       dsl.NotFound()
     }
   }
