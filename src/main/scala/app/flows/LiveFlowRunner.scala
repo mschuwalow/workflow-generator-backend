@@ -25,20 +25,19 @@ private final class LiveFlowRunner(
     Promise
       .makeManaged[Nothing, Unit]
       .flatMap { startConsuming =>
-        val sourcesM = ZManaged.foldLeft(terminal)(Map.empty: SourcesStreamMap) {
-          case (acc, s) =>
-            collectSources(s, flow.id, startConsuming, acc)
+        val sourcesM = ZManaged.foldLeft(terminal)(Map.empty: SourcesStreamMap) { case (acc, s) =>
+          collectSources(s, flow.id, startConsuming, acc)
         }
         for {
           sources <- sourcesM
-          fibers <- ZManaged.foreach(flow.streams) { s =>
-                      Promise.makeManaged[Nothing, Unit].flatMap { started =>
-                        runStream(flow.id, s, sources, started.succeed(()).unit).toManaged_.fork.map((_, started))
-                      }
-                    }
-          _      <- ZIO.foreach(fibers)(_._2.await).toManaged_
-          _      <- startConsuming.succeed(()).toManaged_
-          _      <- ZIO.foreach(fibers)(_._1.join).toManaged_
+          fibers  <- ZManaged.foreach(flow.streams) { s =>
+                       Promise.makeManaged[Nothing, Unit].flatMap { started =>
+                         runStream(flow.id, s, sources, started.succeed(()).unit).toManaged_.fork.map((_, started))
+                       }
+                     }
+          _       <- ZIO.foreach(fibers)(_._2.await).toManaged_
+          _       <- startConsuming.succeed(()).toManaged_
+          _       <- ZIO.foreach(fibers)(_._1.join).toManaged_
         } yield ()
       }
       .useNow
@@ -100,16 +99,15 @@ private final class LiveFlowRunner(
           interpretStream(sink.source, sources)
             .onFirstPull(onStart)
             .zipWithIndex
-            .foldM(offset) {
-              case (offset, (e, i)) =>
-                if (offset.value > i)
-                  ZIO.succeed(offset)
-                else
-                  for {
-                    _         <- push(e)
-                    nextOffset = offset.copy(value = offset.value + 1)
-                    _         <- FlowOffsetRepository.put(nextOffset)
-                  } yield nextOffset
+            .foldM(offset) { case (offset, (e, i)) =>
+              if (offset.value > i)
+                ZIO.succeed(offset)
+              else
+                for {
+                  _         <- push(e)
+                  nextOffset = offset.copy(value = offset.value + 1)
+                  _         <- FlowOffsetRepository.put(nextOffset)
+                } yield nextOffset
             }
         }
     }
@@ -151,9 +149,8 @@ private final class LiveFlowRunner(
                 val result = (l, Some(r))
                 (result, result)
             }
-            .collect {
-              case (Some(l), Some(r)) =>
-                ((l, r))
+            .collect { case (Some(l), Some(r)) =>
+              ((l, r))
             }
         case UDF(_, code, stream, elementType) =>
           go(stream).mapM { element =>
@@ -176,9 +173,8 @@ private final class LiveFlowRunner(
                 val result = (l, Some(r))
                 (result, result)
             }
-            .collect {
-              case (Some(l), r) =>
-                ((l, r))
+            .collect { case (Some(l), r) =>
+              ((l, r))
             }
         case Merge(_, stream1, stream2)        =>
           go(stream1).mergeEither(go(stream2))

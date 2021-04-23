@@ -26,9 +26,8 @@ object semantic {
 
     val result = (sinks.traverse(typeCheckSink(_)) <* checkResult)
       .run(Context.initial(graph.components))
-      .map {
-        case (_, sinks) =>
-          typed.Flow(sinks)
+      .map { case (_, sinks) =>
+        typed.Flow(sinks)
       }
 
     result.left.map(Error.GraphValidationFailed(_))

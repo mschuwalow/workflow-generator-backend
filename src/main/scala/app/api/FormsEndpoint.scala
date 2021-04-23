@@ -11,7 +11,7 @@ final class FormsEndpoint[R <: FormsEndpoint.Env] extends Endpoint[R] {
   import dsl._
 
   val authedRoutes = TSecAuthService[UserInfo, AugmentedJWT[HMACSHA256, UserInfo], RTask] {
-    case req @ POST -> Root asAuthed user        =>
+    case req @ POST -> Root asAuthed user =>
       for {
         _        <- Permissions.authorize(user, Scope.Forms)
         body     <- req.request.as[Form]

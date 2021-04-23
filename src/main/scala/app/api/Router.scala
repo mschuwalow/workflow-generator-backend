@@ -10,7 +10,11 @@ import zio.interop.catz._
 
 object Router {
 
-  type Env = FlowEndpoint.Env with GeneratedFormsEndpoint.Env with FormsEndpoint.Env with Has[JWTAuth]
+  type Env = FlowEndpoint.Env
+    with GeneratedFormsEndpoint.Env
+    with FormsEndpoint.Env
+    with SwaggerEndpoint.Env
+    with Has[JWTAuth]
 
   def makeApp[R <: Env]: URIO[R, HttpApp[RIO[R, *]]] = {
     val healthEndpoint         = new HealthEndpoint[R]()
@@ -18,13 +22,14 @@ object Router {
     val formsEndpoint          = new FormsEndpoint[R]()
     val generatedFormsEndpoint = new GeneratedFormsEndpoint[R]("/generated")
     val authEndpoint           = new AuthEndpoint[R]()
+    val swaggerEndpoint        = new SwaggerEndpoint[R]()
 
     val normalRoutes = Http4sRouter(
       "/health" -> healthEndpoint.routes,
       "/auth"   -> authEndpoint.routes
     )
 
-    val securedRoutes = for {
+    val makeSecuredRoutes = for {
       authenticator        <- JWTAuth.getTSecAuthenticator[R]
       authRoutes            = authEndpoint.authedRoutes
       flowRoutes            = flowEndpoint.authedRoutes
@@ -40,8 +45,8 @@ object Router {
     )
 
     for {
-      secured <- securedRoutes
-      normal   = normalRoutes
-    } yield ErrorHandlingMiddleware(normal <+> secured).orNotFound
+      securedRoutes <- makeSecuredRoutes
+      allRoutes      = swaggerEndpoint.routes <+> normalRoutes <+> securedRoutes
+    } yield ErrorHandlingMiddleware(allRoutes).orNotFound
   }
 }
