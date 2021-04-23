@@ -10,38 +10,41 @@ import zio.interop.catz._
 
 object Router {
 
-  type Env = FlowEndpoint.Env with GeneratedFormsEndpoint.Env with FormsEndpoint.Env with Has[JWTAuth]
+  type Env = FlowEndpoint.Env
+    with RenderedFormsEndpoint.Env
+    with FormsEndpoint.Env
+    with SwaggerEndpoint.Env
+    with Has[JWTAuth]
 
   def makeApp[R <: Env]: URIO[R, HttpApp[RIO[R, *]]] = {
-    val healthEndpoint         = new HealthEndpoint[R]()
-    val flowEndpoint           = new FlowEndpoint[R]()
-    val formsEndpoint          = new FormsEndpoint[R]()
-    val generatedFormsEndpoint = new GeneratedFormsEndpoint[R]("/generated")
-    val authEndpoint           = new AuthEndpoint[R]()
+    val healthEndpoint        = new HealthEndpoint[R]()
+    val flowEndpoint          = new FlowEndpoint[R]()
+    val formsEndpoint         = new FormsEndpoint[R]()
+    val renderedFormsEndpoint = new RenderedFormsEndpoint[R]("/rendered")
+    val authEndpoint          = new AuthEndpoint[R]()
+    val swaggerEndpoint       = new SwaggerEndpoint[R]()
 
     val normalRoutes = Http4sRouter(
       "/health" -> healthEndpoint.routes,
       "/auth"   -> authEndpoint.routes
     )
 
-    val securedRoutes = for {
-      authenticator        <- JWTAuth.getTSecAuthenticator[R]
-      authRoutes            = authEndpoint.authedRoutes
-      flowRoutes            = flowEndpoint.authedRoutes
-      formsRoutes           = formsEndpoint.authedRoutes
-      generatedFormsRoutes <- generatedFormsEndpoint.authedRoutes
+    val makeSecuredRoutes = for {
+      authenticator       <- JWTAuth.getTSecAuthenticator[R]
+      flowRoutes           = flowEndpoint.authedRoutes
+      formsRoutes          = formsEndpoint.authedRoutes
+      renderedFormsRoutes <- renderedFormsEndpoint.authedRoutes
     } yield AuthMiddleware(authenticator)(
       TSecRouter(
-        "/auth"      -> authRoutes,
-        "/workflows" -> flowRoutes,
-        "/forms"     -> formsRoutes,
-        "/generated" -> generatedFormsRoutes
+        "/flows"    -> flowRoutes,
+        "/forms"    -> formsRoutes,
+        "/rendered" -> renderedFormsRoutes
       )
     )
 
     for {
-      secured <- securedRoutes
-      normal   = normalRoutes
-    } yield ErrorHandlingMiddleware(normal <+> secured).orNotFound
+      securedRoutes <- makeSecuredRoutes
+      allRoutes      = swaggerEndpoint.routes <+> normalRoutes <+> securedRoutes
+    } yield ErrorHandlingMiddleware(allRoutes).orNotFound
   }
 }

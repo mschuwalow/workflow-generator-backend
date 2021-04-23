@@ -1,0 +1,532 @@
+components:
+  schemas:
+    ComponentId:
+      type: string
+    CreateFlowRequest:
+      properties:
+        components:
+          additionalProperties:
+            $ref: '#/components/schemas/RawFlowComponent'
+          description: Keys are treated as component ids
+          type: object
+      required:
+        - components
+      type: object
+    CreateFormRequest:
+      properties:
+        perms:
+          $ref: '#/components/schemas/Scope'
+        uniqueFormElements:
+          items:
+            $ref: '#/components/schemas/FormElement'
+          type: array
+      required:
+        - uniqueFormElements
+      type: object
+    Flow:
+      properties:
+        id:
+          $ref: '#/components/schemas/FlowId'
+        sinks:
+          items:
+            $ref: '#/components/schemas/Sink'
+          type: array
+        state:
+          $ref: '#/components/schemas/FlowState'
+      required:
+        - id
+        - sinks
+        - state
+      type: object
+    FlowId:
+      type: string
+    FlowState:
+      oneOf:
+        - properties:
+            type:
+              enum:
+                - Done
+              type: string
+          required:
+            - type
+          type: object
+        - properties:
+            type:
+              enum:
+                - Running
+              type: string
+          required:
+            - type
+          type: object
+        - properties:
+            reason:
+              type: string
+            type:
+              enum:
+                - Failed
+              type: string
+          required:
+            - type
+            - reason
+          type: object
+    Form:
+      properties:
+        id:
+          $ref: '#/components/schemas/FormId'
+        perms:
+          $ref: '#/components/schemas/Scope'
+        uniqueFormElements:
+          items:
+            $ref: '#/components/schemas/FormElement'
+          type: array
+      required:
+        - id
+        - uniqueFormElements
+      type: object
+    FormElement:
+      oneOf:
+        - properties:
+            id:
+              type: string
+            label:
+              type: string
+            type:
+              enum:
+                - TextField
+              type: string
+          type: object
+        - properties:
+            id:
+              type: string
+            label:
+              type: string
+            type:
+              enum:
+                - NumberField
+              type: string
+          type: object
+        - properties:
+            id:
+              type: string
+            label:
+              type: string
+            type:
+              enum:
+                - DatePicker
+              type: string
+          type: object
+    FormId:
+      format: uuid
+      type: string
+    LoginRequest:
+      properties:
+        password:
+          type: string
+        username:
+          type: string
+      required:
+        - username
+        - password
+      type: object
+    RawFlowComponent:
+      oneOf:
+        - properties:
+            formId:
+              $ref: '#/components/schemas/FormId'
+            type:
+              enum:
+                - FormOutput
+              type: string
+          required:
+            - type
+            - formId
+          type: object
+        - properties:
+            type:
+              enum:
+                - Numbers
+              type: string
+            values:
+              items:
+                type: number
+              type: array
+          required:
+            - type
+            - values
+          type: object
+        - properties:
+            elementType:
+              $ref: '#/components/schemas/Type'
+            stream:
+              $ref: '#/components/schemas/ComponentId'
+            type:
+              enum:
+                - Void
+              type: string
+          required:
+            - type
+          type: object
+        - properties:
+            code:
+              description: Python code. Should define a `def run(x)` function
+              type: string
+            inputTypeHint:
+              $ref: '#/components/schemas/Type'
+            outputTypeHint:
+              $ref: '#/components/schemas/Type'
+            stream:
+              $ref: '#/components/schemas/ComponentId'
+            type:
+              enum:
+                - UDF
+              type: string
+          required:
+            - type
+            - code
+          type: object
+        - properties:
+            stream1:
+              $ref: '#/components/schemas/ComponentId'
+            stream2:
+              $ref: '#/components/schemas/ComponentId'
+            type:
+              enum:
+                - LeftJoin
+              type: string
+          required:
+            - type
+            - stream1
+            - stream2
+          type: object
+        - properties:
+            stream1:
+              $ref: '#/components/schemas/ComponentId'
+            stream2:
+              $ref: '#/components/schemas/ComponentId'
+            type:
+              enum:
+                - InnerJoin
+              type: string
+          required:
+            - type
+            - stream1
+            - stream2
+          type: object
+        - properties:
+            stream1:
+              $ref: '#/components/schemas/ComponentId'
+            stream2:
+              $ref: '#/components/schemas/ComponentId'
+            type:
+              enum:
+                - Merge
+              type: string
+          required:
+            - type
+            - stream1
+            - stream2
+          type: object
+    Scope:
+      oneOf:
+        - properties:
+            type:
+              enum:
+                - Admin
+              type: string
+          required:
+            - type
+          type: object
+        - properties:
+            groups:
+              items:
+                type: string
+              type: array
+            type:
+              enum:
+                - ForGroups
+              type: string
+          required:
+            - type
+            - groups
+          type: object
+        - properties:
+            type:
+              enum:
+                - ForUsers
+              type: string
+            users:
+              items:
+                type: string
+              type: array
+          required:
+            - type
+            - users
+          type: object
+    Sink:
+      oneOf:
+        - properties:
+            source:
+              $ref: '#/components/schemas/Stream'
+            type:
+              enum:
+                - Void
+              type: string
+          required:
+            - type
+            - source
+          type: object
+    Stream:
+      oneOf:
+        - properties:
+            elementType:
+              $ref: '#/components/schemas/Type'
+            id:
+              $ref: '#/components/schemas/ComponentId'
+            type:
+              enum:
+                - FormOutput
+              type: string
+          required:
+            - type
+            - id
+            - elementType
+          type: object
+        - properties:
+            id:
+              $ref: '#/components/schemas/ComponentId'
+            type:
+              enum:
+                - Numbers
+              type: string
+            values:
+              items:
+                type: number
+              type: array
+          required:
+            - type
+            - value
+          type: object
+        - properties:
+            code:
+              type: string
+            elementType:
+              $ref: '#/components/schemas/Type'
+            id:
+              $ref: '#/components/schemas/ComponentId'
+            stream:
+              $ref: '#/components/schemas/Stream'
+            type:
+              enum:
+                - UDF
+              type: string
+          required:
+            - type
+            - id
+            - code
+            - stream
+            - elementType
+          type: object
+        - properties:
+            id:
+              $ref: '#/components/schemas/ComponentId'
+            stream1:
+              $ref: '#/components/schemas/Stream'
+            stream2:
+              $ref: '#/components/schemas/Stream'
+            type:
+              enum:
+                - LeftJoin
+              type: string
+          required:
+            - type
+            - id
+            - stream1
+            - stream2
+          type: object
+        - properties:
+            id:
+              $ref: '#/components/schemas/ComponentId'
+            stream1:
+              $ref: '#/components/schemas/Stream'
+            stream2:
+              $ref: '#/components/schemas/Stream'
+            type:
+              enum:
+                - InnerJoin
+              type: string
+          required:
+            - type
+            - id
+            - stream1
+            - stream2
+          type: object
+        - properties:
+            id:
+              $ref: '#/components/schemas/ComponentId'
+            stream1:
+              $ref: '#/components/schemas/Stream'
+            stream2:
+              $ref: '#/components/schemas/Stream'
+            type:
+              enum:
+                - Merge
+              type: string
+          required:
+            - type
+            - id
+            - stream1
+            - stream2
+          type: object
+    Type:
+      example: (Date | Number)
+      type: string
+  securitySchemes:
+    BearerAuth:
+      bearerFormat: JWT
+      description: Token received from the /auth/login endpoint
+      scheme: bearer
+      type: http
+info:
+  title: Workflow Generator
+  version: 0.0.1
+openapi: 3.0.0
+paths:
+  /auth/login:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful login
+          headers:
+            Authorization:
+              description: Bearer token to use for future requests
+              schema:
+                type: string
+        '401':
+          description: Invalid credentials
+      summary: Login using stud.ip credentials
+      tags:
+        - auth
+  /flows:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFlowRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flow'
+          description: Flow created
+        '401':
+          description: Invalid credentials
+      security:
+        - BearerAuth: []
+      summary: Create a new flow
+      tags:
+        - workflows
+  /flows/{flowId}:
+    delete:
+      parameters:
+        - in: path
+          name: flowId
+          required: true
+          schema:
+            $ref: '#/components/schemas/FlowId'
+      responses:
+        '204':
+          description: Successfully deleted flow
+      security:
+        - BearerAuth: []
+      summary: Delete a flow
+      tags:
+        - workflows
+    get:
+      parameters:
+        - in: path
+          name: flowId
+          required: true
+          schema:
+            $ref: '#/components/schemas/FlowId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flow'
+          description: Successfully retrieved flow
+      security:
+        - BearerAuth: []
+      summary: Get a flow by id
+      tags:
+        - workflows
+  /forms:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFormRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Form'
+          description: Form created
+        '401':
+          description: Invalid credentials
+      security:
+        - BearerAuth: []
+      summary: Create a new form
+      tags:
+        - forms
+  /forms/{formId}:
+    get:
+      parameters:
+        - in: path
+          name: formId
+          required: true
+          schema:
+            $ref: '#/components/schemas/FormId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Form'
+          description: Successfully retrieved form
+      security:
+        - BearerAuth: []
+      summary: Get a form by id
+      tags:
+        - forms
+  /rendered/{formId}:
+    get:
+      parameters:
+        - in: path
+          name: formId
+          required: true
+          schema:
+            $ref: '#/components/schemas/FormId'
+      responses:
+        '200':
+          description: The rendered form
+      security:
+        - BearerAuth: []
+      summary: Get a rendered form
+      tags:
+        - forms
+tags:
+  - description: Create and manage workflows
+    name: workflows

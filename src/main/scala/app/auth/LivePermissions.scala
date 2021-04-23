@@ -12,10 +12,6 @@ final class LivePermissions(
     val hasPermission = scope match {
       case Scope.Admin             =>
         isAdmin(userInfo)
-      case Scope.Flows             =>
-        isAdmin(userInfo)
-      case Scope.Forms             =>
-        isAdmin(userInfo)
       case Scope.ForGroups(groups) =>
         isAdmin(userInfo) || groups.contains(userInfo.group)
       case Scope.ForUsers(ids)     =>
