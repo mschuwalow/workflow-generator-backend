@@ -23,7 +23,7 @@ object Dependencies {
     val zioInteropCats         = "2.4.1.0"
     val zioKafka               = "0.14.0"
     val zioLogging             = "0.5.8"
-    val zioPrelude             = "1.0.0-RC1"
+    val zioPrelude             = "1.0.0-RC3"
   }
   import Versions._
 
