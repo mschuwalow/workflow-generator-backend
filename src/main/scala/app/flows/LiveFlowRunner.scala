@@ -13,7 +13,7 @@ private final class LiveFlowRunner(
 ) extends FlowRunner
     with StreamSyntax {
 
-  type SourcesStreamMap = Map[ComponentId, UIO[ZStream[Any, Nothing, Any]]]
+  type SourcesStreamMap = Map[ComponentId, ZStream[Any, Nothing, Any]]
 
   def emitFormOutput(formId: FormId, elementType: Type)(element: elementType.Scala): Task[Unit] = {
     val topicName = topicForForm(formId)
@@ -179,7 +179,7 @@ private final class LiveFlowRunner(
         case Merge(_, stream1, stream2)        =>
           go(stream1).mergeEither(go(stream2))
         case FormOutput(id, _, _)              =>
-          ZStream.fromEffect(sources(id)).flatten
+          ZStream.fromIterable(sources.get(id)).flatten
       }
       anyStream.asInstanceOf[ZStream[Has[UDFRunner] with Has[StreamsManager], Throwable, stream.elementType.Scala]]
     }
