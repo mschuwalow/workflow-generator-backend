@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy-image:
+  publish-image:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
