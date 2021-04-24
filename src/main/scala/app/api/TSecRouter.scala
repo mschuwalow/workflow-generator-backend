@@ -28,7 +28,7 @@ object TSecRouter {
         }
     }
 
-  private def translate[F[_]: Functor, V, A](prefix: String)(req: SecuredRequest[F, V, A]): SecuredRequest[F, V, A] = {
+  private def translate[F[_], V, A](prefix: String)(req: SecuredRequest[F, V, A]): SecuredRequest[F, V, A] = {
     val newCaret = prefix match {
       case "/"                    => 0
       case x if x.startsWith("/") => x.length
