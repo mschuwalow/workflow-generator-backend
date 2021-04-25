@@ -1,27 +1,19 @@
 {
-  "components": {
-    "1": {
-      "type": "FormOutput",
-      "formId": "c4d03e3b-9fd8-47d3-a4d6-6abd81271380"
+  "elements": [
+    {
+      "id": "firstName",
+      "label": "first name: ",
+      "type": "TextField"
     },
-    "2": {
-      "type": "UDF",
-      "code": "def run(x):\n    return x['date']",
-      "outputTypeHint": "Date",
-      "stream": "1"
+    {
+      "id": "lastName",
+      "label": "last name: ",
+      "type": "TextField"
     },
-    "3": {
-      "type": "LeftJoin",
-      "stream1": "1",
-      "stream2": "2"
-    },
-    "4": {
-      "type": "Void",
-      "stream": "3"
-    },
-    "5": {
-      "type": "Void",
-      "stream": "3"
+    {
+      "id": "date",
+      "label": "date: ",
+      "type": "DatePicker"
     }
-  }
+  ]
 }
