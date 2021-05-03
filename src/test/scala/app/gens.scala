@@ -1,6 +1,6 @@
 package app
 
-import app.flows.Type.TDate
+import app.Type.TDate
 import zio.random.Random
 import zio.test.Gen._
 import zio.test.{Gen, Sized}
@@ -29,7 +29,7 @@ object gens {
     import app.flows._
 
     object typed {
-      import app.flows.typed._
+      import app.Typed._
 
       def stream: Gen[Random with Sized, Stream] = {
         import Stream._

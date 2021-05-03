@@ -1,7 +1,7 @@
 package app.flows
 
 import app.BaseSpec
-import app.flows.Type._
+import app.Type._
 import app.gens.{flows => gens}
 import io.circe.syntax._
 import zio.test.Assertion._

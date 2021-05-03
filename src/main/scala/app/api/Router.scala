@@ -1,6 +1,6 @@
 package app.api
 
-import app.auth.JWTAuth
+import app.auth.inbound.JWTAuth
 import cats.syntax.semigroupk._
 import org.http4s._
 import org.http4s.implicits._

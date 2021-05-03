@@ -1,9 +1,10 @@
 package app.api
 
-import app.auth.{Permissions, UserInfo}
-import app.flows.FlowRunner
+import app.auth.UserInfo
+import app.auth.inbound.Permissions
 import app.forms.FormElement.{TextField, _}
 import app.forms._
+import app.forms.inbound.FormsService
 import korolev.effect.Effect
 import korolev.server.{KorolevService, KorolevServiceConfig}
 import korolev.state.javaSerialization._
@@ -30,17 +31,15 @@ final class RenderedFormsEndpoint[R <: RenderedFormsEndpoint.Env](mountPath: Str
           case korolev.Root / id if id.nonEmpty =>
             for {
               formId     <- Task(FormId(UUID.fromString(id))).orElse(notFound)
-              formWithId <- FormsRepository.get(formId).flatMap {
-                              _.fold[Task[Form]](notFound)(ZIO.succeed(_))
-                            }
-              _          <- formWithId.perms.fold[RTask[Unit]](ZIO.unit)(Permissions.authorize(userInfo, _))
-            } yield State.Working(formId, formWithId, userInfo)
+              form       <- FormsService.getById(formId)
+              _          <- form.perms.fold[RTask[Unit]](ZIO.unit)(Permissions.authorize(userInfo, _))
+            } yield State.Working(form, userInfo)
           case _                                =>
             notFound
         }
       },
       document = {
-        case State.Working(_, formDefinition, _) =>
+        case State.Working(formDefinition, _) =>
           val formId      = elementId()
           val definitions = formDefinition.elements.map(e => (elementId(), e))
           optimize {
@@ -97,11 +96,9 @@ final class RenderedFormsEndpoint[R <: RenderedFormsEndpoint.Env](mountPath: Str
                               out.map((element.id.value, _))
                             }
                             .map(_.toMap)
-                          val emit     = elements.flatMap { event =>
-                            val outputType = formDefinition.outputType
-                            FlowRunner
-                              .emitFormOutput(formDefinition.id, outputType)(event.asInstanceOf[outputType.Scala])
-                          }
+                          val emit     = elements.flatMap(event =>
+                            FormsService.publish(formDefinition)(event.asInstanceOf[formDefinition.outputType.Scala])
+                          )
                           emit *> access.transition(_ => State.Submitted)
                         }
                       )
@@ -129,13 +126,13 @@ final class RenderedFormsEndpoint[R <: RenderedFormsEndpoint.Env](mountPath: Str
 }
 
 object RenderedFormsEndpoint {
-  type Env = Has[FormsRepository] with Has[FlowRunner] with Has[Permissions] with KorolevEndpoint.Env
+  type Env = Has[FormsService] with Has[Permissions] with KorolevEndpoint.Env
 
   private object internal {
     sealed trait State
 
     object State {
-      final case class Working(id: FormId, form: Form, userInfo: UserInfo) extends State
+      final case class Working(form: Form, userInfo: UserInfo) extends State
       case object Submitted                                                extends State
     }
   }

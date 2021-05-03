@@ -1,7 +1,9 @@
 package app.api
 
-import app.auth.{Permissions, Scope, UserInfo}
-import app.flows.{FlowId, FlowRepository, FlowService, unresolved}
+import app.auth.{Scope, UserInfo}
+import app.auth.inbound.Permissions
+import app.flows.{FlowId, unresolved}
+import app.flows.inbound.FlowService
 import tsec.authentication._
 import tsec.mac.jca.HMACSHA256
 import zio.Has
@@ -22,7 +24,7 @@ final class FlowEndpoint[R <: FlowEndpoint.Env] extends Endpoint[R] {
     case GET -> Root / UUIDVar(id) asAuthed user =>
       for {
         _        <- Permissions.authorize(user, Scope.Admin)
-        flow     <- FlowRepository.getById(FlowId(id))
+        flow     <- FlowService.getById(FlowId(id))
         response <- Ok(flow)
       } yield response
 
@@ -36,5 +38,5 @@ final class FlowEndpoint[R <: FlowEndpoint.Env] extends Endpoint[R] {
 }
 
 object FlowEndpoint {
-  type Env = Has[FlowService] with Has[FlowRepository] with Has[Permissions]
+  type Env = Has[FlowService] with Has[Permissions]
 }

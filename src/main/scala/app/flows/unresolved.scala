@@ -1,5 +1,6 @@
 package app.flows
 
+import app.Type
 import app.forms.FormId
 import io.circe._
 import io.circe.generic.extras.Configuration
