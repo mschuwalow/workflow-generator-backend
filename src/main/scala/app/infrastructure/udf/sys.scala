@@ -11,11 +11,15 @@ import java.lang.{Runtime => JRuntime}
 import java.net.ServerSocket
 import java.nio.file.{Files, Path}
 
-private final class LiveSys(
-  env: LiveSys.Env
-) extends Sys {
+private[udf] object sys {
 
-  def runCommand(cmd: Command) = {
+  final case class RunningProcess(
+    await: UIO[Int],
+    destroy: UIO[Unit],
+    destroyForcibly: UIO[Unit]
+  )
+
+  def runCommand(cmd: Command): ZManaged[Clock with Blocking with Logging, Throwable, RunningProcess] = {
     val runtime = JRuntime.getRuntime()
 
     def pump[R <: Clock with Blocking](
@@ -58,27 +62,29 @@ private final class LiveSys(
                   .toManaged(_.interrupt)
       } yield proc
 
-    run(cmd).map { p =>
-      RunningProcess(
-        (blocking.effectBlocking(p.waitFor()) *> ZIO.effect(
-          p.exitValue()
-        )).catchAll(e => log.warn(s"Command failed with ${e.toString()}").as(1))
-          .provide(env),
-        blocking
-          .effectBlocking(p.destroy())
-          .unit
-          .catchAll(e => log.warn(s"Stopping process failed with ${e.toString()}"))
-          .provide(env),
-        blocking
-          .effectBlocking(p.destroyForcibly())
-          .unit
-          .catchAll(e => log.warn(s"Killing process failed with ${e.toString()}"))
-          .provide(env)
-      )
-    }.provide(env)
+    run(cmd).flatMap { p =>
+      ZManaged.environment[Blocking with Logging].map { env =>
+        RunningProcess(
+          (blocking.effectBlocking(p.waitFor()) *> ZIO.effect(
+            p.exitValue()
+          )).catchAll(e => log.warn(s"Command failed with ${e.toString()}").as(1))
+            .provide(env),
+          blocking
+            .effectBlocking(p.destroy())
+            .unit
+            .catchAll(e => log.warn(s"Stopping process failed with ${e.toString()}"))
+            .provide(env),
+          blocking
+            .effectBlocking(p.destroyForcibly())
+            .unit
+            .catchAll(e => log.warn(s"Killing process failed with ${e.toString()}"))
+            .provide(env)
+        )
+      }
+    }
   }
 
-  def extractResource(name: String): ZManaged[Any, Throwable, Path] = {
+  def extractResource(name: String): ZManaged[Logging, Throwable, Path] = {
     def fromCloseable[A <: Closeable](thunk: => A) =
       ZManaged.make(ZIO.effect(thunk)) { ac =>
         ZIO
@@ -101,9 +107,9 @@ private final class LiveSys(
                        is.close()
                      }.toManaged_
     } yield resourcePath
-  }.provide(env)
+  }
 
-  val tmpDir: ZManaged[Any, Throwable, Path] = {
+  val tmpDir: ZManaged[Logging, Throwable, Path] = {
     import scala.reflect.io.Directory
     ZManaged.make {
       ZIO.effect {
@@ -118,24 +124,23 @@ private final class LiveSys(
           )
         )
     }
-  }.provide(env)
+  }
 
-  val freePort =
+  val freePort: ZIO[Any, Nothing, Int] =
     ZIO.bracket(
       ZIO.effectTotal(new ServerSocket(0)),
       (socket: ServerSocket) => ZIO.effectTotal(socket.close()),
       (socket: ServerSocket) => ZIO.effectTotal(socket.getLocalPort)
     )
 
-}
-
-object LiveSys {
-  type Env = Blocking with Clock with Logging
-
-  val layer: URLayer[Env, Has[Sys]] = {
+  def runFromClassPath(
+    name: String,
+    args: String*
+  ): ZManaged[Clock with Blocking with Logging, Throwable, RunningProcess] =
     for {
-      env <- ZIO.environment[Env]
-    } yield new LiveSys(env)
-  }.toLayer
+      executable <- extractResource(name)
+      _          <- ZIO.effect(executable.toFile.setExecutable(true)).toManaged_
+      process    <- runCommand(s"${executable} ${args.mkString(" ")}")
+    } yield process
 
 }

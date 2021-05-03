@@ -1,6 +1,8 @@
 package app.infrastructure.http
 
 import app.Error
+import app.auth._
+import app.auth.outbound.UserInfoService
 import app.config.AuthConfig
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
@@ -10,8 +12,6 @@ import sttp.client.httpclient.zio.SttpClient
 import zio._
 import zio.blocking.Blocking
 import zio.logging.{Logging, log}
-import app.auth._
-import app.auth.outbound.UserInfoService
 
 final private class StudIpUserInfoService(
   env: StudIpUserInfoService.Env

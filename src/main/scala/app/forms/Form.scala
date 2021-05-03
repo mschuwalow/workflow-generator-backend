@@ -1,7 +1,7 @@
 package app.forms
 
-import app.auth.Scope
 import app.Type
+import app.auth.Scope
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 

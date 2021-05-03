@@ -1,7 +1,6 @@
 package app.forms.outbound
 
 import app.forms._
-
 import zio._
 
 trait FormsRepository {

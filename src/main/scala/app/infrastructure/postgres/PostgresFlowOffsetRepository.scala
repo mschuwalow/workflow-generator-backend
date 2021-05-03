@@ -1,7 +1,7 @@
 package app.infrastructure.postgres
 
-import app.flows.{ComponentId, FlowId, FlowOffset}
 import app.flows.outbound.FlowOffsetRepository
+import app.flows.{ComponentId, FlowId, FlowOffset}
 import doobie.implicits._
 import doobie.postgres.implicits._
 import zio._

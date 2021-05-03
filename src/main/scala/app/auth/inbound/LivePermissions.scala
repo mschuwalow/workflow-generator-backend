@@ -1,8 +1,8 @@
 package app.auth.inbound
 
 import app.Error
-import app.config.AuthConfig
 import app.auth._
+import app.config.AuthConfig
 import zio._
 
 final class LivePermissions(

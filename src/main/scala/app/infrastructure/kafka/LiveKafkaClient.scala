@@ -1,7 +1,7 @@
 package app.infrastructure.kafka
 
-import app.config.KafkaConfig
 import app.Type
+import app.config.KafkaConfig
 import io.circe.parser.{parse => parseJson}
 import io.circe.syntax._
 import org.apache.kafka.clients.consumer.ConsumerConfig
@@ -77,7 +77,7 @@ private final class LiveKafkaClient(
     } yield consumer
 }
 
-private[kafka] object LiveKafkaClient {
+object LiveKafkaClient {
   type Env = Has[KafkaConfig] with Blocking with Clock
 
   val layer: ZLayer[Env, Throwable, Has[KafkaClient]] =

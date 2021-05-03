@@ -1,9 +1,9 @@
 package app.api
 
-import app.auth.{Scope, UserInfo}
 import app.auth.inbound.Permissions
-import app.forms.{CreateFormRequest, FormId}
+import app.auth.{Scope, UserInfo}
 import app.forms.inbound.FormsService
+import app.forms.{CreateFormRequest, FormId}
 import tsec.authentication._
 import tsec.mac.jca.HMACSHA256
 import zio.Has

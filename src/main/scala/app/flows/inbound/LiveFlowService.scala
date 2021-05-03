@@ -2,9 +2,9 @@ package app.flows.inbound
 
 import app.Error
 import app.flows._
+import app.flows.inbound.compiler
 import app.flows.outbound._
 import app.forms.inbound.FormsService
-import app.flows.inbound.compiler
 import zio._
 
 private final class LiveFlowService(
@@ -17,7 +17,7 @@ private final class LiveFlowService(
     for {
       request <- check(request)
       flow    <- FlowRepository.create(request)
-      _       <- run(state, flow)
+      _       <- forkRun(state, flow)
     } yield flow
   }.provide(env)
 
@@ -43,7 +43,7 @@ private final class LiveFlowService(
     FlowRepository.getById(id).provide(env)
 }
 
-object LiveFlowService {
+private[inbound] object LiveFlowService {
 
   type Env = Has[FlowRunner] with Has[FlowRepository] with Has[FormsService]
 
@@ -56,14 +56,14 @@ object LiveFlowService {
       running <- FlowRepository.getAll
                    .map(_.filter(_.state == FlowState.Running))
                    .toManaged_
-      _       <- ZIO.foreach_(running)(internal.run(state, _)).toManaged_
+      _       <- ZIO.foreach_(running)(internal.forkRun(state, _)).toManaged_
     } yield new LiveFlowService(state, env)
   }.toLayer
 
   private object internal {
     type State = Ref[Map[FlowId, Fiber[Throwable, Unit]]]
 
-    def run(state: State, flow: typed.Flow) =
+    def forkRun(state: State, flow: typed.Flow) =
       ZIO.uninterruptibleMask { restore =>
         for {
           latch <- Promise.make[Nothing, Unit]

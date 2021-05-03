@@ -1,7 +1,7 @@
 package app.auth.outbound
 
-import zio._
 import app.auth.UserInfo
+import zio._
 
 trait UserInfoService {
   def getUserInfo(username: String, password: String): Task[UserInfo]

@@ -1,6 +1,6 @@
 package app.infrastructure
 
 package object udf {
-  type Command = String
-  type Port    = Int
+  private[udf] type Command = String
+  private[udf] type Port    = Int
 }

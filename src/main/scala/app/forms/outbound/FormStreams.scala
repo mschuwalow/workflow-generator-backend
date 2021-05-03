@@ -1,7 +1,6 @@
 package app.forms.outbound
 
-import app.forms._
-import app.forms.FormId
+import app.forms.{FormId, _}
 import zio._
 import zio.stream._
 

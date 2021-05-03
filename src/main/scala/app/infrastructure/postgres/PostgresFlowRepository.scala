@@ -1,9 +1,9 @@
 package app.infrastructure.postgres
 
 import app.Error
+import app.flows.outbound.FlowRepository
 import app.flows.typed.Flow
 import app.flows.{FlowId, FlowState, typed}
-import app.flows.outbound.FlowRepository
 import doobie.implicits._
 import doobie.postgres.implicits._
 import zio.interop.catz._

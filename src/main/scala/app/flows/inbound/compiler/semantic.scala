@@ -1,9 +1,8 @@
 package app.flows.inbound.compiler
 
-import app.Error
 import app.Type._
-import app.Type
 import app.flows.{ComponentId, resolved, typed}
+import app.{Error, Type}
 import cats.instances.list._
 import cats.syntax.apply._
 import cats.syntax.flatMap._

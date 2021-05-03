@@ -1,8 +1,8 @@
-package app.forms
+package app.forms.outbound
 
-import app.BaseSpec
-import app.gens.{forms => gens}
-import app.postgres.{DatabaseAspect, PostgresFormsRepository}
+import app.forms.gens
+import app.infrastructure.postgres.PostgresFormsRepository
+import app.{BaseSpec, DatabaseAspect}
 import zio.test.Assertion._
 import zio.test._
 

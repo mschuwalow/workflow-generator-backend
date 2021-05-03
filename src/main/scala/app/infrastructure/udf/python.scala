@@ -10,25 +10,21 @@ import zio.logging.Logging
 
 import scala.reflect.ClassTag
 
-private final class LivePython(
-  env: LivePython.Env
-) extends Python {
-  def retry[R <: Clock, E, A] =
-    (zio: ZIO[R, E, A]) => zio.retry(Schedule.recurs(5) && Schedule.spaced(200.milliseconds))
+private[udf] object python {
 
   def runAs[A: ClassTag](
     startCommand: Port => Command,
     startDelay: Duration,
-    shutdown: Option[A => UIO[Unit]]
-  ): Managed[Throwable, A] = {
+    shutdown: Option[A => UIO[Unit]] = None
+  ): ZManaged[Clock with Blocking with Logging with Clock, Throwable, A] = {
 
     val retrySchedule =
       Schedule.recurs(5) && Schedule.spaced(200.milliseconds)
 
     val startPythonServer = {
       val startTask = for {
-        pythonPort <- Sys.freePort.toManaged_
-        _          <- Sys.runCommand(startCommand(pythonPort))
+        pythonPort <- sys.freePort.toManaged_
+        _          <- sys.runCommand(startCommand(pythonPort))
         _          <- clock.sleep(startDelay).toManaged_
       } yield pythonPort
 
@@ -36,7 +32,7 @@ private final class LivePython(
     }
 
     def startClientServer(pythonPort: Port) = {
-      val startTask = Sys.freePort.flatMap { jvmPort =>
+      val startTask = sys.freePort.flatMap { jvmPort =>
         blocking.effectBlocking {
           new ClientServerBuilder()
             .pythonPort(pythonPort)
@@ -46,7 +42,7 @@ private final class LivePython(
       }
 
       ZManaged.make {
-        retry(startTask)
+        startTask.retry(retrySchedule)
       } { client =>
         ZIO.effect(client.shutdown()).either
       }
@@ -70,15 +66,6 @@ private final class LivePython(
       client     <- startClientServer(pythonPort)
       instance   <- cast(client)
     } yield instance
-  }.provide(env)
-}
+  }
 
-object LivePython {
-  type Env = Has[Sys] with Logging with Clock with Blocking
-
-  val layer: URLayer[Env, Has[Python]] = {
-    for {
-      env <- ZManaged.environment[Env]
-    } yield new LivePython(env)
-  }.toLayer
 }

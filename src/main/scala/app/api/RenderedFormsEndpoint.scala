@@ -30,9 +30,9 @@ final class RenderedFormsEndpoint[R <: RenderedFormsEndpoint.Env](mountPath: Str
         request.pq match {
           case korolev.Root / id if id.nonEmpty =>
             for {
-              formId     <- Task(FormId(UUID.fromString(id))).orElse(notFound)
-              form       <- FormsService.getById(formId)
-              _          <- form.perms.fold[RTask[Unit]](ZIO.unit)(Permissions.authorize(userInfo, _))
+              formId <- Task(FormId(UUID.fromString(id))).orElse(notFound)
+              form   <- FormsService.getById(formId)
+              _      <- form.perms.fold[RTask[Unit]](ZIO.unit)(Permissions.authorize(userInfo, _))
             } yield State.Working(form, userInfo)
           case _                                =>
             notFound
@@ -108,7 +108,7 @@ final class RenderedFormsEndpoint[R <: RenderedFormsEndpoint.Env](mountPath: Str
               )
             )
           }
-        case State.Submitted                     =>
+        case State.Submitted                  =>
           optimize {
             Html(
               body(
@@ -133,7 +133,7 @@ object RenderedFormsEndpoint {
 
     object State {
       final case class Working(form: Form, userInfo: UserInfo) extends State
-      case object Submitted                                                extends State
+      case object Submitted                                    extends State
     }
   }
 }

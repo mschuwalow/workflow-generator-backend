@@ -1,11 +1,13 @@
 package app.infrastructure.udf
 
 import app.Type
+import app.flows.outbound.UDFRunner
 import app.udf.{JEither, PythonRunner}
 import zio._
+import zio.blocking.Blocking
+import zio.clock.Clock
 import zio.duration._
 import zio.logging.{Logging, log}
-import app.flows.outbound.UDFRunner
 
 import scala.jdk.CollectionConverters._
 
@@ -32,15 +34,15 @@ private final class LiveUDFRunner(
 }
 
 object LiveUDFRunner {
-  type Env = Has[Sys] with Has[Python] with Logging
+  type Env = Clock with Blocking with Clock with Logging
 
-  def layer(workers: Int): RLayer[Env, Has[UDFRunner]] =
+  def layer(workers: Int): ZLayer[Env, Throwable, Has[UDFRunner]] =
     Queue
       .unbounded[internal.Request]
       .toManaged(_.shutdown)
       .flatMap { requests =>
-        Sys.extractResource("/start-server.py").flatMap { startServer =>
-          val startWorker = Python
+        sys.extractResource("/start-server.py").flatMap { startServer =>
+          val startWorker = python
             .runAs[PythonRunner](
               p => s"python3 ${startServer.toAbsolutePath()} --port=$p",
               2.seconds

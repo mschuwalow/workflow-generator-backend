@@ -1,8 +1,8 @@
-package app.flows
+package app.flows.outbound
 
-import app.BaseSpec
-import app.gens.{flows => gens}
-import app.postgres.{DatabaseAspect, PostgresFlowRepository}
+import app.flows.gens
+import app.infrastructure.postgres.PostgresFlowRepository
+import app.{BaseSpec, DatabaseAspect}
 import zio.test.Assertion._
 import zio.test._
 

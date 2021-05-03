@@ -1,6 +1,6 @@
-package app.postgres
+package app.infrastructure.postgres
 
-import app.BaseSpec
+import app.{BaseSpec, DatabaseAspect, DatabaseScope}
 import zio.test.Assertion._
 import zio.test._
 

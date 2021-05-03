@@ -1,8 +1,8 @@
 package app.infrastructure.postgres
 
 import app.Error
-import app.forms.{CreateFormRequest, Form, FormId}
 import app.forms.outbound.FormsRepository
+import app.forms.{CreateFormRequest, Form, FormId}
 import doobie.implicits._
 import doobie.postgres.implicits._
 import zio._

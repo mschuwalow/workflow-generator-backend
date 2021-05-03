@@ -1,9 +1,9 @@
 package app.api
 
-import app.auth.{Scope, UserInfo}
 import app.auth.inbound.Permissions
-import app.flows.{FlowId, unresolved}
+import app.auth.{Scope, UserInfo}
 import app.flows.inbound.FlowService
+import app.flows.{FlowId, unresolved}
 import tsec.authentication._
 import tsec.mac.jca.HMACSHA256
 import zio.Has

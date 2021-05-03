@@ -4,7 +4,7 @@ import app.Type
 import zio._
 import zio.stream._
 
-private[kafka] trait KafkaClient {
+trait KafkaClient {
 
   def createStream(topicName: String): UIO[Unit]
 
@@ -20,7 +20,7 @@ private[kafka] trait KafkaClient {
 
 }
 
-private[kafka] object KafkaClient {
+object KafkaClient {
 
   def createStream(streamName: String): URIO[Has[KafkaClient], Unit] =
     ZIO.accessM(_.get.createStream(streamName))

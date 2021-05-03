@@ -1,6 +1,7 @@
-package app.postgres
+package app
 
 import app.Constants
+import app.infrastructure.postgres.Database
 import zio._
 import zio.blocking.Blocking
 import zio.clock.Clock

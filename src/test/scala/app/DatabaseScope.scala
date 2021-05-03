@@ -1,5 +1,6 @@
-package app.postgres
+package app
 
+import app.infrastructure.postgres.Database
 import zio._
 
 trait DatabaseScope {

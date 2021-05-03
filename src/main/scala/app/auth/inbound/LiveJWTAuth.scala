@@ -13,17 +13,19 @@ private final class LiveJWTAuth(signingKey: MacSigningKey[HMACSHA256], env: Live
 
   def auth(username: String, password: String) = {
     for {
-      userInfo     <- UserInfoService.getUserInfo(username, password)
-      authenticator = getTSecAuthenticator[Any]
-      token        <- authenticator.create(userInfo)
+      userInfo      <- UserInfoService.getUserInfo(username, password)
+      authenticator <- getTSecAuthenticator[Any]
+      token         <- authenticator.create(userInfo)
     } yield token
   }.provide(env)
 
   def getTSecAuthenticator[R] =
-    JWTAuthenticator.pstateless.inBearerToken[RIO[R, *], UserInfo, HMACSHA256](
-      21.days,
-      Some(7.days),
-      signingKey
+    ZIO.succeed(
+      JWTAuthenticator.pstateless.inBearerToken[RIO[R, *], UserInfo, HMACSHA256](
+        21.days,
+        Some(7.days),
+        signingKey
+      )
     )
 }
 
