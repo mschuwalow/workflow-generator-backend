@@ -5,7 +5,7 @@ import app.auth._
 import app.config.AuthConfig
 import zio._
 
-final class LivePermissions(
+private final class LivePermissions(
   config: AuthConfig
 ) extends Permissions {
 
@@ -26,7 +26,7 @@ final class LivePermissions(
 
 }
 
-object LivePermissions {
+private[inbound] object LivePermissions {
 
   type Env = Has[AuthConfig]
 

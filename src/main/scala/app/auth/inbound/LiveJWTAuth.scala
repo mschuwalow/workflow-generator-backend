@@ -29,7 +29,7 @@ private final class LiveJWTAuth(signingKey: MacSigningKey[HMACSHA256], env: Live
     )
 }
 
-object LiveJWTAuth {
+private[inbound] object LiveJWTAuth {
   type Env = Has[UserInfoService]
 
   val layer: RLayer[Env, Has[JWTAuth]] = {
