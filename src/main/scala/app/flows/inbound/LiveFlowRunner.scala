@@ -65,11 +65,19 @@ private final class LiveFlowRunner(
           else
             Stream
               .fromEffect(promise.await)
-              .crossRight(FormsService.subscribe(formId, elementType))
+              .crossRight(
+                ZStream
+                  .fromEffect(FormsService.getById(formId))
+                  .flatMap(form =>
+                    if (form.outputType == elementType) {
+                      FormsService.subscribe(form)
+                    } else {
+                      ZStream.dieMessage(s"Form type mismatch. expected: $elementType; got: ${form.outputType}")
+                    }
+                  )
+              )
               .broadcastDynamic(256)
-              .map { s =>
-                acc + (id -> s)
-              }
+              .map(s => acc + (id -> s))
               .provide(env)
       }
 

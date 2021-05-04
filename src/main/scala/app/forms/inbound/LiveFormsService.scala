@@ -1,6 +1,5 @@
 package app.forms.inbound
 
-import app.Type
 import app.forms._
 import app.forms.outbound._
 import zio._
@@ -17,14 +16,17 @@ private final class LiveFormsService(
     } yield form
   }.provide(env)
 
-  def getById(id: app.forms.FormId): Task[Form] =
+  def getById(id: FormId): UIO[Form] =
     FormsRepository
       .getById(id)
       .provide(env)
+      .orDie
 
-  def publish(form: Form)(element: form.outputType.Scala): UIO[Unit] = ???
+  def publish(form: Form)(element: form.outputType.Scala): UIO[Unit] =
+    FormStreams.publish(form)(Chunk.single(element)).provide(env)
 
-  def subscribe(formId: FormId, elementType: Type): Stream[Nothing, elementType.Scala] = ???
+  def subscribe(form: Form): Stream[Nothing, form.outputType.Scala] =
+    FormStreams.consumeAll(form).provide(env)
 
 }
 

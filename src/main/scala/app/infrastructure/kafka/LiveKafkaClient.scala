@@ -16,6 +16,8 @@ import zio.kafka.producer.{Producer, ProducerSettings}
 import zio.kafka.serde.Serde
 import zio.stream.ZStream
 
+import java.util.UUID
+
 private final class LiveKafkaClient(
   adminClient: AdminClient,
   producer: Producer.Service[Any, Int, String],
@@ -69,12 +71,15 @@ private final class LiveKafkaClient(
 
   def makeConsumer(groupId: Option[String]) =
     for {
-      config           <- KafkaConfig.get.toManaged_
-      settings          =
+      config   <- KafkaConfig.get.toManaged_
+      settings  =
         ConsumerSettings(config.bootstrapServers).withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-      settingsWithGroup = groupId.fold(settings)(settings.withGroupId)
-      consumer         <- Consumer.make(settingsWithGroup)
+      groupId  <- groupId.fold(generateId.toManaged_)(ZManaged.succeed(_))
+      consumer <- Consumer.make(settings.withGroupId(groupId))
     } yield consumer
+
+  private def generateId =
+    ZIO.effectTotal(UUID.randomUUID().toString())
 }
 
 object LiveKafkaClient {
