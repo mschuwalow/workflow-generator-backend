@@ -23,7 +23,7 @@ object Main extends App {
       } yield ()
 
     prog
-      .provideSomeLayer[ZEnv](layers.prod)
+      .provideLayer(layers.prod)
       .exitCode
   }
 

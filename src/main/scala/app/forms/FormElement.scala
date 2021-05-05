@@ -1,6 +1,6 @@
 package app.forms
 
-import app.flows.Type
+import app.Type
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.{Decoder, Encoder}
