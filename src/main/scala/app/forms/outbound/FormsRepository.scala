@@ -5,7 +5,7 @@ import zio._
 
 trait FormsRepository {
   def get(id: FormId): Task[Option[Form]]
-  def getById(id: FormId): Task[Form]
+  def getOrFail(id: FormId): Task[Form]
   def create(form: CreateFormRequest): Task[Form]
 }
 
@@ -15,7 +15,7 @@ object FormsRepository {
     ZIO.accessM(_.get.get(id))
 
   def getById(id: FormId): RIO[Has[FormsRepository], Form] =
-    ZIO.accessM(_.get.getById(id))
+    ZIO.accessM(_.get.getOrFail(id))
 
   def create(form: CreateFormRequest): RIO[Has[FormsRepository], Form] =
     ZIO.accessM(_.get.create(form))

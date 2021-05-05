@@ -19,7 +19,7 @@ private final class PostgresFormsRepository(xa: TaskTransactor) extends FormsRep
     query.query[Form].option.transact(xa)
   }
 
-  def getById(id: FormId): Task[Form] =
+  def getOrFail(id: FormId): Task[Form] =
     get(id).flatMap {
       case Some(flow) => ZIO.succeed(flow)
       case None       => ZIO.fail(Error.NotFound)
