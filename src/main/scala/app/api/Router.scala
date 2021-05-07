@@ -4,6 +4,7 @@ import app.auth.inbound.JWTAuth
 import cats.syntax.semigroupk._
 import org.http4s._
 import org.http4s.implicits._
+import org.http4s.server.middleware.CORS
 import org.http4s.server.{Router => Http4sRouter}
 import zio._
 import zio.interop.catz._
@@ -45,6 +46,6 @@ object Router {
     for {
       securedRoutes <- makeSecuredRoutes
       allRoutes      = swaggerEndpoint.routes <+> normalRoutes <+> securedRoutes
-    } yield ErrorHandlingMiddleware(allRoutes).orNotFound
+    } yield CORS(ErrorHandlingMiddleware(allRoutes)).orNotFound
   }
 }
