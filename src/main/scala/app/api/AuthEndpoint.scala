@@ -1,6 +1,6 @@
 package app.api
 
-import app.auth.JWTAuth
+import app.auth.inbound.JWTAuth
 import io.circe.Decoder
 import io.circe.generic.semiauto.deriveDecoder
 import org.http4s.{HttpRoutes, Response, Status}

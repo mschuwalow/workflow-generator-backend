@@ -24,6 +24,6 @@ object SwaggerEndpoint {
 
   type Env = Blocking
 
-  final val fileNames = Set("swagger.yaml", "swagger.yml")
+  final val fileNames = Set("swagger.yaml", "swagger.yml", "api.yaml", "api.yml")
 
 }
