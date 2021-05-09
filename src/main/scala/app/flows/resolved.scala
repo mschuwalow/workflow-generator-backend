@@ -1,5 +1,6 @@
 package app.flows
 
+import app.Type
 import app.forms.FormId
 
 object resolved {

@@ -1,7 +1,9 @@
 package app.api
 
-import app.auth.{Permissions, Scope, UserInfo}
-import app.forms.{CreateFormRequest, FormId, FormsRepository, FormsService}
+import app.auth.inbound.Permissions
+import app.auth.{Scope, UserInfo}
+import app.forms.inbound.FormsService
+import app.forms.{CreateFormRequest, FormId}
 import tsec.authentication._
 import tsec.mac.jca.HMACSHA256
 import zio.Has
@@ -22,12 +24,12 @@ final class FormsEndpoint[R <: FormsEndpoint.Env] extends Endpoint[R] {
     case GET -> Root / UUIDVar(id) asAuthed user =>
       for {
         _        <- Permissions.authorize(user, Scope.Admin)
-        flow     <- FormsRepository.get(FormId(id))
+        flow     <- FormsService.getById(FormId(id))
         response <- Ok(flow)
       } yield response
   }
 }
 
 object FormsEndpoint {
-  type Env = Has[FormsRepository] with Has[Permissions] with Has[FormsService]
+  type Env = Has[Permissions] with Has[FormsService]
 }
