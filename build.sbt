@@ -25,7 +25,7 @@ inThisBuild(
     ),
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
-    scalaVersion := "2.13.5",
+    scalaVersion := "2.13.6",
     scalafixDependencies ++= Dependencies.ScalaFix
   )
 )
