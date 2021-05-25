@@ -1,23 +1,14 @@
-name: Automerge
+name: Auto-Merge
 on:
   pull_request_target:
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - edited
-      - labeled
-      - unlabeled
-      - ready_for_review
+    types: [labeled]
 
 jobs:
-  automerge:
+  enable-auto-merge:
     runs-on: ubuntu-latest
+
+    if: github.event.pull_request.user.login == 'mschuwalow' && contains(github.event.pull_request.labels.*.name, 'automerge')
     steps:
-      - uses: reitermarkus/automerge@v1
-        with:
-          token: ${{ secrets.GH_ADMIN_TOKEN }}
-          merge-method: squash
-          required-labels: automerge
-          pull-request: ${{ github.event.inputs.pull-request }}
-          pull-request-author-associations: "MEMBER,OWNER"
+    - uses: alexwilson/enable-github-automerge-action@main
+      with:
+        github-token: "${{ secrets.GITHUB_TOKEN }}"
