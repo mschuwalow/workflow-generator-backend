@@ -1,12 +1,7 @@
-name: Autoupdate
+name: Autoupdate PRs
 on:
-  # This will trigger on all pushes to all branches.
   push: {}
-  # Alternatively, you can only trigger if commits are pushed to certain branches, e.g.:
-  # push:
-  #   branches:
-  #     - master
-  #     - unstable
+
 jobs:
   autoupdate:
     name: autoupdate
