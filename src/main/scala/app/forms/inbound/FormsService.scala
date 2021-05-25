@@ -7,7 +7,7 @@ import zio.stream._
 trait FormsService {
   def create(request: CreateFormRequest): Task[Form]
   def getById(id: FormId): UIO[Form]
-  def publish(form: Form)(element: form.outputType.Scala): UIO[Unit]
+  def submit(form: Form)(result: form.outputType.Scala): UIO[Unit]
   def subscribe(form: Form): Stream[Nothing, form.outputType.Scala]
 }
 
@@ -20,7 +20,7 @@ object FormsService {
     ZIO.accessM(_.get.getById(id))
 
   def publish(form: Form)(element: form.outputType.Scala): URIO[Has[FormsService], Unit] =
-    ZIO.accessM(_.get.publish(form)(element))
+    ZIO.accessM(_.get.submit(form)(element))
 
   def subscribe(form: Form): ZStream[Has[FormsService], Nothing, form.outputType.Scala] =
     ZStream.accessStream(_.get.subscribe(form))
