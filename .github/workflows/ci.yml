@@ -59,10 +59,3 @@ jobs:
     - name: Stop docker-compose
       run: |
         docker-compose down
-
-  ci:
-    runs-on: ubuntu-20.04
-    needs: [lint, test]
-    steps:
-      - name: Aggregate job outcomes
-        run: echo "build succeeded"
