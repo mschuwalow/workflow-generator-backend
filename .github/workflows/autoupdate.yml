@@ -17,3 +17,4 @@ jobs:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
           PR_FILTER: 'labelled'
           PR_LABELS: 'autoupdate'
+          MERGE_CONFLICT_ACTION: 'ignore'
