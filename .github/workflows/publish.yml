@@ -1,5 +1,4 @@
-name: "Publish"
-
+name: "Publish to Docker Hub"
 on:
   workflow_dispatch:
 
