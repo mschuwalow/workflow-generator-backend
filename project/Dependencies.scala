@@ -5,9 +5,9 @@ object Dependencies {
   object Versions {
     val betterMonadicFor       = "0.3.1"
     val circe                  = "0.13.0"
-    val doobie                 = "0.13.2"
+    val doobie                 = "0.13.3"
     val flyway                 = "7.9.0"
-    val http4s                 = "0.21.22"
+    val http4s                 = "0.21.23"
     val jawn                   = "1.1.2"
     val kindProjector          = "0.13.0"
     val korolev                = "0.17.2"
@@ -15,15 +15,15 @@ object Dependencies {
     val organizeImports        = "0.5.0"
     val pureConfig             = "0.15.0"
     val py4j                   = "0.10.9.2"
-    val scalaParserCombinators = "1.1.2"
+    val scalaParserCombinators = "2.0.0"
     val silencer               = "1.7.0"
     val sttp                   = "2.2.9"
     val tsec                   = "0.2.1"
-    val zio                    = "1.0.8"
-    val zioInteropCats         = "2.4.1.0"
+    val zio                    = "1.0.7"
+    val zioInteropCats         = "2.5.1.0"
     val zioKafka               = "0.14.0"
     val zioLogging             = "0.5.8"
-    val zioPrelude             = "1.0.0-RC3"
+    val zioPrelude             = "1.0.0-RC5"
   }
   import Versions._
 

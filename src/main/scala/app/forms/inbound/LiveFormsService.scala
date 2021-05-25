@@ -22,7 +22,7 @@ private final class LiveFormsService(
       .provide(env)
       .orDie
 
-  def publish(form: Form)(element: form.outputType.Scala): UIO[Unit] =
+  def submit(form: Form)(element: form.outputType.Scala): UIO[Unit] =
     FormStreams.publish(form)(Chunk.single(element)).provide(env)
 
   def subscribe(form: Form): Stream[Nothing, form.outputType.Scala] =

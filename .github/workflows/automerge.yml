@@ -1,0 +1,14 @@
+name: Enable Automerge
+on:
+  pull_request_target:
+    types: [labeled]
+
+jobs:
+  enable-auto-merge:
+    runs-on: ubuntu-latest
+
+    if: github.event.pull_request.user.login == 'mschuwalow' && contains(github.event.pull_request.labels.*.name, 'automerge')
+    steps:
+    - uses: alexwilson/enable-github-automerge-action@main
+      with:
+        github-token: "${{ secrets.GH_ADMIN_TOKEN }}"
