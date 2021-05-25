@@ -1,7 +1,9 @@
 name: Label PR
 on:
   pull_request:
-    types: [opened]
+    types:
+      - reopened
+      - opened
 
 jobs:
   pr-labeler:

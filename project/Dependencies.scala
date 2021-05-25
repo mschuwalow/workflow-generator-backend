@@ -15,15 +15,15 @@ object Dependencies {
     val organizeImports        = "0.5.0"
     val pureConfig             = "0.15.0"
     val py4j                   = "0.10.9.2"
-    val scalaParserCombinators = "1.1.2"
+    val scalaParserCombinators = "2.0.0"
     val silencer               = "1.7.0"
     val sttp                   = "2.2.9"
     val tsec                   = "0.2.1"
-    val zio                    = "1.0.7"
+    val zio                    = "1.0.8"
     val zioInteropCats         = "2.5.1.0"
     val zioKafka               = "0.14.0"
     val zioLogging             = "0.5.9"
-    val zioPrelude             = "1.0.0-RC3"
+    val zioPrelude             = "1.0.0-RC5"
   }
   import Versions._
 
