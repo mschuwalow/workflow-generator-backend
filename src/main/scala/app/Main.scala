@@ -5,7 +5,7 @@ import app.config._
 import cats.effect._
 import fs2.Stream.Compiler._
 import org.http4s.HttpApp
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.middleware.CORS
 import zio.clock.Clock
 import zio.internal.{Platform, Tracing}
