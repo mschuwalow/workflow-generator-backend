@@ -21,7 +21,7 @@ object Dependencies {
     val tsec                   = "0.2.1"
     val zio                    = "1.0.10"
     val zioInteropCats         = "2.5.1.0"
-    val zioKafka               = "0.14.0"
+    val zioKafka               = "0.16.0"
     val zioLogging             = "0.5.11"
     val zioPrelude             = "1.0.0-RC5"
   }
