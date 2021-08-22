@@ -19,7 +19,7 @@ object Dependencies {
     val silencer               = "1.7.0"
     val sttp                   = "2.2.9"
     val tsec                   = "0.2.1"
-    val zio                    = "1.0.10"
+    val zio                    = "1.0.11"
     val zioInteropCats         = "2.5.1.0"
     val zioKafka               = "0.14.0"
     val zioLogging             = "0.5.11"
