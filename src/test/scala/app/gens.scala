@@ -24,7 +24,7 @@ object gens {
   def tObject: Gen[Random with Sized, (String, Type)] =
     Gen.listOfBounded(0, 3)(anyType).map { xs =>
       val names  = xs.zipWithIndex.map { case ((typeString, t), i) =>
-        val field = s"field_${i}"
+        val field = s"field_$i"
         (s""""$field": $typeString""", field, t)
       }
       val string = names.map(_._1).mkString("{", ", ", "}")

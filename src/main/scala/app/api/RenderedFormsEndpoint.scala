@@ -79,7 +79,8 @@ final class RenderedFormsEndpoint[R <: RenderedFormsEndpoint.Env](mountPath: Str
                       button(
                         "Submit",
                         event("click") { access =>
-                          val elements = ZIO.foreach(definitions) { case (inputId, element) =>
+                          val elements = ZIO
+                            .foreach(definitions) { case (inputId, element) =>
                               val property = access.property(inputId)
                               val out      = element match {
                                 case TextField(_, _)   =>
@@ -107,7 +108,7 @@ final class RenderedFormsEndpoint[R <: RenderedFormsEndpoint.Env](mountPath: Str
               )
             )
           }
-        case State.Submitted                  =>
+        case State.Submitted                 =>
           optimize {
             Html(body("Form has been submitted"))
           }
@@ -125,8 +126,8 @@ object RenderedFormsEndpoint {
     sealed trait State
 
     object State {
-      final case class Loaded(form: Form, userInfo: UserInfo)  extends State
-      case object Submitted                                    extends State
+      final case class Loaded(form: Form, userInfo: UserInfo) extends State
+      case object Submitted                                   extends State
     }
   }
 }
