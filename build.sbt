@@ -2,15 +2,11 @@ addCommandAlias("build", "prepare; test")
 addCommandAlias("prepare", "fix; fmt")
 addCommandAlias("check", "fixCheck; fmtCheck")
 addCommandAlias("fix", "all compile:scalafix test:scalafix")
-addCommandAlias(
-  "fixCheck",
-  "compile:scalafix --check; test:scalafix --check"
-)
+addCommandAlias("fixCheck", "compile:scalafix --check; test:scalafix --check")
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
-addCommandAlias(
-  "fmtCheck",
-  "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck"
-)
+addCommandAlias("fmtCheck", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
+
+resolvers += "jitpack".at("https://jitpack.io")
 
 inThisBuild(
   List(

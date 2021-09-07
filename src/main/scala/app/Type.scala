@@ -142,6 +142,7 @@ object Type {
       implicit val rightDecoder = right.deriveDecoder
       Decoder[(left.Scala, right.Scala)]
     }
+
   }
 
   final case class TEither(left: Type, right: Type) extends Type {
