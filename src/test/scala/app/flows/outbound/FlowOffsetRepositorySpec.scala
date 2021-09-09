@@ -8,8 +8,8 @@ import zio.test._
 
 object FlowOffsetRepositorySpec extends BaseSpec with DatabaseAspect {
 
-  def baseSpec =
-    suite("Spec")(
+  def baseSpec(name: String) =
+    suite(name)(
       testM("can save and get offsets") {
         checkM(gens.typed.createFlowRequest) { request =>
           db {
@@ -40,9 +40,7 @@ object FlowOffsetRepositorySpec extends BaseSpec with DatabaseAspect {
 
   def spec =
     suite("FlowsRepository")(
-      suite("Postgres implementation")(
-        baseSpec @@ database
-      ).provideCustomLayerShared(PostgresLayer)
+      (baseSpec("Postgres implementation") @@ database).provideCustomLayerShared(PostgresLayer)
     )
 
   val PostgresLayer = DatabaseLayer >+> PostgresFlowRepository.layer >+> PostgresFlowOffsetRepository.layer

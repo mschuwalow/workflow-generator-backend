@@ -1,13 +1,15 @@
 package app.jforms
 
 import app.Type
+import app.auth.Scope
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder, Json}
 
 final case class JForm(
   id: JFormId,
   dataSchema: JFormDataSchema,
-  uiSchema: Json
+  uiSchema: Json,
+  perms: Option[Scope]
 ) {
 
   val outputType: Type =

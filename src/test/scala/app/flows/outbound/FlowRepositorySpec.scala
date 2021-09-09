@@ -8,8 +8,8 @@ import zio.test._
 
 object FlowRepositorySpec extends BaseSpec with DatabaseAspect {
 
-  def baseSpec =
-    suite("Spec")(
+  def baseSpec(name: String) =
+    suite(name)(
       testM("can save and get flows") {
         checkM(gens.typed.createFlowRequest) { request =>
           db {
@@ -60,9 +60,7 @@ object FlowRepositorySpec extends BaseSpec with DatabaseAspect {
 
   def spec =
     suite("FlowsRepository")(
-      suite("Postgres implementation")(
-        baseSpec @@ database
-      ).provideCustomLayerShared(PostgresLayer)
+      (baseSpec("Postgres implementation") @@ database).provideCustomLayerShared(PostgresLayer)
     )
 
   val PostgresLayer = DatabaseLayer >+> PostgresFlowRepository.layer

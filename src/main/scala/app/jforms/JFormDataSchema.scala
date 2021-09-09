@@ -6,6 +6,8 @@ import cats.instances.either._
 import cats.instances.list._
 import cats.syntax.flatMap._
 import cats.syntax.traverse._
+import doobie.postgres.circe.jsonb.implicits._
+import doobie.util.{Get, Put}
 import io.circe.schema.{Schema, ValidationError}
 import io.circe.{ACursor, Decoder, Encoder, Json}
 
@@ -31,7 +33,13 @@ object JFormDataSchema {
   implicit val decoder: Decoder[JFormDataSchema] =
     Decoder.decodeJson.emap(fromJson)
 
-  private[this] def fromJson(js: Json): Either[String, JFormDataSchema] =
+  implicit val put: Put[JFormDataSchema] =
+    Put[Json].contramap(_.js)
+
+  implicit val get: Get[JFormDataSchema] =
+    Get[Json].map(fromJson(_).toOption.get)
+
+  def fromJson(js: Json): Either[String, JFormDataSchema] =
     Try(Schema.load(js)).toEither.left.map(e => s"Failed to parse schema: $e") >>
       extractType(js.hcursor).map(JFormDataSchema(js, _))
 
