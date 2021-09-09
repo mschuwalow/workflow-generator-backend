@@ -10,7 +10,7 @@ object Dependencies {
     val http4s                 = "0.21.26"
     val jawn                   = "1.2.0"
     val kindProjector          = "0.13.2"
-    val korolev                = "0.17.2"
+    val korolev                = "1.0.0"
     val log4j                  = "2.14.1"
     val organizeImports        = "0.5.0"
     val pureConfig             = "0.16.0"
@@ -22,8 +22,8 @@ object Dependencies {
     val zio                    = "1.0.11"
     val zioInteropCats         = "2.5.1.0"
     val zioKafka               = "0.14.0"
-    val zioLogging             = "0.5.11"
-    val zioPrelude             = "1.0.0-RC6"
+    val zioLogging             = "0.5.12"
+    val zioPrelude             = "1.0.0-RC5"
   }
   import Versions._
 
