@@ -16,11 +16,9 @@ object FlowRepositorySpec extends BaseSpec with DatabaseAspect {
             for {
               r1 <- FlowRepository.create(request)
               r2 <- FlowRepository.getById(r1.id)
-            } yield assert(r1.streams)(equalTo(request.streams)) && assert(r2.streams)(
-              equalTo(request.streams)
-            ) && assert(
-              r1.id
-            )(equalTo(r2.id))
+            } yield assert(r1.sinks)(equalTo(request.streams)) &&
+              assert(r2.sinks)(equalTo(request.streams)) &&
+              assert(r1.id)(equalTo(r2.id))
           }
         }
       },

@@ -4,7 +4,6 @@ import app.Error
 import app.flows._
 import app.flows.inbound.compiler
 import app.flows.outbound._
-import app.forms.inbound.FormsService
 import zio._
 
 private final class LiveFlowService(
@@ -45,7 +44,7 @@ private final class LiveFlowService(
 
 private[inbound] object LiveFlowService {
 
-  type Env = Has[FlowRunner] with Has[FlowRepository] with Has[FormsService]
+  type Env = Has[FlowRunner] with Has[FlowRepository] with compiler.resolver.Env
 
   val layer: ZLayer[Env, Throwable, Has[FlowService]] = {
     for {

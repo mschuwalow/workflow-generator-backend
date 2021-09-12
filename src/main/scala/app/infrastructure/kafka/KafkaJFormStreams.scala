@@ -29,6 +29,6 @@ private final class KafkaJFormStreams(
 object KafkaJFormStreams {
   type Env = Has[KafkaClient]
 
-  val layer: ZLayer[Env, Nothing, Has[JFormStreams]] =
+  val layer: URLayer[Env, Has[JFormStreams]] =
     ZIO.access[Env](env => new KafkaJFormStreams(env.get)).toLayer
 }

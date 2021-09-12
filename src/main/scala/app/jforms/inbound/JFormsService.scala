@@ -11,7 +11,7 @@ trait JFormsService {
   def subscribe(form: JForm): Stream[Nothing, form.outputType.Scala]
 }
 
-object FormsService {
+object JFormsService {
 
   def create(form: CreateJFormRequest): RIO[Has[JFormsService], JForm] =
     ZIO.accessM(_.get.create(form))

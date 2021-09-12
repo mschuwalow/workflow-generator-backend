@@ -138,11 +138,7 @@ private[inbound] object semantic {
             // if they do not match typechecking will fail later.
             myType <- outputTypeHint
                         .orElse(hint)
-                        .fold[Run[Type]](
-                          fail(
-                            "Type could not be determined. Try adding a type hint"
-                          )
-                        )(pure(_))
+                        .fold[Run[Type]](fail("Type could not be determined. Try adding a type hint."))(pure(_))
           } yield typed.Stream.UDF(id, code, s, myType)
         case InnerJoin(stream1, stream2)                      =>
           hint match {
@@ -193,7 +189,9 @@ private[inbound] object semantic {
           }
         case FormOutput(formId, elementType)                  =>
           pure(typed.Stream.FormOutput(id, formId, elementType))
-        case _                                                =>
+        case JFormOutput(formId, elementType)                 =>
+          pure(typed.Stream.JFormOutput(id, formId, elementType))
+        case Void(_, _)                                       =>
           fail("Sink not expected here")
       }
     }

@@ -28,7 +28,7 @@ object gens {
         (s""""$field": $typeString""", field, t)
       }
       val string = names.map(_._1).mkString("{", ", ", "}")
-      val t      = Type.TObject(names.map { case (_, f, t) => (f, t) })
+      val t      = Type.TObject(names.map { case (_, f, t) => (f, t) }.toMap)
       (string, t)
     }
 

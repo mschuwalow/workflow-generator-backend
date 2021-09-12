@@ -52,7 +52,7 @@ object JFormDataSchema {
           .toList
           .flatten
           .traverse(k => extractType(hc.downField("properties").downField(k)).map((k, _)))
-        fields.map(Type.TObject.apply)
+        fields.map(fs => Type.TObject(fs.toMap))
       case "string"             =>
         hc.get[String]("format") match {
           case Right("date") => Right(Type.TDate)
