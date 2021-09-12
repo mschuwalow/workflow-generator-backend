@@ -8,8 +8,8 @@ import zio.test._
 
 object FormsRepositorySpec extends BaseSpec with DatabaseAspect {
 
-  def baseSpec =
-    suite("Spec")(
+  def baseSpec(name: String) =
+    suite(name)(
       testM("can save and get forms") {
         checkM(gens.createFormRequest) { request =>
           db {
@@ -43,9 +43,7 @@ object FormsRepositorySpec extends BaseSpec with DatabaseAspect {
 
   def spec =
     suite("FormRepository")(
-      suite("Postgres implementation")(
-        baseSpec @@ database
-      ).provideCustomLayerShared(PostgresLayer)
+      (baseSpec("Postgres implementation") @@ database).provideCustomLayerShared(PostgresLayer)
     )
 
   val PostgresLayer = DatabaseLayer >+> PostgresFormsRepository.layer

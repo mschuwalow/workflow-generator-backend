@@ -23,6 +23,18 @@ components:
       required:
         - uniqueFormElements
       type: object
+    CreateJFormRequest:
+      properties:
+        dataSchema:
+          type: object
+        perms:
+          $ref: '#/components/schemas/Scope'
+        uiSchema:
+          type: object
+      required:
+        - dataSchema
+        - uiSchema
+      type: object
     Flow:
       properties:
         id:
@@ -116,6 +128,22 @@ components:
               type: string
           type: object
     FormId:
+      format: uuid
+      type: string
+    JForm:
+      properties:
+        dataSchema: {}
+        id:
+          $ref: '#/components/schemas/JFormId'
+        perms:
+          $ref: '#/components/schemas/Scope'
+        uiSchema: {}
+      required:
+        - id
+        - dataSchema
+        - uiSchema
+      type: object
+    JFormId:
       format: uuid
       type: string
     LoginRequest:
@@ -511,6 +539,69 @@ paths:
       summary: Get a form by id
       tags:
         - forms
+  /jforms:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateJFormRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JForm'
+          description: Form created
+        '401':
+          description: Invalid credentials
+      security:
+        - BearerAuth: []
+      summary: Create a new form
+      tags:
+        - json forms
+  /jforms/{formId}:
+    get:
+      parameters:
+        - in: path
+          name: formId
+          required: true
+          schema:
+            $ref: '#/components/schemas/JFormId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JForm'
+          description: Successfully retrieved form
+      security:
+        - BearerAuth: []
+      summary: Get a form by id
+      tags:
+        - json forms
+  /jforms/{formId}/submissions:
+    post:
+      parameters:
+        - in: path
+          name: formId
+          required: true
+          schema:
+            $ref: '#/components/schemas/JFormId'
+      requestBody:
+        content:
+          application/json:
+            schema: {}
+        required: true
+      responses:
+        '202':
+          description: Form has been submitted
+      security:
+        - BearerAuth: []
+      summary: Submit a form
+      tags:
+        - json forms
   /rendered/{formId}:
     get:
       parameters:

@@ -8,19 +8,17 @@ import zio.test._
 
 object FlowRepositorySpec extends BaseSpec with DatabaseAspect {
 
-  def baseSpec =
-    suite("Spec")(
+  def baseSpec(name: String) =
+    suite(name)(
       testM("can save and get flows") {
         checkM(gens.typed.createFlowRequest) { request =>
           db {
             for {
               r1 <- FlowRepository.create(request)
               r2 <- FlowRepository.getById(r1.id)
-            } yield assert(r1.streams)(equalTo(request.streams)) && assert(r2.streams)(
-              equalTo(request.streams)
-            ) && assert(
-              r1.id
-            )(equalTo(r2.id))
+            } yield assert(r1.sinks)(equalTo(request.streams)) &&
+              assert(r2.sinks)(equalTo(request.streams)) &&
+              assert(r1.id)(equalTo(r2.id))
           }
         }
       },
@@ -60,9 +58,7 @@ object FlowRepositorySpec extends BaseSpec with DatabaseAspect {
 
   def spec =
     suite("FlowsRepository")(
-      suite("Postgres implementation")(
-        baseSpec @@ database
-      ).provideCustomLayerShared(PostgresLayer)
+      (baseSpec("Postgres implementation") @@ database).provideCustomLayerShared(PostgresLayer)
     )
 
   val PostgresLayer = DatabaseLayer >+> PostgresFlowRepository.layer

@@ -14,6 +14,7 @@ object Router {
   type Env = FlowEndpoint.Env
     with RenderedFormsEndpoint.Env
     with FormsEndpoint.Env
+    with JFormsEndpoint.Env
     with SwaggerEndpoint.Env
     with Has[JWTAuth]
 
@@ -21,6 +22,7 @@ object Router {
     val healthEndpoint        = new HealthEndpoint[R]()
     val flowEndpoint          = new FlowEndpoint[R]()
     val formsEndpoint         = new FormsEndpoint[R]()
+    val jformsEndpoint        = new JFormsEndpoint[R]()
     val renderedFormsEndpoint = new RenderedFormsEndpoint[R]("/rendered")
     val authEndpoint          = new AuthEndpoint[R]()
     val swaggerEndpoint       = new SwaggerEndpoint[R]()
@@ -32,13 +34,12 @@ object Router {
 
     val makeSecuredRoutes = for {
       authenticator       <- JWTAuth.getTSecAuthenticator[R]
-      flowRoutes           = flowEndpoint.authedRoutes
-      formsRoutes          = formsEndpoint.authedRoutes
       renderedFormsRoutes <- renderedFormsEndpoint.authedRoutes
     } yield AuthMiddleware(authenticator)(
       TSecRouter(
-        "/flows"    -> flowRoutes,
-        "/forms"    -> formsRoutes,
+        "/flows"    -> flowEndpoint.authedRoutes,
+        "/forms"    -> formsEndpoint.authedRoutes,
+        "/jforms"   -> jformsEndpoint.authedRoutes,
         "/rendered" -> renderedFormsRoutes
       )
     )
