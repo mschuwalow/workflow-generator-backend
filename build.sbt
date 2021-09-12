@@ -2,20 +2,16 @@ addCommandAlias("build", "prepare; test")
 addCommandAlias("prepare", "fix; fmt")
 addCommandAlias("check", "fixCheck; fmtCheck")
 addCommandAlias("fix", "all compile:scalafix test:scalafix")
-addCommandAlias(
-  "fixCheck",
-  "compile:scalafix --check; test:scalafix --check"
-)
+addCommandAlias("fixCheck", "compile:scalafix --check; test:scalafix --check")
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
-addCommandAlias(
-  "fmtCheck",
-  "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck"
-)
+addCommandAlias("fmtCheck", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
+
+resolvers += "jitpack".at("https://jitpack.io")
 
 inThisBuild(
   List(
-    organization := "com.schuwalow",
-    developers := List(
+    organization      := "com.schuwalow",
+    developers        := List(
       Developer(
         "mschuwalow",
         "Maxim Schuwalow",
@@ -25,7 +21,7 @@ inThisBuild(
     ),
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
-    scalaVersion := "2.13.6",
+    scalaVersion      := "2.13.6",
     scalafixDependencies ++= Dependencies.ScalaFix
   )
 )
@@ -33,10 +29,10 @@ inThisBuild(
 lazy val root = (project in file("."))
   .enablePlugins(JavaAppPackaging, DockerSpotifyClientPlugin)
   .settings(
-    name := "workflow-generator-backend",
+    name                      := "workflow-generator-backend",
     ThisBuild / scalacOptions := Options
       .scalacOptions(scalaVersion.value, isSnapshot.value),
-    testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
+    testFrameworks            := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
     libraryDependencies ++= Dependencies.App
   )
 

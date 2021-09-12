@@ -11,7 +11,7 @@ final case class Form(
   perms: Option[Scope]
 ) {
   val outputType =
-    Type.TObject(elements.map(e => (e.id.value, e.elementType)))
+    Type.TObject(elements.map(e => (e.id.value, e.elementType)).toMap)
 }
 
 object Form {

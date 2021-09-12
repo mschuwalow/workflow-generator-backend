@@ -2,10 +2,11 @@ package app.flows.inbound.compiler
 
 import app.flows._
 import app.forms.inbound.FormsService
+import app.jforms.inbound.JFormsService
 import zio._
 
 private[inbound] object resolver {
-  type Env = Has[FormsService]
+  type Env = Has[FormsService] with Has[JFormsService]
 
   def resolve(input: unresolved.CreateFlowRequest): RIO[Env, resolved.CreateFlowRequest] = {
     val out = ZIO.foreach(input.components) { case (k, v) => resolveComponent(v).map((k, _)) }
@@ -20,6 +21,10 @@ private[inbound] object resolver {
         for {
           form <- FormsService.getById(formId)
         } yield Out.FormOutput(form.id, form.outputType)
+      case JFormOutput(formId)                              =>
+        for {
+          form <- JFormsService.getById(formId)
+        } yield Out.JFormOutput(form.id, form.outputType)
       case Never(elementType)                               =>
         ZIO.succeed(Out.Never(elementType))
       case Numbers(values)                                  =>

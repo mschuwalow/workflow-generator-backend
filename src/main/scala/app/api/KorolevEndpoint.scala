@@ -106,7 +106,7 @@ abstract class KorolevEndpoint[R <: KorolevEndpoint.Env] extends Endpoint[R] {
 
   private[this] def makeSinkAndSubscriber[F[_]: Effect: ConcurrentEffect]() = {
     val queue                               = Queue[F, String]()
-    val sink: Pipe[F, WebSocketFrame, Unit] = (in: FS2Stream[F, WebSocketFrame]) => {
+    val sink: Pipe[F, WebSocketFrame, Unit] = (in: FS2Stream[F, WebSocketFrame]) =>
       in.evalMap {
         case Text(t, _) if t != null =>
           queue.enqueue(t)
@@ -115,7 +115,6 @@ abstract class KorolevEndpoint[R <: KorolevEndpoint.Env] extends Endpoint[R] {
         case f                       =>
           throw new Exception(s"Invalid frame type ${f.getClass.getName}")
       }.onFinalizeCase(_ => queue.close())
-    }
     (sink, queue.stream)
   }
 

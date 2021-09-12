@@ -1,0 +1,8 @@
+{
+  "Vorname": "Max",
+  "Nachname": "Mustermann",
+  "Adresse": "test1",
+  "Postleitzahl": 123,
+  "Typ der Arbeit": "test2",
+  "Zur Veröffentlichung freigeben": true
+}
