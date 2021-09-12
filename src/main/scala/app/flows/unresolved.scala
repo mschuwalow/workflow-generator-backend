@@ -2,6 +2,7 @@ package app.flows
 
 import app.Type
 import app.forms.FormId
+import app.jforms.JFormId
 import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
@@ -27,6 +28,7 @@ object unresolved {
     def isSink: Boolean =
       self match {
         case FormOutput(_)   => false
+        case JFormOutput(_)  => false
         case Never(_)        => false
         case Numbers(_)      => false
         case Void(_, _)      => true
@@ -40,6 +42,7 @@ object unresolved {
   object Component {
 
     // sources
+    final case class JFormOutput(formId: JFormId) extends Component
 
     final case class FormOutput(formId: FormId) extends Component
 

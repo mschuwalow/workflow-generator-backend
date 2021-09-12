@@ -73,15 +73,12 @@ private[inbound] object syntactic {
         case Never(_)                    => Check.unit
         case Numbers(_)                  => Check.unit
         case UDF(stream, _, _, _)        => checkComponent(stream)
-        case InnerJoin(stream1, stream2) =>
-          checkComponent(stream1) *> checkComponent(stream2)
-        case LeftJoin(stream1, stream2)  =>
-          checkComponent(stream1) *> checkComponent(stream2)
-        case Merge(stream1, stream2)     =>
-          checkComponent(stream1) *> checkComponent(stream2)
-        case Void(stream, _)             =>
-          checkComponent(stream)
+        case InnerJoin(stream1, stream2) => checkComponent(stream1) *> checkComponent(stream2)
+        case LeftJoin(stream1, stream2)  => checkComponent(stream1) *> checkComponent(stream2)
+        case Merge(stream1, stream2)     => checkComponent(stream1) *> checkComponent(stream2)
+        case Void(stream, _)             => checkComponent(stream)
         case FormOutput(_)               => Check.unit
+        case JFormOutput(_)              => Check.unit
       }
     }
   }
