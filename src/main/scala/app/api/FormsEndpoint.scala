@@ -24,8 +24,8 @@ final class FormsEndpoint[R <: FormsEndpoint.Env] extends Endpoint[R] {
     case GET -> Root / UUIDVar(id) asAuthed user =>
       for {
         _        <- Permissions.authorize(user, Scope.Admin)
-        flow     <- FormsService.getById(FormId(id))
-        response <- Ok(flow)
+        form     <- FormsService.getById(FormId(id))
+        response <- Ok(form)
       } yield response
   }
 }

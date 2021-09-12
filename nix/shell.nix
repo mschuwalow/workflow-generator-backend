@@ -1,6 +1,6 @@
 { pkgs }:
-with pkgs;
-mkShell {
-  buildInputs = [ gnumake nixfmt docker-compose sbt yq moreutils ]
+pkgs.mkShell {
+  buildInputs = with pkgs;
+    [ gnumake nixfmt docker-compose sbt yq moreutils fd ]
     ++ (with workflow-generator-backend; jar.buildInputs ++ runtimeDeps);
 }

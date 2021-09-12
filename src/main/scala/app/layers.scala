@@ -2,13 +2,8 @@ package app
 
 import app.config.ConfigLayer
 import app.infrastructure.http.StudIpUserInfoService
-import app.infrastructure.kafka.{KafkaFormStreams, LiveKafkaClient}
-import app.infrastructure.postgres.{
-  Database,
-  PostgresFlowOffsetRepository,
-  PostgresFlowRepository,
-  PostgresFormsRepository
-}
+import app.infrastructure.kafka._
+import app.infrastructure.postgres._
 import app.infrastructure.udf.LiveUDFRunner
 import sttp.client.httpclient.zio.HttpClientZioBackend
 import zio._
@@ -24,12 +19,15 @@ object layers {
       PostgresFlowOffsetRepository.layer >+>
       PostgresFlowRepository.layer >+>
       PostgresFormsRepository.layer >+>
+      PostgresJFormsRepository.layer >+>
       LiveUDFRunner.layer(4) >+>
       LiveKafkaClient.layer >+>
       KafkaFormStreams.layer >+>
+      KafkaJFormStreams.layer >+>
       HttpClientZioBackend.layer() >+>
       StudIpUserInfoService.layer >+>
       app.auth.inbound.layer >+>
       app.forms.inbound.layer >+>
+      app.jforms.inbound.layer >+>
       app.flows.inbound.layer
 }

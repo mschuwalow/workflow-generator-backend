@@ -5,6 +5,7 @@ object Dependencies {
   object Versions {
     val betterMonadicFor       = "0.3.1"
     val circe                  = "0.14.1"
+    val circeJsonSchema        = "0.2.0"
     val doobie                 = "0.13.4"
     val flyway                 = "7.15.0"
     val http4s                 = "0.21.26"
@@ -27,48 +28,47 @@ object Dependencies {
   }
   import Versions._
 
-  val App =
-    List(
-      "com.github.pureconfig"        %% "pureconfig"               % pureConfig,
-      "com.softwaremill.sttp.client" %% "httpclient-backend-zio"   % sttp,
-      "com.softwaremill.sttp.client" %% "circe"                    % sttp,
-      "dev.zio"                      %% "zio-interop-cats"         % zioInteropCats,
-      "dev.zio"                      %% "zio-kafka"                % zioKafka,
-      "dev.zio"                      %% "zio-logging-slf4j"        % zioLogging,
-      "dev.zio"                      %% "zio-logging"              % zioLogging,
-      "dev.zio"                      %% "zio-prelude"              % zioPrelude,
-      "dev.zio"                      %% "zio-streams"              % zio,
-      "dev.zio"                      %% "zio-test-sbt"             % zio   % "test",
-      "dev.zio"                      %% "zio-test"                 % zio   % "test",
-      "dev.zio"                      %% "zio"                      % zio,
-      "io.circe"                     %% "circe-core"               % circe,
-      "io.circe"                     %% "circe-generic-extras"     % circe,
-      "io.circe"                     %% "circe-generic"            % circe,
-      "io.circe"                     %% "circe-literal"            % circe % "test",
-      "io.github.jmcardon"           %% "tsec-http4s"              % tsec,
-      "net.sf.py4j"                   % "py4j"                     % py4j,
-      "org.apache.logging.log4j"      % "log4j-api"                % log4j,
-      "org.apache.logging.log4j"      % "log4j-core"               % log4j,
-      "org.apache.logging.log4j"      % "log4j-slf4j-impl"         % log4j,
-      "org.flywaydb"                  % "flyway-core"              % flyway,
-      "org.fomkin"                   %% "korolev-http4s"           % korolev,
-      "org.fomkin"                   %% "korolev-zio"              % korolev,
-      "org.http4s"                   %% "http4s-blaze-server"      % http4s,
-      "org.http4s"                   %% "http4s-circe"             % http4s,
-      "org.http4s"                   %% "http4s-dsl"               % http4s,
-      "org.scala-lang.modules"       %% "scala-parser-combinators" % scalaParserCombinators,
-      "org.tpolecat"                 %% "doobie-core"              % doobie,
-      "org.tpolecat"                 %% "doobie-hikari"            % doobie,
-      "org.tpolecat"                 %% "doobie-postgres-circe"    % doobie,
-      "org.tpolecat"                 %% "doobie-postgres"          % doobie,
-      "org.typelevel"                %% "jawn-parser"              % jawn,
-      compilerPlugin("com.olegpy"   %% "better-monadic-for" % betterMonadicFor),
-      compilerPlugin("org.typelevel" % "kind-projector"     % kindProjector cross CrossVersion.full)
-    )
+  val App = List(
+    "com.github.pureconfig"        %% "pureconfig"               % pureConfig,
+    "com.softwaremill.sttp.client" %% "httpclient-backend-zio"   % sttp,
+    "com.softwaremill.sttp.client" %% "circe"                    % sttp,
+    "dev.zio"                      %% "zio-interop-cats"         % zioInteropCats,
+    "dev.zio"                      %% "zio-kafka"                % zioKafka,
+    "dev.zio"                      %% "zio-logging-slf4j"        % zioLogging,
+    "dev.zio"                      %% "zio-logging"              % zioLogging,
+    "dev.zio"                      %% "zio-prelude"              % zioPrelude,
+    "dev.zio"                      %% "zio-streams"              % zio,
+    "dev.zio"                      %% "zio-test-sbt"             % zio   % "test",
+    "dev.zio"                      %% "zio-test"                 % zio   % "test",
+    "dev.zio"                      %% "zio"                      % zio,
+    "io.circe"                     %% "circe-core"               % circe,
+    "io.circe"                     %% "circe-generic-extras"     % circe,
+    "io.circe"                     %% "circe-generic"            % circe,
+    "io.circe"                     %% "circe-json-schema"        % circeJsonSchema,
+    "io.circe"                     %% "circe-literal"            % circe % "test",
+    "io.github.jmcardon"           %% "tsec-http4s"              % tsec,
+    "net.sf.py4j"                   % "py4j"                     % py4j,
+    "org.apache.logging.log4j"      % "log4j-api"                % log4j,
+    "org.apache.logging.log4j"      % "log4j-core"               % log4j,
+    "org.apache.logging.log4j"      % "log4j-slf4j-impl"         % log4j,
+    "org.flywaydb"                  % "flyway-core"              % flyway,
+    "org.fomkin"                   %% "korolev-http4s"           % korolev,
+    "org.fomkin"                   %% "korolev-zio"              % korolev,
+    "org.http4s"                   %% "http4s-blaze-server"      % http4s,
+    "org.http4s"                   %% "http4s-circe"             % http4s,
+    "org.http4s"                   %% "http4s-dsl"               % http4s,
+    "org.scala-lang.modules"       %% "scala-parser-combinators" % scalaParserCombinators,
+    "org.tpolecat"                 %% "doobie-core"              % doobie,
+    "org.tpolecat"                 %% "doobie-hikari"            % doobie,
+    "org.tpolecat"                 %% "doobie-postgres-circe"    % doobie,
+    "org.tpolecat"                 %% "doobie-postgres"          % doobie,
+    "org.typelevel"                %% "jawn-parser"              % jawn,
+    compilerPlugin("com.olegpy"   %% "better-monadic-for" % betterMonadicFor),
+    compilerPlugin("org.typelevel" % "kind-projector"     % kindProjector cross CrossVersion.full)
+  )
 
-  val ScalaFix =
-    List(
-      "com.github.liancheng" %% "organize-imports" % organizeImports
-    )
+  val ScalaFix = List(
+    "com.github.liancheng" %% "organize-imports" % organizeImports
+  )
 
 }

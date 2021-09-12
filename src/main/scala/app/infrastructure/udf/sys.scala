@@ -140,7 +140,7 @@ private[udf] object sys {
     for {
       executable <- extractResource(name)
       _          <- ZIO.effect(executable.toFile.setExecutable(true)).toManaged_
-      process    <- runCommand(s"${executable} ${args.mkString(" ")}")
+      process    <- runCommand(s"$executable ${args.mkString(" ")}")
     } yield process
 
 }
