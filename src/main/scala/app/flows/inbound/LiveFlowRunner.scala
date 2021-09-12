@@ -3,6 +3,7 @@ package app.flows.inbound
 import app.flows._
 import app.flows.outbound._
 import app.forms.inbound.FormsService
+import app.jforms.inbound.JFormsService
 import app.utils.StreamSyntax
 import zio._
 import zio.logging.{Logger, log}
@@ -15,17 +16,13 @@ private final class LiveFlowRunner(
 
   type SourcesStreamMap = Map[ComponentId, ZStream[Any, Nothing, Any]]
 
-  def run(flow: typed.Flow): Task[Unit] = {
-    val terminal = flow.streams.map(_.source).distinct
+  def run(flow: typed.Flow): Task[Unit] =
     Promise
       .makeManaged[Nothing, Unit]
       .flatMap { startConsuming =>
-        val sourcesM = ZManaged.foldLeft(terminal)(Map.empty: SourcesStreamMap) { case (acc, s) =>
-          collectSources(s, startConsuming, acc)
-        }
         for {
-          sources <- sourcesM
-          fibers  <- ZManaged.foreach(flow.streams) { s =>
+          sources <- collectSources(flow, startConsuming)
+          fibers  <- ZManaged.foreach(flow.sinks) { s =>
                        Promise.makeManaged[Nothing, Unit].flatMap { started =>
                          runStream(flow.id, s, sources, started.succeed(()).unit).toManaged_.fork.map((_, started))
                        }
@@ -37,51 +34,54 @@ private final class LiveFlowRunner(
       }
       .useNow
       .provide(env)
-  }
 
   private def collectSources(
-    stream: typed.Stream,
-    promise: Promise[Nothing, Unit],
-    sources: SourcesStreamMap
+    flow: typed.Flow,
+    promise: Promise[Nothing, Unit]
   ): Managed[Nothing, SourcesStreamMap] = {
     import typed.Stream._
-    def go(stream: typed.Stream, acc: SourcesStreamMap): Managed[Nothing, SourcesStreamMap] =
-      stream match {
-        case InnerJoin(_, stream1, stream2)      =>
-          go(stream1, acc).flatMap(go(stream2, _))
-        case UDF(_, _, stream, _)                =>
-          go(stream, acc)
-        case Numbers(_, _)                       =>
-          ZManaged.succeed(acc)
-        case Never(_, _)                         =>
-          ZManaged.succeed(acc)
-        case LeftJoin(_, stream1, stream2)       =>
-          go(stream1, acc).flatMap(go(stream2, _))
-        case Merge(_, stream1, stream2)          =>
-          go(stream1, acc).flatMap(go(stream2, _))
-        case FormOutput(id, formId, elementType) =>
-          if (acc.contains(id))
-            ZManaged.succeed(acc)
-          else
-            Stream
-              .fromEffect(promise.await)
-              .crossRight(
-                ZStream
-                  .fromEffect(FormsService.getById(formId))
-                  .flatMap(form =>
-                    if (form.outputType == elementType) {
-                      FormsService.subscribe(form)
-                    } else {
-                      ZStream.dieMessage(s"Form type mismatch. expected: $elementType; got: ${form.outputType}")
-                    }
-                  )
-              )
-              .broadcastDynamic(256)
-              .map(s => acc + (id -> s))
-              .provide(env)
+    ZManaged.foldLeft(flow.sinks.flatMap(_.stream.sources))(Map.empty: SourcesStreamMap) { case (acc, s) =>
+      s match {
+        case FormOutput(id, formId, elementType)  =>
+          Stream
+            .fromEffect(promise.await)
+            .crossRight(
+              ZStream
+                .fromEffect(FormsService.getById(formId))
+                .flatMap(form =>
+                  if (form.outputType == elementType) {
+                    FormsService.subscribe(form)
+                  } else {
+                    ZStream.dieMessage(s"Form type mismatch. expected: $elementType; got: ${form.outputType}")
+                  }
+                )
+            )
+            .broadcastDynamic(256)
+            .map(s => acc + (id -> s))
+            .provide(env)
+        case JFormOutput(id, formId, elementType) =>
+          Stream
+            .fromEffect(promise.await)
+            .crossRight(
+              ZStream
+                .fromEffect(JFormsService.getById(formId))
+                .flatMap(form =>
+                  if (form.outputType == elementType) {
+                    JFormsService.subscribe(form)
+                  } else {
+                    ZStream.dieMessage(s"Form type mismatch. expected: $elementType; got: ${form.outputType}")
+                  }
+                )
+            )
+            .broadcastDynamic(256)
+            .map(s => acc + (id -> s))
+            .provide(env)
+        case Never(id, _)                         =>
+          ZManaged.succeed(acc + (id -> ZStream.never))
+        case Numbers(id, values)                  =>
+          ZManaged.succeed(acc + (id -> ZStream.fromIterable(values)))
       }
-
-    go(stream, sources)
+    }
   }
 
   private def runStream(
@@ -94,7 +94,7 @@ private final class LiveFlowRunner(
       FlowOffsetRepository
         .get(flowId, sink.id)
         .flatMap { offset =>
-          interpretStream(sink.source, sources)
+          interpretStream(sink.stream, sources)
             .onFirstPull(onStart)
             .zipWithIndex
             .foldM(offset) { case (offset, (e, i)) =>
@@ -113,7 +113,7 @@ private final class LiveFlowRunner(
   private def interpretSink(
     flowId: FlowId,
     sink: typed.Sink
-  ): Managed[Nothing, sink.source.elementType.Scala => UIO[Unit]] = {
+  ): Managed[Nothing, sink.stream.elementType.Scala => UIO[Unit]] = {
     import typed.Sink._
     sink match {
       case Void(id, _) =>
@@ -133,6 +133,9 @@ private final class LiveFlowRunner(
     def go(
       stream: typed.Stream
     ): ZStream[Has[UDFRunner] with Has[FormsService], Throwable, stream.elementType.Scala] = {
+      def consumeSource(id: ComponentId) =
+        ZStream.fromIterable(sources.get(id)).flatten
+
       val anyStream: ZStream[Has[UDFRunner] with Has[FormsService], Throwable, Any] = stream match {
         case InnerJoin(_, stream1, stream2)    =>
           go(stream1)
@@ -154,10 +157,6 @@ private final class LiveFlowRunner(
           go(stream).mapM { element =>
             UDFRunner.runPython(code, stream.elementType, elementType)(element)
           }
-        case Numbers(_, values)                =>
-          Stream.fromIterable(values)
-        case Never(_, _)                       =>
-          ZStream.never
         case LeftJoin(_, stream1, stream2)     =>
           go(stream1)
             .mergeEither(go(stream2))
@@ -176,8 +175,8 @@ private final class LiveFlowRunner(
             }
         case Merge(_, stream1, stream2)        =>
           go(stream1).mergeEither(go(stream2))
-        case FormOutput(id, _, _)              =>
-          ZStream.fromIterable(sources.get(id)).flatten
+        case source: typed.Stream.Source       =>
+          consumeSource(source.id)
       }
       anyStream.asInstanceOf[ZStream[Has[UDFRunner] with Has[FormsService], Throwable, stream.elementType.Scala]]
     }
@@ -187,7 +186,11 @@ private final class LiveFlowRunner(
 
 private[inbound] object LiveFlowRunner {
 
-  type Env = Has[UDFRunner] with Has[Logger[String]] with Has[FormsService] with Has[FlowOffsetRepository]
+  type Env = Has[UDFRunner]
+    with Has[Logger[String]]
+    with Has[FormsService]
+    with Has[FlowOffsetRepository]
+    with Has[JFormsService]
 
   val layer: URLayer[Env, Has[FlowRunner]] = {
     for {

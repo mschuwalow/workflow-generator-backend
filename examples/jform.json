@@ -1,0 +1,77 @@
+{
+  "dataSchema": {
+    "type": "object",
+    "properties": {
+      "Nachname": {
+        "type": "string",
+        "isMoveable": "true",
+        "index": 1
+      },
+      "Vorname": {
+        "type": "string",
+        "isMoveable": "true",
+        "index": 2
+      },
+      "Adresse": {
+        "type": "string",
+        "isMoveable": "true",
+        "index": 3
+      },
+      "Postleitzahl": {
+        "type": "number",
+        "isMoveable": "true",
+        "index": 4
+      },
+      "Typ der Arbeit": {
+        "type": "string",
+        "isMoveable": "true",
+        "index": 5,
+        "enum": [
+          "Bachelorarbeit",
+          "Masterarbeit"
+        ]
+      },
+      "Zur Veröffentlichung freigeben": {
+        "type": "boolean",
+        "isMoveable": "true",
+        "index": 6
+      }
+    }
+  },
+  "uiSchema": {
+    "type": "VerticalLayout",
+    "elements": [
+      {
+        "type": "Label",
+        "text": "Anmeldung zur Abschlussarbeit"
+      },
+      {
+        "type": "Control",
+        "scope": "#/properties/Nachname"
+      },
+      {
+        "type": "Control",
+        "scope": "#/properties/Vorname"
+      },
+      {
+        "type": "Control",
+        "scope": "#/properties/Adresse"
+      },
+      {
+        "type": "Control",
+        "scope": "#/properties/Postleitzahl"
+      },
+      {
+        "type": "Control",
+        "scope": "#/properties/Typ der Arbeit",
+        "options": {
+          "format": "radio"
+        }
+      },
+      {
+        "type": "Control",
+        "scope": "#/properties/Zur Veröffentlichung freigeben"
+      }
+    ]
+  }
+}

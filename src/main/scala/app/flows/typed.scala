@@ -3,6 +3,7 @@ package app.flows
 import app.Type
 import app.Type._
 import app.forms.FormId
+import app.jforms.JFormId
 import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
@@ -11,7 +12,7 @@ import io.circe.generic.semiauto._
 import scala.annotation.unused
 
 object typed {
-  final case class Flow(id: FlowId, streams: List[Sink], state: FlowState)
+  final case class Flow(id: FlowId, sinks: List[Sink], state: FlowState)
 
   object Flow {
 
@@ -35,12 +36,12 @@ object typed {
 
   sealed trait Sink {
     def id: ComponentId
-    val source: Stream
+    val stream: Stream
   }
 
   object Sink {
 
-    final case class Void(id: ComponentId, source: Stream) extends Sink
+    final case class Void(id: ComponentId, stream: Stream) extends Sink
 
     @unused
     implicit val configuration: Configuration =
@@ -56,31 +57,43 @@ object typed {
   sealed trait Stream {
     val id: ComponentId
     val elementType: Type
+    val sources: Set[Stream.Source]
   }
 
   object Stream {
 
-    final case class FormOutput(id: ComponentId, formId: FormId, elementType: Type) extends Stream
+    sealed trait Source extends Stream { self =>
+      final val sources: Set[Source] = Set(self)
+    }
 
-    final case class Never(id: ComponentId, elementType: Type) extends Stream
+    final case class FormOutput(id: ComponentId, formId: FormId, elementType: Type) extends Source
 
-    final case class Numbers(id: ComponentId, values: List[Long]) extends Stream {
+    final case class JFormOutput(id: ComponentId, formId: JFormId, elementType: Type) extends Source
+
+    final case class Never(id: ComponentId, elementType: Type) extends Source
+
+    final case class Numbers(id: ComponentId, values: List[Long]) extends Source {
       val elementType = Type.TNumber
     }
 
     final case class InnerJoin(id: ComponentId, stream1: Stream, stream2: Stream) extends Stream {
       val elementType = TTuple(stream1.elementType, stream2.elementType)
+      val sources     = stream1.sources ++ stream2.sources
     }
 
     final case class LeftJoin(id: ComponentId, stream1: Stream, stream2: Stream) extends Stream {
       val elementType = TTuple(stream1.elementType, TOption(stream2.elementType))
+      val sources     = stream1.sources ++ stream2.sources
     }
 
     final case class Merge(id: ComponentId, stream1: Stream, stream2: Stream) extends Stream {
       val elementType = TEither(stream1.elementType, stream2.elementType)
+      val sources     = stream1.sources ++ stream2.sources
     }
 
-    final case class UDF(id: ComponentId, code: String, stream: Stream, elementType: Type) extends Stream
+    final case class UDF(id: ComponentId, code: String, stream: Stream, elementType: Type) extends Stream {
+      val sources = stream.sources
+    }
 
     @unused
     implicit val configuration: Configuration =

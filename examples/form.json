@@ -2,17 +2,17 @@
   "elements": [
     {
       "id": "firstName",
-      "label": "first name: ",
+      "label": "Vorname: ",
       "type": "TextField"
     },
     {
       "id": "lastName",
-      "label": "last name: ",
+      "label": "Nachname: ",
       "type": "TextField"
     },
     {
       "id": "date",
-      "label": "date: ",
+      "label": "Geburtsdatum: ",
       "type": "DatePicker"
     }
   ]

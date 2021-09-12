@@ -92,7 +92,7 @@ object Type {
     }
   }
 
-  final case class TObject(fields: List[(String, Type)]) extends Type {
+  final case class TObject(fields: Map[String, Type]) extends Type {
     type Scala = Map[String, Any]
 
     val deriveEncoder =
@@ -101,13 +101,13 @@ object Type {
           fields.map { case (field, fieldType) =>
             implicit val encoder = fieldType.deriveEncoder
             (field, a(field).asInstanceOf[fieldType.Scala].asJson)
-          }: _*
+          }.toList: _*
         )
       }
 
     val deriveDecoder =
       Decoder.instance { cursor =>
-        fields.traverse { case (field, fieldType) =>
+        fields.toList.traverse { case (field, fieldType) =>
           implicit val decoder = fieldType.deriveDecoder
           cursor.get[fieldType.Scala](field).map((field, _))
         }.map(_.toMap)
@@ -142,6 +142,7 @@ object Type {
       implicit val rightDecoder = right.deriveDecoder
       Decoder[(left.Scala, right.Scala)]
     }
+
   }
 
   final case class TEither(left: Type, right: Type) extends Type {
@@ -208,7 +209,7 @@ object Type {
       ","
     ) ~ "}" ^^ { case (_ ~ rawFields ~ _) =>
       val fields = rawFields.map { case (name ~ _ ~ t) => (name, t) }
-      TObject(fields)
+      TObject(fields.toMap)
     }
 
     lazy val tOption: PackratParser[TOption] = fullType ~ "?" ^^ { case (t ~ _) =>
