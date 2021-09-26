@@ -78,7 +78,7 @@ private final class LiveKafkaClient(
       consumer <- Consumer.make(settings.withGroupId(groupId))
     } yield consumer
 
-  private def generateId =
+  private def generateId                    =
     ZIO.effectTotal(UUID.randomUUID().toString())
 }
 

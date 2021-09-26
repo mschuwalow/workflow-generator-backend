@@ -29,7 +29,7 @@ object FlowState {
   implicit val decoder: Decoder[FlowState] =
     deriveConfiguredDecoder
 
-  implicit val meta: Meta[FlowState] =
+  implicit val meta: Meta[FlowState]       =
     Meta[String].timap(parse(_).flatMap(_.as[FlowState]).toOption.get)(
       _.asJson.noSpaces
     )

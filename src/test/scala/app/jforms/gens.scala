@@ -13,7 +13,7 @@ object gens {
   val jformDataSchema: Gen[Any, JFormDataSchema] =
     Gen.const(JFormDataSchema.fromJson(Json.obj("type" -> "object".asJson, "properties" -> Json.obj())).toOption.get)
 
-  val jformUiSchema: Gen[Any, Json]              = Gen.const(Json.obj())
+  val jformUiSchema: Gen[Any, Json] = Gen.const(Json.obj())
 
   val createJFormRequest: Gen[Random with Sized, CreateJFormRequest] =
     for {
