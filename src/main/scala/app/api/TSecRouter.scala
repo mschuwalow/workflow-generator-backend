@@ -8,7 +8,7 @@ import tsec.authentication.SecuredRequest
 
 object TSecRouter {
 
-  def apply[F[_]: Monad, V, A](mappings: (String, SecuredRoutes[F, V, A])*): SecuredRoutes[F, V, A] =
+  def apply[F[_]: Monad, V, A](mappings: (String, SecuredRoutes[F, V, A])*): SecuredRoutes[F, V, A]        =
     define(mappings: _*)(Kleisli.liftF(OptionT.none))
 
   def define[F[_]: Monad, V, A](
@@ -41,6 +41,6 @@ object TSecRouter {
     req.copy(request = req.request.withAttribute(Request.Keys.PathInfoCaret, oldCaret + newCaret))
   }
 
-  private def toSegments(path: String): List[String] =
+  private def toSegments(path: String): List[String]                                                       =
     path.split("/").filterNot(_.trim.isEmpty).toList
 }
