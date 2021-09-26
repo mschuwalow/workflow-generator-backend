@@ -13,7 +13,7 @@ import zio.{Has, ZIO}
 final class JFormsEndpoint[R <: JFormsEndpoint.Env] extends Endpoint[R] {
   import dsl._
 
-  val authedRoutes = TSecAuthService[UserInfo, AugmentedJWT[HMACSHA256, UserInfo], RTask] {
+  val authedRoutes                                                                                 = TSecAuthService[UserInfo, AugmentedJWT[HMACSHA256, UserInfo], RTask] {
     case req @ POST -> Root asAuthed user =>
       for {
         _        <- Permissions.authorize(user, Scope.Admin)
