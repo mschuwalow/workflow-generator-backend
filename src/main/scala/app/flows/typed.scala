@@ -62,7 +62,7 @@ object typed {
 
   object Stream {
 
-    sealed trait Source extends Stream { self =>
+    sealed trait Source                                                             extends Stream { self =>
       final val sources: Set[Source] = Set(self)
     }
 
@@ -72,21 +72,21 @@ object typed {
 
     final case class Never(id: ComponentId, elementType: Type) extends Source
 
-    final case class Numbers(id: ComponentId, values: List[Long]) extends Source {
+    final case class Numbers(id: ComponentId, values: List[Long])                          extends Source {
       val elementType = Type.TNumber
     }
 
-    final case class InnerJoin(id: ComponentId, stream1: Stream, stream2: Stream) extends Stream {
+    final case class InnerJoin(id: ComponentId, stream1: Stream, stream2: Stream)          extends Stream {
       val elementType = TTuple(stream1.elementType, stream2.elementType)
       val sources     = stream1.sources ++ stream2.sources
     }
 
-    final case class LeftJoin(id: ComponentId, stream1: Stream, stream2: Stream) extends Stream {
+    final case class LeftJoin(id: ComponentId, stream1: Stream, stream2: Stream)           extends Stream {
       val elementType = TTuple(stream1.elementType, TOption(stream2.elementType))
       val sources     = stream1.sources ++ stream2.sources
     }
 
-    final case class Merge(id: ComponentId, stream1: Stream, stream2: Stream) extends Stream {
+    final case class Merge(id: ComponentId, stream1: Stream, stream2: Stream)              extends Stream {
       val elementType = TEither(stream1.elementType, stream2.elementType)
       val sources     = stream1.sources ++ stream2.sources
     }
