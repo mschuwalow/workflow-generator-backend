@@ -21,7 +21,7 @@ private final class KafkaJFormStreams(
   def consumeAll(form: JForm): Stream[Nothing, form.outputType.Scala] =
     client.consumeStream(topicForForm(form.id), form.outputType).map(_.value)
 
-  private def topicForForm(formId: JFormId): String =
+  private def topicForForm(formId: JFormId): String                   =
     s"jforms-${formId.value}"
 
 }

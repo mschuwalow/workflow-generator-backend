@@ -17,14 +17,14 @@ trait DatabaseAspect extends Constants {
   def db[R <: Has[DatabaseScope], E, A](zio: ZIO[R, E, A]): ZIO[R, E, A] =
     DatabaseScope.managed(zio)
 
-  final def DatabaseLayer =
+  final def DatabaseLayer                                                =
     Blocking.live >+>
       Clock.live >+>
       ConfigLayer.orDie >+>
       Database.layer.orDie >+>
       DatabaseScope.postgres
 
-  final def NoDatabaseLayer =
+  final def NoDatabaseLayer                                              =
     DatabaseScope.noop
 
 }
