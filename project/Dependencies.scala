@@ -16,7 +16,7 @@ object Dependencies {
     val organizeImports        = "0.5.0"
     val pureConfig             = "0.16.0"
     val py4j                   = "0.10.9.2"
-    val scalaParserCombinators = "2.0.0"
+    val scalaParserCombinators = "2.1.0"
     val silencer               = "1.7.0"
     val sttp                   = "2.2.10"
     val tsec                   = "0.4.0"
