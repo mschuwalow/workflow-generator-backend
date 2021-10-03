@@ -3,7 +3,7 @@ package app.flows.inbound
 import app.flows._
 import zio._
 
-private[inbound] trait FlowRunner  {
+private[inbound] trait FlowRunner {
   def run(flow: typed.Flow): Task[Unit]
 }
 

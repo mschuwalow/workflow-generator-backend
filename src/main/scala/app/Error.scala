@@ -19,12 +19,12 @@ object Error {
     }
   }
 
-  case object AuthorizationFailed                        extends Error {
+  case object AuthorizationFailed extends Error {
     def httpResponse[R](dsl: Http4sDsl[RIO[R, *]]) =
       ZIO.succeed(Response(status = Status.Unauthorized))
   }
 
-  case object NotFound                                   extends Error {
+  case object NotFound extends Error {
     def httpResponse[R](dsl: Http4sDsl[RIO[R, *]]) = {
       import dsl._
       dsl.NotFound()
