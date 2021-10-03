@@ -9,10 +9,10 @@ import zio.test.Assertion._
 
 object UniqueFormElements extends SubtypeSmart[List[FormElement]](hasField("elementIds", _.map(_.id), isDistinct)) {
 
-  implicit val encoder: Encoder[UniqueFormElements]           =
+  implicit val encoder: Encoder[UniqueFormElements] =
     Encoder[List[FormElement]].contramap(unwrap)
 
-  implicit val decoder: Decoder[UniqueFormElements]           =
+  implicit val decoder: Decoder[UniqueFormElements] =
     Decoder[List[FormElement]].emap(make(_).toEither[String].left.map(_.mkString(", ")))
 
   implicit val uniqueFormElementsGet: Get[UniqueFormElements] =

@@ -21,29 +21,29 @@ private[compiler] sealed trait Check[S, +E, +A] { self =>
     } yield a
 }
 
-private[compiler] object Check                  {
+private[compiler] object Check {
 
-  final case class Fail[S, E](e: E)                                                     extends Check[S, E, Nothing]    {
+  final case class Fail[S, E](e: E) extends Check[S, E, Nothing] {
     def run(state: S) =
       Left(e)
   }
 
-  final case class Done[S, A](a: A)                                                     extends Check[S, Nothing, A]    {
+  final case class Done[S, A](a: A) extends Check[S, Nothing, A] {
     def run(state: S) =
       Right((state, a))
   }
 
-  final case class Get[S]()                                                             extends Check[S, Nothing, S]    {
+  final case class Get[S]() extends Check[S, Nothing, S] {
     def run(state: S) =
       Right((state, state))
   }
 
-  final case class Set[S](s: S)                                                         extends Check[S, Nothing, Unit] {
+  final case class Set[S](s: S) extends Check[S, Nothing, Unit] {
     def run(state: S) =
       Right((s, ()))
   }
 
-  final case class FlatMap[S, E, A, B](self: Check[S, E, A], cont: A => Check[S, E, B]) extends Check[S, E, B]          {
+  final case class FlatMap[S, E, A, B](self: Check[S, E, A], cont: A => Check[S, E, B]) extends Check[S, E, B] {
     def run(state: S) =
       self.run(state).flatMap { case (s, a) =>
         cont(a).run(s)

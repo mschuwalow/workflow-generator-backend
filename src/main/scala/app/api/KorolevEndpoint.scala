@@ -34,7 +34,7 @@ abstract class KorolevEndpoint[R <: KorolevEndpoint.Env] extends Endpoint[R] {
 
   protected def makeService(implicit effect: Effect[RTask], ec: ExecutionContext): KorolevService[RTask]
 
-  protected def notFound: Task[Nothing]                                                              =
+  protected def notFound: Task[Nothing] =
     ZIO.fail(NotFoundMarker)
 
   protected def authedStateLoader[S](f: (String, Head, UserInfo) => RTask[S]): StateLoader[RTask, S] =
@@ -43,7 +43,7 @@ abstract class KorolevEndpoint[R <: KorolevEndpoint.Env] extends Endpoint[R] {
       f(deviceId, request, userInfo)
     }
 
-  final def authedRoutes                                                                             =
+  final def authedRoutes =
     ZIO.runtime[R].map { implicit runtime =>
       implicit val ec: ExecutionContext            = runtime.platform.executor.asEC
       implicit val effect                          = zioEffectInstance[R, Throwable](runtime)(identity)(identity)
@@ -101,10 +101,10 @@ abstract class KorolevEndpoint[R <: KorolevEndpoint.Env] extends Endpoint[R] {
       )
     }
 
-  private[this] def getContentTypeAndResponseHeaders(responseHeaders: Seq[(String, String)])         =
+  private[this] def getContentTypeAndResponseHeaders(responseHeaders: Seq[(String, String)]) =
     responseHeaders.filterNot(_._1 == UserInfoHeader).map { case (name, value) => Header(name, value) }
 
-  private[this] def makeSinkAndSubscriber[F[_]: Effect: ConcurrentEffect]()                          = {
+  private[this] def makeSinkAndSubscriber[F[_]: Effect: ConcurrentEffect]() = {
     val queue                               = Queue[F, String]()
     val sink: Pipe[F, WebSocketFrame, Unit] = (in: FS2Stream[F, WebSocketFrame]) =>
       in.evalMap {

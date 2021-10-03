@@ -27,7 +27,7 @@ object Main extends App {
       .exitCode
   }
 
-  override val platform: Platform                                     = Platform.default
+  override val platform: Platform = Platform.default
     .withTracing(Tracing.disabled)
 
   private def runHttp[R <: Clock](

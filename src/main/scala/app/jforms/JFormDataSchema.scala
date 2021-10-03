@@ -33,13 +33,13 @@ object JFormDataSchema {
   implicit val decoder: Decoder[JFormDataSchema] =
     Decoder.decodeJson.emap(fromJson)
 
-  implicit val put: Put[JFormDataSchema]         =
+  implicit val put: Put[JFormDataSchema] =
     Put[Json].contramap(_.js)
 
-  implicit val get: Get[JFormDataSchema]         =
+  implicit val get: Get[JFormDataSchema] =
     Get[Json].map(fromJson(_).toOption.get)
 
-  def fromJson(js: Json): Either[String, JFormDataSchema]          =
+  def fromJson(js: Json): Either[String, JFormDataSchema] =
     Try(Schema.load(js)).toEither.left.map(e => s"Failed to parse schema: $e") >>
       extractType(js.hcursor).map(JFormDataSchema(js, _))
 
