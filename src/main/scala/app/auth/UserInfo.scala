@@ -14,7 +14,7 @@ object UserInfo {
   implicit val encoder: Encoder.AsObject[UserInfo] =
     deriveEncoder
 
-  implicit val decoder: Decoder[UserInfo]          =
+  implicit val decoder: Decoder[UserInfo] =
     deriveDecoder
 
 }

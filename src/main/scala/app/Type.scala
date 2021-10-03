@@ -17,7 +17,7 @@ sealed abstract class Type { self =>
   val deriveEncoder: Encoder[Scala]
   val deriveDecoder: Decoder[Scala]
 
-  def show: String                = {
+  def show: String = {
     import Type._
     self match {
       case TDate                => "Date"
@@ -70,7 +70,7 @@ object Type {
 
   type TNumber = TNumber.type
 
-  case object TNumber                                 extends Type {
+  case object TNumber extends Type {
     type Scala = Long
 
     val deriveEncoder = Encoder[Long]
@@ -78,7 +78,7 @@ object Type {
     val deriveDecoder = Decoder[Long]
   }
 
-  final case class TArray(elementType: Type)          extends Type {
+  final case class TArray(elementType: Type) extends Type {
     type Scala = Chunk[elementType.Scala]
 
     val deriveEncoder = {
@@ -114,7 +114,7 @@ object Type {
       }
   }
 
-  final case class TOption(value: Type)               extends Type {
+  final case class TOption(value: Type) extends Type {
     type Scala = Option[value.Scala]
 
     val deriveEncoder = {
@@ -128,7 +128,7 @@ object Type {
     }
   }
 
-  final case class TTuple(left: Type, right: Type)    extends Type {
+  final case class TTuple(left: Type, right: Type) extends Type {
     type Scala = (left.Scala, right.Scala)
 
     val deriveEncoder = {
@@ -184,11 +184,11 @@ object Type {
       "?"
     )
 
-    lazy val tDate: PackratParser[TDate]     = "Date" ^^ { _ =>
+    lazy val tDate: PackratParser[TDate] = "Date" ^^ { _ =>
       TDate
     }
 
-    lazy val tBoolean: PackratParser[TBool]  = "Bool" ^^ { _ =>
+    lazy val tBoolean: PackratParser[TBool] = "Bool" ^^ { _ =>
       TBool
     }
 
@@ -200,7 +200,7 @@ object Type {
       TNumber
     }
 
-    lazy val tArray: PackratParser[TArray]   = "[" ~ fullType ~ "]" ^^ { case (_ ~ t ~ _) =>
+    lazy val tArray: PackratParser[TArray] = "[" ~ fullType ~ "]" ^^ { case (_ ~ t ~ _) =>
       TArray(t)
     }
 
@@ -216,7 +216,7 @@ object Type {
       TOption(t)
     }
 
-    lazy val tTuple: PackratParser[TTuple]   =
+    lazy val tTuple: PackratParser[TTuple] =
       "(" ~ fullType ~ "," ~ fullType ~ ")" ^^ { case (_ ~ t1 ~ _ ~ t2 ~ _) =>
         TTuple(t1, t2)
       }
@@ -226,7 +226,7 @@ object Type {
         TEither(t1, t2)
       }
 
-    lazy val fullType: PackratParser[Type]   =
+    lazy val fullType: PackratParser[Type] =
       tOption | tBoolean | tString | tNumber | tDate | tArray | tObject | tTuple | tEither
 
     def parse(in: String): Either[String, Type] = {

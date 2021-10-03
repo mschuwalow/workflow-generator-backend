@@ -47,18 +47,18 @@ private[inbound] object semantic {
       Context(in, Map.empty, None)
   }
 
-  private[semantic] val context: Run[Context]                                     =
+  private[semantic] val context: Run[Context] =
     Check.getState[Context]
 
-  private[semantic] def updateContext(f: Context => Context)                      =
+  private[semantic] def updateContext(f: Context => Context) =
     Check.updateState(f)
 
-  private[semantic] def fail(msg: String): Run[Nothing]                           =
+  private[semantic] def fail(msg: String): Run[Nothing] =
     context.flatMap { ctx =>
       Check.fail(s"${ctx.enclosing.fold("")(id => s"[${id.value}]: ")}$msg")
     }
 
-  private[semantic] def pure[A](a: A): Run[A]                                     =
+  private[semantic] def pure[A](a: A): Run[A] =
     Check.done(a)
 
   private[semantic] def require(
@@ -66,10 +66,10 @@ private[inbound] object semantic {
     msg: String
   ): Run[Unit] = if (bool) Check.unit else fail(msg)
 
-  private[semantic] def askRaw(id: ComponentId): Run[Option[resolved.Component]]  =
+  private[semantic] def askRaw(id: ComponentId): Run[Option[resolved.Component]] =
     context.map(_.in.get(id))
 
-  private[semantic] def askTyped(id: ComponentId): Run[Option[typed.Stream]]      =
+  private[semantic] def askTyped(id: ComponentId): Run[Option[typed.Stream]] =
     context.map(_.out.get(id))
 
   private[semantic] def putTyped(
@@ -80,12 +80,12 @@ private[inbound] object semantic {
       ctx.copy(out = ctx.out + (id -> value))
     }
 
-  private[semantic] def setEnclosing(id: Option[ComponentId])                     =
+  private[semantic] def setEnclosing(id: Option[ComponentId]) =
     updateContext { ctx =>
       ctx.copy(enclosing = id)
     }
 
-  private[semantic] val getEnclosing                                              =
+  private[semantic] val getEnclosing =
     context.map(_.enclosing)
 
   private[semantic] def withEnclosing[A](id: ComponentId)(nested: Run[A]): Run[A] =
