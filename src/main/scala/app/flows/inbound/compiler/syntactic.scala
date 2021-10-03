@@ -41,7 +41,7 @@ private[inbound] object syntactic {
 
   }
 
-  private[syntactic] def failWithMessage(msg: String): Run[Nothing]               =
+  private[syntactic] def failWithMessage(msg: String): Run[Nothing] =
     Check.getState[Context].flatMap { ctx =>
       Check.fail(s"Failed while checking ${ctx.position.reverse.map(_.value).mkString("->")}: $msg")
     }
@@ -57,7 +57,7 @@ private[inbound] object syntactic {
         )
     }
 
-  private[syntactic] def nest[A](id: ComponentId)(nested: Run[A]): Run[A]         =
+  private[syntactic] def nest[A](id: ComponentId)(nested: Run[A]): Run[A] =
     for {
       s <- Check.getState[Context]
       _ <- if (s.position.contains(id)) failWithMessage(s"Cycle detected: ${id.value}") else Check.unit[Context]
@@ -66,7 +66,7 @@ private[inbound] object syntactic {
       _ <- Check.updateState[Context](old => old.copy(position = old.position.tail))
     } yield a
 
-  private[syntactic] def checkComponent(id: ComponentId): Run[Unit]               = {
+  private[syntactic] def checkComponent(id: ComponentId): Run[Unit] = {
     import unresolved.Component._
     nest(id) {
       getComponent(id).flatMap {
