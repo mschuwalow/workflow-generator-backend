@@ -29,10 +29,10 @@ object Scope {
   implicit val decoder: Decoder[Scope] =
     deriveConfiguredDecoder
 
-  implicit val scopeGet: Get[Scope]    =
+  implicit val scopeGet: Get[Scope] =
     Get[Json].map(_.as[Scope].toOption.get)
 
-  implicit val scopePut: Put[Scope]    =
+  implicit val scopePut: Put[Scope] =
     Put[Json].contramap(_.asJson)
 
 }

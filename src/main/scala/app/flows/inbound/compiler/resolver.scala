@@ -8,7 +8,7 @@ import zio._
 private[inbound] object resolver {
   type Env = Has[FormsService] with Has[JFormsService]
 
-  def resolve(input: unresolved.CreateFlowRequest): RIO[Env, resolved.CreateFlowRequest]      = {
+  def resolve(input: unresolved.CreateFlowRequest): RIO[Env, resolved.CreateFlowRequest] = {
     val out = ZIO.foreach(input.components) { case (k, v) => resolveComponent(v).map((k, _)) }
     out.map(resolved.CreateFlowRequest)
   }
