@@ -7,7 +7,7 @@ object Dependencies {
     val circe                  = "0.14.1"
     val circeJsonSchema        = "0.2.0"
     val doobie                 = "0.13.4"
-    val flyway                 = "8.1.0"
+    val flyway                 = "8.2.0"
     val http4s                 = "0.21.26"
     val jawn                   = "1.3.0"
     val kindProjector          = "0.13.2"
