@@ -18,7 +18,7 @@ object Dependencies {
     val py4j                   = "0.10.9.3"
     val scalaParserCombinators = "2.1.0"
     val silencer               = "1.7.0"
-    val sttp                   = "2.2.10"
+    val sttp                   = "2.3.0"
     val tsec                   = "0.2.1"
     val zio                    = "1.0.13"
     val zioInteropCats         = "2.5.1.0"
