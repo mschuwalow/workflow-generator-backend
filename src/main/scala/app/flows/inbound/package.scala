@@ -7,9 +7,16 @@ import zio._
 
 package object inbound {
 
-  val layer: ZLayer[LiveFlowRunner.Env with Has[FlowRepository] with Has[FormsService] with Has[
-    JFormsService
-  ], Throwable, Has[FlowService]] =
+  val layer: ZLayer[
+    LiveFlowRunner.Env
+      with Has[FlowRepository]
+      with Has[FormsService]
+      with Has[
+        JFormsService
+      ],
+    Throwable,
+    Has[FlowService]
+  ] =
     (ZLayer.identity[
       Has[FlowRepository] with Has[FormsService] with Has[JFormsService]
     ] ++ LiveFlowRunner.layer) >>> LiveFlowService.layer

@@ -1,7 +1,8 @@
 package app.flows.inbound.compiler
 
 import app.Error
-import app.flows.{ComponentId, unresolved}
+import app.flows.ComponentId
+import app.flows.unresolved._
 import cats.instances.either._
 import cats.instances.list._
 import cats.syntax.apply._
@@ -11,8 +12,8 @@ import cats.syntax.traverse._
 private[inbound] object syntactic {
 
   def checkCycles(
-    graph: unresolved.CreateFlowRequest
-  ): Either[Error.GraphValidationFailed, unresolved.CreateFlowRequest] = {
+    graph: CreateFlowRequest
+  ): Either[Error.GraphValidationFailed, CreateFlowRequest] = {
     // all starting points to traverse the graph
     val sinks = graph.components.collect {
       case (id, component) if component.isSink =>
@@ -30,13 +31,13 @@ private[inbound] object syntactic {
   private[syntactic] type Run[A] = Check[Context, String, A]
 
   private[syntactic] final case class Context(
-    nodes: Map[ComponentId, unresolved.Component],
+    nodes: Map[ComponentId, Component],
     position: List[ComponentId]
   )
 
   private[syntactic] object Context {
 
-    def initial(nodes: Map[ComponentId, unresolved.Component]): Context =
+    def initial(nodes: Map[ComponentId, Component]): Context =
       Context(nodes, Nil)
 
   }
@@ -46,11 +47,11 @@ private[inbound] object syntactic {
       Check.fail(s"Failed while checking ${ctx.position.reverse.map(_.value).mkString("->")}: $msg")
     }
 
-  private[syntactic] def getComponent(id: ComponentId): Run[unresolved.Component] =
+  private[syntactic] def getComponent(id: ComponentId): Run[Component] =
     Check.getState.flatMap { ctx =>
       ctx.nodes
         .get(id)
-        .fold[Run[unresolved.Component]](
+        .fold[Run[Component]](
           Check.fail(s"Component with id ${id.value} not found")
         )(
           Check.done
@@ -67,18 +68,19 @@ private[inbound] object syntactic {
     } yield a
 
   private[syntactic] def checkComponent(id: ComponentId): Run[Unit] = {
-    import unresolved.Component._
+    import Component._
     nest(id) {
       getComponent(id).flatMap {
-        case Never(_)                    => Check.unit
-        case Numbers(_)                  => Check.unit
-        case UDF(stream, _, _, _)        => checkComponent(stream)
-        case InnerJoin(stream1, stream2) => checkComponent(stream1) *> checkComponent(stream2)
-        case LeftJoin(stream1, stream2)  => checkComponent(stream1) *> checkComponent(stream2)
-        case Merge(stream1, stream2)     => checkComponent(stream1) *> checkComponent(stream2)
-        case Void(stream, _)             => checkComponent(stream)
-        case FormOutput(_)               => Check.unit
-        case JFormOutput(_)              => Check.unit
+        case Never(_)                      => Check.unit
+        case Numbers(_)                    => Check.unit
+        case UDF(stream, _, _, _)          => checkComponent(stream)
+        case InnerJoin(stream1, stream2)   => checkComponent(stream1) *> checkComponent(stream2)
+        case LeftJoin(stream1, stream2)    => checkComponent(stream1) *> checkComponent(stream2)
+        case Merge(stream1, stream2)       => checkComponent(stream1) *> checkComponent(stream2)
+        case MergeEither(stream1, stream2) => checkComponent(stream1) *> checkComponent(stream2)
+        case Void(stream, _)               => checkComponent(stream)
+        case FormOutput(_)                 => Check.unit
+        case JFormOutput(_)                => Check.unit
       }
     }
   }

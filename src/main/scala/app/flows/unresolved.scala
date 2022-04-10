@@ -27,15 +27,16 @@ object unresolved {
 
     def isSink: Boolean =
       self match {
-        case FormOutput(_)   => false
-        case JFormOutput(_)  => false
-        case Never(_)        => false
-        case Numbers(_)      => false
-        case Void(_, _)      => true
-        case UDF(_, _, _, _) => false
-        case LeftJoin(_, _)  => false
-        case InnerJoin(_, _) => false
-        case Merge(_, _)     => false
+        case FormOutput(_)     => false
+        case JFormOutput(_)    => false
+        case Never(_)          => false
+        case Numbers(_)        => false
+        case Void(_, _)        => true
+        case UDF(_, _, _, _)   => false
+        case LeftJoin(_, _)    => false
+        case InnerJoin(_, _)   => false
+        case Merge(_, _)       => false
+        case MergeEither(_, _) => false
       }
   }
 
@@ -64,6 +65,8 @@ object unresolved {
     final case class LeftJoin(stream1: ComponentId, stream2: ComponentId) extends Component
 
     final case class InnerJoin(stream1: ComponentId, stream2: ComponentId) extends Component
+
+    final case class MergeEither(stream1: ComponentId, stream2: ComponentId) extends Component
 
     final case class Merge(stream1: ComponentId, stream2: ComponentId) extends Component
 

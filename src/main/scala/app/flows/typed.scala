@@ -87,6 +87,13 @@ object typed {
     }
 
     final case class Merge(id: ComponentId, stream1: Stream, stream2: Stream) extends Stream {
+      assert(stream1.elementType == stream2.elementType)
+
+      val elementType = stream1.elementType
+      val sources     = stream1.sources ++ stream2.sources
+    }
+
+    final case class MergeEither(id: ComponentId, stream1: Stream, stream2: Stream) extends Stream {
       val elementType = TEither(stream1.elementType, stream2.elementType)
       val sources     = stream1.sources ++ stream2.sources
     }
