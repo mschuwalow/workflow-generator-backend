@@ -14,19 +14,14 @@ private final class LiveFlowService(
 
   def add(request: unresolved.CreateFlowRequest) = {
     for {
-      request <- check(request)
-      flow    <- FlowRepository.create(request)
-      _       <- forkRun(state, flow)
+      compiled <- compile(request)
+      flow     <- FlowRepository.create(compiled)
+      _        <- forkRun(state, flow)
     } yield flow
   }.provide(env)
 
-  def check(graph: unresolved.CreateFlowRequest) = {
-    for {
-      graph <- ZIO.fromEither(compiler.syntactic.checkCycles(graph))
-      graph <- compiler.resolver.resolve(graph)
-      flow  <- ZIO.fromEither(compiler.semantic.typecheck(graph))
-    } yield flow
-  }.provide(env)
+  def compile(request: unresolved.CreateFlowRequest) =
+    compiler.compileRequest(request).provide(env)
 
   def delete(id: FlowId) = {
     for {
