@@ -174,6 +174,8 @@ private final class LiveFlowRunner(
               ((l, r))
             }
         case Merge(_, stream1, stream2)        =>
+          go(stream1).merge(go(stream2))
+        case MergeEither(_, stream1, stream2)  =>
           go(stream1).mergeEither(go(stream2))
         case source: typed.Stream.Source       =>
           consumeSource(source.id)
