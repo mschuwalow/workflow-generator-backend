@@ -1,5 +1,6 @@
 package app.flows
 
+import app.Type
 import app.gens.anyType0
 import zio.random.Random
 import zio.test.{Gen, Sized}
@@ -8,6 +9,32 @@ object gens {
 
   object typed {
     import app.flows.typed._
+
+    def streamWithType(requestedType: Type): Gen[Random with Sized, Stream] = {
+      import Stream._
+
+      val never = for {
+        id <- componentId
+      } yield Never(id, requestedType)
+
+      val merge = Gen.suspend {
+        for {
+          id <- componentId
+          s1 <- streamWithType(requestedType)
+          s2 <- streamWithType(requestedType)
+        } yield Merge(id, s1, s2)
+      }
+
+      val udf = Gen.suspend {
+        for {
+          id   <- componentId
+          code <- Gen.anyString
+          s    <- stream
+        } yield UDF(id, code, s, requestedType)
+      }
+
+      Gen.oneOf(never, merge, udf)
+    }
 
     def stream: Gen[Random with Sized, Stream] = {
       import Stream._
@@ -43,6 +70,15 @@ object gens {
           id <- componentId
           s1 <- stream
           s2 <- stream
+        } yield MergeEither(id, s1, s2)
+      }
+
+      val mergeEither = Gen.suspend {
+        for {
+          id <- componentId
+          t  <- anyType0
+          s1 <- streamWithType(t)
+          s2 <- streamWithType(t)
         } yield Merge(id, s1, s2)
       }
 
@@ -55,7 +91,7 @@ object gens {
         } yield UDF(id, code, s, t)
       }
 
-      Gen.oneOf(never, numbers, innerJoin, leftJoin, merge, udf)
+      Gen.oneOf(never, numbers, innerJoin, leftJoin, merge, mergeEither, udf)
     }
 
     val sink: Gen[Random with Sized, Sink] = {
