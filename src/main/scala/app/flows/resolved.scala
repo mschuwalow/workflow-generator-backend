@@ -20,6 +20,7 @@ object resolved {
         case UDF(_, _, _, _)   => false
         case LeftJoin(_, _)    => false
         case InnerJoin(_, _)   => false
+        case MergeEither(_, _) => false
         case Merge(_, _)       => false
       }
   }
@@ -53,5 +54,6 @@ object resolved {
 
     final case class Merge(stream1: ComponentId, stream2: ComponentId) extends Component
 
+    final case class MergeEither(stream1: ComponentId, stream2: ComponentId) extends Component
   }
 }

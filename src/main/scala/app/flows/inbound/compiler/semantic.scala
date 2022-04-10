@@ -1,16 +1,17 @@
 package app.flows.inbound.compiler
 
 import app.Type._
-import app.flows.{ComponentId, resolved, typed}
+import app.flows.{ComponentId, resolved => In, typed => Out}
 import app.{Error, Type}
 import cats.instances.list._
+import cats.syntax.applicative._
 import cats.syntax.apply._
 import cats.syntax.flatMap._
 import cats.syntax.traverse._
 
 private[inbound] object semantic {
 
-  def typecheck(graph: resolved.CreateFlowRequest): Either[Error.GraphValidationFailed, typed.CreateFlowRequest] = {
+  def typecheck(graph: In.CreateFlowRequest): Either[Error.GraphValidationFailed, Out.CreateFlowRequest] = {
     // all starting points to traverse the graph
     val sinks = graph.components.collect {
       case (id, component) if component.isSink => id
@@ -27,7 +28,7 @@ private[inbound] object semantic {
     val result = (sinks.traverse(typeCheckSink(_)) <* checkResult)
       .run(Context.initial(graph.components))
       .map { case (_, sinks) =>
-        typed.CreateFlowRequest(sinks)
+        Out.CreateFlowRequest(sinks)
       }
 
     result.left.map(Error.GraphValidationFailed(_))
@@ -36,14 +37,14 @@ private[inbound] object semantic {
   private[semantic] type Run[A] = Check[Context, String, A]
 
   final private[semantic] case class Context(
-    in: Map[ComponentId, resolved.Component],
-    out: Map[ComponentId, typed.Stream],
+    in: Map[ComponentId, In.Component],
+    out: Map[ComponentId, Out.Stream],
     enclosing: Option[ComponentId]
   )
 
   private[semantic] object Context {
 
-    def initial(in: Map[ComponentId, resolved.Component]): Context =
+    def initial(in: Map[ComponentId, In.Component]): Context =
       Context(in, Map.empty, None)
   }
 
@@ -66,15 +67,15 @@ private[inbound] object semantic {
     msg: String
   ): Run[Unit] = if (bool) Check.unit else fail(msg)
 
-  private[semantic] def askRaw(id: ComponentId): Run[Option[resolved.Component]] =
+  private[semantic] def askRaw(id: ComponentId): Run[Option[In.Component]] =
     context.map(_.in.get(id))
 
-  private[semantic] def askTyped(id: ComponentId): Run[Option[typed.Stream]] =
+  private[semantic] def askTyped(id: ComponentId): Run[Option[Out.Stream]] =
     context.map(_.out.get(id))
 
   private[semantic] def putTyped(
     id: ComponentId,
-    value: typed.Stream
+    value: Out.Stream
   ): Run[Unit] =
     updateContext { ctx =>
       ctx.copy(out = ctx.out + (id -> value))
@@ -98,8 +99,8 @@ private[inbound] object semantic {
 
   private[semantic] def typeCheckSink(
     id: ComponentId
-  ): Run[typed.Sink] = {
-    import resolved.Component._
+  ): Run[Out.Sink] = {
+    import In.Component._
     withEnclosing(id) {
       askRaw(id).flatMap {
         case None      => fail(s"Component id not found")
@@ -107,7 +108,7 @@ private[inbound] object semantic {
           raw match {
             case Void(sId, hint) =>
               typeCheckStream(sId, hint).map { stream =>
-                typed.Sink.Void(id, stream)
+                Out.Sink.Void(id, stream)
               }
             case _               =>
               fail("Expected a sink")
@@ -119,18 +120,18 @@ private[inbound] object semantic {
   private[semantic] def typeCheckStream(
     id: ComponentId,
     hint: Option[Type] // downstream type expectation.
-  ): Run[typed.Stream] = {
-    def check(comp: resolved.Component): Run[typed.Stream] = {
-      import resolved.Component._
+  ): Run[Out.Stream] = {
+    def check(comp: In.Component): Run[Out.Stream] = {
+      import In.Component._
       comp match {
         case Never(elementType)                               =>
           elementType
             .orElse(hint)
-            .fold[Run[typed.Stream]](
+            .fold[Run[Out.Stream]](
               fail("Type could not be determined. Try adding a type hint.")
-            )(t => pure(typed.Stream.Never(id, t)))
+            )(t => pure(Out.Stream.Never(id, t)))
         case Numbers(values)                                  =>
-          pure(typed.Stream.Numbers(id, values))
+          pure(Out.Stream.Numbers(id, values))
         case UDF(stream, code, inputTypeHint, outputTypeHint) =>
           for {
             s      <- typeCheckStream(stream, inputTypeHint)
@@ -139,19 +140,19 @@ private[inbound] object semantic {
             myType <- outputTypeHint
                         .orElse(hint)
                         .fold[Run[Type]](fail("Type could not be determined. Try adding a type hint."))(pure(_))
-          } yield typed.Stream.UDF(id, code, s, myType)
+          } yield Out.Stream.UDF(id, code, s, myType)
         case InnerJoin(stream1, stream2)                      =>
           hint match {
             case Some(TTuple(left, right)) =>
               for {
                 s1 <- typeCheckStream(stream1, Some(left))
                 s2 <- typeCheckStream(stream2, Some(right))
-              } yield typed.Stream.InnerJoin(id, s1, s2)
+              } yield Out.Stream.InnerJoin(id, s1, s2)
             case None                      =>
               for {
                 s1 <- typeCheckStream(stream1, None)
                 s2 <- typeCheckStream(stream2, None)
-              } yield typed.Stream.InnerJoin(id, s1, s2)
+              } yield Out.Stream.InnerJoin(id, s1, s2)
             case Some(t)                   =>
               fail(s"Found incompatible type. Expected tuple type, got $t")
           }
@@ -161,36 +162,43 @@ private[inbound] object semantic {
               for {
                 s1 <- typeCheckStream(stream1, Some(left))
                 s2 <- typeCheckStream(stream2, Some(right))
-              } yield typed.Stream.LeftJoin(id, s1, s2)
+              } yield Out.Stream.LeftJoin(id, s1, s2)
             case None                               =>
               for {
                 s1 <- typeCheckStream(stream1, None)
                 s2 <- typeCheckStream(stream2, None)
-              } yield typed.Stream.LeftJoin(id, s1, s2)
+              } yield Out.Stream.LeftJoin(id, s1, s2)
             case Some(t)                            =>
               fail(
                 s"Found incompatible type. Expected tuple type with right side being optional, got $t"
               )
           }
         case Merge(stream1, stream2)                          =>
+          for {
+            s1 <- typeCheckStream(stream1, hint)
+            s2 <- typeCheckStream(stream2, hint)
+            _  <- fail(s"Found mismatched types for union: [${s1.elementType}, ${s2.elementType}]")
+                    .whenA(s1.elementType != s2.elementType)
+          } yield Out.Stream.Merge(id, s1, s2)
+        case MergeEither(stream1, stream2)                    =>
           hint match {
             case Some(TEither(left, right)) =>
               for {
                 s1 <- typeCheckStream(stream1, Some(left))
                 s2 <- typeCheckStream(stream2, Some(right))
-              } yield typed.Stream.Merge(id, s1, s2)
+              } yield Out.Stream.MergeEither(id, s1, s2)
             case None                       =>
               for {
                 s1 <- typeCheckStream(stream1, None)
                 s2 <- typeCheckStream(stream2, None)
-              } yield typed.Stream.Merge(id, s1, s2)
+              } yield Out.Stream.MergeEither(id, s1, s2)
             case Some(t)                    =>
               fail(s"Found incompatible type. Expected either type, got $t")
           }
         case FormOutput(formId, elementType)                  =>
-          pure(typed.Stream.FormOutput(id, formId, elementType))
+          pure(Out.Stream.FormOutput(id, formId, elementType))
         case JFormOutput(formId, elementType)                 =>
-          pure(typed.Stream.JFormOutput(id, formId, elementType))
+          pure(Out.Stream.JFormOutput(id, formId, elementType))
         case Void(_, _)                                       =>
           fail("Sink not expected here")
       }

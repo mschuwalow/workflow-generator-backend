@@ -39,6 +39,8 @@ private[inbound] object resolver {
         ZIO.succeed(Out.InnerJoin(stream1, stream2))
       case Merge(stream1, stream2)                          =>
         ZIO.succeed(Out.Merge(stream1, stream2))
+      case MergeEither(stream1, stream2)                    =>
+        ZIO.succeed(Out.MergeEither(stream1, stream2))
     }
   }
 
