@@ -9,7 +9,7 @@ with lib; {
       version = "latest";
 
       # depsSha256 = "0000000000000000000000000000000000000000000000000000";
-      depsSha256 = "0LkktGh/zvlnRxlkyS99RhU1hssXCYo2j5NgrJgO0Sk=";
+      depsSha256 = "0o7F1STAQY59iETsrMCWLJMHoIzSJbF+aIEXDdkijYg=";
 
       src = sources.sourceByRegex ../. [ "^build.sbt$" "^project.*" "^src.*" ];
 
@@ -36,7 +36,7 @@ with lib; {
       pname = "workflow-generator-backend";
       version = "latest";
 
-      buildInputs = [ makeWrapper ];
+      nativeBuildInputs = [ makeWrapper ];
 
       unpackPhase = "true";
 

@@ -1,0 +1,23 @@
+{
+  "components": {
+    "1": {
+      "type": "FormOutput",
+      "formId": "dc8fc6c7-8dc2-4726-ac3c-0f3f8f8ea1b7"
+    },
+    "2": {
+      "type": "UDF",
+      "code": "def run(x):\n    return x['date']",
+      "outputTypeHint": "Date",
+      "stream": "1"
+    },
+    "3": {
+      "type": "LeftJoin",
+      "stream1": "2",
+      "stream2": "1"
+    },
+    "4": {
+      "type": "Void",
+      "stream": "3"
+    }
+  }
+}
