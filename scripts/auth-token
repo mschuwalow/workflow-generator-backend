@@ -1,0 +1,6 @@
+#!/bin/sh
+
+echo "{\"username\": \"$STUDIP_USERNAME\", \"password\": \"$STUDIP_PASSWORD\"}" \
+  | http localhost:8080/auth/login --headers \
+  | grep Authorization \
+  | sed "s/Authorization: Bearer //"

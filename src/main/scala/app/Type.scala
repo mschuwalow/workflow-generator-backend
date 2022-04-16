@@ -33,8 +33,6 @@ sealed abstract class Type { self =>
       case TEither(left, right) => s"(${left.show} | ${right.show})"
     }
   }
-
-  override def toString(): String = show
 }
 
 object Type {
@@ -233,7 +231,7 @@ object Type {
       val tokens = new PackratReader(new lexical.Scanner(in))
       phrase(fullType)(tokens) match {
         case Success(result, _) => Right(result)
-        case e                  => Left(e.toString())
+        case e                  => Left(e.map(_.show).toString())
       }
     }
   }
