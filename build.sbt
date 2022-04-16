@@ -27,12 +27,11 @@ inThisBuild(
 )
 
 lazy val root = (project in file("."))
-  .enablePlugins(JavaAppPackaging, DockerSpotifyClientPlugin)
+  .enablePlugins(JavaAppPackaging)
   .settings(
-    name                      := "workflow-generator-backend",
-    ThisBuild / scalacOptions := Options
-      .scalacOptions(scalaVersion.value, isSnapshot.value),
-    testFrameworks            := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
+    name           := "workflow-generator-backend",
+    scalacOptions  := Options.scalacOptions(optimize = !isSnapshot.value),
+    testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
     libraryDependencies ++= Dependencies.App
   )
 
