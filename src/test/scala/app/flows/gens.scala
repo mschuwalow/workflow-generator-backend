@@ -49,7 +49,7 @@ object gens {
         ns <- Gen.listOf(Gen.anyLong)
       } yield Numbers(id, ns)
 
-      // todo
+      // TODO
       // val innerJoin = Gen.suspend {
       //   for {
       //     id <- componentId

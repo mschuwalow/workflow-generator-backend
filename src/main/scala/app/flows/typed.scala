@@ -98,6 +98,7 @@ object typed {
       val sources     = leftStream.sources ++ rightStream.sources
     }
 
+    // TODO: Weird semantics, remove
     final case class LeftJoin(
       id: ComponentId,
       leftStream: Stream,
