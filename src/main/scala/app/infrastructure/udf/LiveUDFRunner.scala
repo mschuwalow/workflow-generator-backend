@@ -9,6 +9,7 @@ import zio.clock.Clock
 import zio.duration._
 import zio.logging.{Logging, log}
 
+import java.util.ArrayList
 import scala.jdk.CollectionConverters._
 
 private final class LiveUDFRunner(
@@ -16,19 +17,13 @@ private final class LiveUDFRunner(
 ) extends UDFRunner {
   import LiveUDFRunner.internal._
 
-  def runPython(
-    function: String,
-    input: Type,
-    output: Type
-  )(
-    arg: input.Scala
-  ): Task[output.Scala] =
+  def runPython(function: String, input: Type, output: Type)(arg: input.Scala): Task[output.Scala] =
     for {
       prom   <- Promise.make[Throwable, Any]
-      casted <- ZIO.effect(toJava(input)(arg))
+      casted <- Task(toJava(input)(arg))
       _      <- requests.offer(Request(function, casted, prom))
       result <- prom.await
-      result <- ZIO.effect(fromJava(output, result))
+      result <- Task(fromJava(output, result))
     } yield result
 
 }
@@ -50,10 +45,10 @@ object LiveUDFRunner {
             .mapM { runner =>
               log.info("Started python worker.") *>
                 requests.take.flatMap { case internal.Request(function, input, cb) =>
-                  log.debug(s"running function: $function")
-                  ZIO.effect {
-                    runner.run_udf(function, input)
-                  }.to(cb)
+                  log.debug(s"running function: $function") *>
+                    Task {
+                      runner.run_udf(function, input)
+                    }.to(cb)
                 }.forever
             }
           ZManaged.collectAllPar_(List.fill(workers)(startWorker.fork)).as {
@@ -86,7 +81,7 @@ object LiveUDFRunner {
           }
         case TTuple(leftType, rightType)  =>
           val (left, right) = v.asInstanceOf[(leftType.Scala, rightType.Scala)]
-          (toJava(leftType)(left), toJava(rightType)(right))
+          Array(toJava(leftType)(left), toJava(rightType)(right))
         case TEither(leftType, rightType) =>
           val value = v.asInstanceOf[Either[leftType.Scala, rightType.Scala]]
           value match {
@@ -115,8 +110,8 @@ object LiveUDFRunner {
           val value = if (v == null) None else Some(fromJava(valueType, v))
           value.asInstanceOf[t.Scala]
         case TTuple(leftType, rightType)  =>
-          val (left, right) = v.asInstanceOf[Tuple2[AnyRef, AnyRef]]
-          (fromJava(leftType, left), fromJava(rightType, right)).asInstanceOf[t.Scala]
+          val arr = v.asInstanceOf[ArrayList[AnyRef]]
+          (fromJava(leftType, arr.get(0)), fromJava(rightType, arr.get(1))).asInstanceOf[t.Scala]
         case TEither(leftType, rightType) =>
           val jvalue = v.asInstanceOf[JEither]
           val value  =

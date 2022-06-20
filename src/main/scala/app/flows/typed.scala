@@ -1,9 +1,9 @@
 package app.flows
 
-import app.Type
 import app.Type._
 import app.forms.FormId
 import app.jforms.JFormId
+import app.{Getter, Type}
 import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
@@ -76,14 +76,37 @@ object typed {
       val elementType = Type.TNumber
     }
 
-    final case class InnerJoin(id: ComponentId, stream1: Stream, stream2: Stream) extends Stream {
-      val elementType = TTuple(stream1.elementType, stream2.elementType)
-      val sources     = stream1.sources ++ stream2.sources
+    final case class Zip(
+      id: ComponentId,
+      leftStream: Stream,
+      rightStream: Stream,
+      onLeftField: Getter,
+      onRightField: Getter
+    ) extends Stream {
+      val elementType = TTuple(leftStream.elementType, rightStream.elementType)
+      val sources     = leftStream.sources ++ rightStream.sources
     }
 
-    final case class LeftJoin(id: ComponentId, stream1: Stream, stream2: Stream) extends Stream {
-      val elementType = TTuple(stream1.elementType, TOption(stream2.elementType))
-      val sources     = stream1.sources ++ stream2.sources
+    final case class InnerJoin(
+      id: ComponentId,
+      leftStream: Stream,
+      rightStream: Stream,
+      onLeftField: Getter,
+      onRightField: Getter
+    ) extends Stream {
+      val elementType = TTuple(leftStream.elementType, rightStream.elementType)
+      val sources     = leftStream.sources ++ rightStream.sources
+    }
+
+    final case class LeftJoin(
+      id: ComponentId,
+      leftStream: Stream,
+      rightStream: Stream,
+      onLeftField: Getter,
+      onRightField: Getter
+    ) extends Stream {
+      val elementType = TTuple(leftStream.elementType, TOption(rightStream.elementType))
+      val sources     = leftStream.sources ++ rightStream.sources
     }
 
     final case class Merge(id: ComponentId, stream1: Stream, stream2: Stream) extends Stream {

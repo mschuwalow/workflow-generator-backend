@@ -15,7 +15,8 @@ trait KafkaClient {
   def consumeStream(
     topicName: String,
     elementType: Type,
-    consumerId: Option[String] = None
+    consumerId: Option[String] = None,
+    groupId: Option[String] = None
   ): Stream[Nothing, Committable[elementType.Scala]]
 
 }
@@ -36,8 +37,9 @@ object KafkaClient {
   def consumeStream(
     streamName: String,
     elementType: Type,
-    consumerId: Option[String] = None
+    consumerId: Option[String] = None,
+    groupId: Option[String] = None
   ): ZStream[Has[KafkaClient], Nothing, Committable[elementType.Scala]] =
-    ZStream.accessStream(_.get.consumeStream(streamName, elementType, consumerId))
+    ZStream.accessStream(_.get.consumeStream(streamName, elementType, consumerId, groupId))
 
 }

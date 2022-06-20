@@ -34,46 +34,49 @@ private[inbound] object semantic {
     result.left.map(Error.GraphValidationFailed(_))
   }
 
-  private[semantic] type Run[A] = Check[Context, String, A]
+  private type Run[A] = Check[Context, String, A]
 
-  final private[semantic] case class Context(
+  final private case class Context(
     in: Map[ComponentId, In.Component],
     out: Map[ComponentId, Out.Stream],
     enclosing: Option[ComponentId]
   )
 
-  private[semantic] object Context {
+  private object Context {
 
     def initial(in: Map[ComponentId, In.Component]): Context =
       Context(in, Map.empty, None)
   }
 
-  private[semantic] val context: Run[Context] =
+  private val context: Run[Context] =
     Check.getState[Context]
 
-  private[semantic] def updateContext(f: Context => Context) =
+  private def updateContext(f: Context => Context) =
     Check.updateState(f)
 
-  private[semantic] def fail(msg: String): Run[Nothing] =
+  private def fail(msg: String): Run[Nothing] =
     context.flatMap { ctx =>
       Check.fail(s"${ctx.enclosing.fold("")(id => s"[${id.value}]: ")}$msg")
     }
 
-  private[semantic] def pure[A](a: A): Run[A] =
+  private def pure[A](a: A): Run[A] =
     Check.done(a)
 
-  private[semantic] def require(
+  private def pass: Run[Unit] =
+    pure(())
+
+  private def require(
     bool: Boolean,
     msg: String
   ): Run[Unit] = if (bool) Check.unit else fail(msg)
 
-  private[semantic] def askRaw(id: ComponentId): Run[Option[In.Component]] =
+  private def askRaw(id: ComponentId): Run[Option[In.Component]] =
     context.map(_.in.get(id))
 
-  private[semantic] def askTyped(id: ComponentId): Run[Option[Out.Stream]] =
+  private def askTyped(id: ComponentId): Run[Option[Out.Stream]] =
     context.map(_.out.get(id))
 
-  private[semantic] def putTyped(
+  private def putTyped(
     id: ComponentId,
     value: Out.Stream
   ): Run[Unit] =
@@ -81,15 +84,15 @@ private[inbound] object semantic {
       ctx.copy(out = ctx.out + (id -> value))
     }
 
-  private[semantic] def setEnclosing(id: Option[ComponentId]) =
+  private def setEnclosing(id: Option[ComponentId]) =
     updateContext { ctx =>
       ctx.copy(enclosing = id)
     }
 
-  private[semantic] val getEnclosing =
+  private val getEnclosing =
     context.map(_.enclosing)
 
-  private[semantic] def withEnclosing[A](id: ComponentId)(nested: Run[A]): Run[A] =
+  private def withEnclosing[A](id: ComponentId)(nested: Run[A]): Run[A] =
     for {
       old <- getEnclosing
       _   <- setEnclosing(Some(id))
@@ -97,7 +100,7 @@ private[inbound] object semantic {
       _   <- setEnclosing(old)
     } yield a
 
-  private[semantic] def typeCheckSink(
+  private def typeCheckSink(
     id: ComponentId
   ): Run[Out.Sink] = {
     import In.Component._
@@ -117,7 +120,7 @@ private[inbound] object semantic {
     }
   }
 
-  private[semantic] def typeCheckStream(
+  private def typeCheckStream(
     id: ComponentId,
     hint: Option[Type] // downstream type expectation.
   ): Run[Out.Stream] = {
@@ -141,46 +144,100 @@ private[inbound] object semantic {
                         .orElse(hint)
                         .fold[Run[Type]](fail("Type could not be determined. Try adding a type hint."))(pure(_))
           } yield Out.Stream.UDF(id, code, s, myType)
-        case InnerJoin(stream1, stream2)                      =>
+
+        case Zip(stream1, stream2, f1, f2) =>
           hint match {
             case Some(TTuple(left, right)) =>
               for {
                 s1 <- typeCheckStream(stream1, Some(left))
                 s2 <- typeCheckStream(stream2, Some(right))
-              } yield Out.Stream.InnerJoin(id, s1, s2)
+                t1 <- f1.extract(s1.elementType)
+                        .fold[Run[Type]](fail("Extractor not compatible with left stream type"))(pure(_))
+                t2 <- f2.extract(s1.elementType)
+                        .fold[Run[Type]](fail("Extractor not compatible with right stream type"))(pure(_))
+                _  <- if (t1 == t2) pass else fail("Extractor types do not match")
+              } yield Out.Stream.Zip(id, s1, s2, f1, f2)
             case None                      =>
               for {
                 s1 <- typeCheckStream(stream1, None)
                 s2 <- typeCheckStream(stream2, None)
-              } yield Out.Stream.InnerJoin(id, s1, s2)
+                t1 <- f1.extract(s1.elementType)
+                        .fold[Run[Type]](fail("Extractor not compatible with left stream type"))(pure(_))
+                t2 <- f2.extract(s2.elementType)
+                        .fold[Run[Type]](fail("Extractor not compatible with right stream type"))(pure(_))
+                _  <- if (t1 == t2) pass else fail("Extractor types do not match")
+              } yield Out.Stream.Zip(id, s1, s2, f1, f2)
             case Some(t)                   =>
-              fail(s"Found incompatible type. Expected tuple type, got $t")
+              fail(
+                s"Found incompatible type. Expected tuple type, got $t"
+              )
           }
-        case LeftJoin(stream1, stream2)                       =>
+
+        case InnerJoin(stream1, stream2, f1, f2) =>
+          hint match {
+            case Some(TTuple(left, right)) =>
+              for {
+                s1 <- typeCheckStream(stream1, Some(left))
+                s2 <- typeCheckStream(stream2, Some(right))
+                t1 <- f1.extract(s1.elementType)
+                        .fold[Run[Type]](fail("Extractor not compatible with left stream type"))(pure(_))
+                t2 <- f2.extract(s1.elementType)
+                        .fold[Run[Type]](fail("Extractor not compatible with right stream type"))(pure(_))
+                _  <- if (t1 == t2) pass else fail("Extractor types do not match")
+              } yield Out.Stream.InnerJoin(id, s1, s2, f1, f2)
+            case None                      =>
+              for {
+                s1 <- typeCheckStream(stream1, None)
+                s2 <- typeCheckStream(stream2, None)
+                t1 <- f1.extract(s1.elementType)
+                        .fold[Run[Type]](fail("Extractor not compatible with left stream type"))(pure(_))
+                t2 <- f2.extract(s2.elementType)
+                        .fold[Run[Type]](fail("Extractor not compatible with right stream type"))(pure(_))
+                _  <- if (t1 == t2) pass else fail("Extractor types do not match")
+              } yield Out.Stream.InnerJoin(id, s1, s2, f1, f2)
+            case Some(t)                   =>
+              fail(
+                s"Found incompatible type. Expected tuple type, got $t"
+              )
+          }
+
+        case LeftJoin(stream1, stream2, f1, f2) =>
           hint match {
             case Some(TTuple(left, TOption(right))) =>
               for {
                 s1 <- typeCheckStream(stream1, Some(left))
                 s2 <- typeCheckStream(stream2, Some(right))
-              } yield Out.Stream.LeftJoin(id, s1, s2)
+                t1 <- f1.extract(s1.elementType)
+                        .fold[Run[Type]](fail("Extractor not compatible with left stream type"))(pure(_))
+                t2 <- f2.extract(s2.elementType)
+                        .fold[Run[Type]](fail("Extractor not compatible with right stream type"))(pure(_))
+                _  <- if (t1 == t2) pass else fail("Extractor types do not match")
+              } yield Out.Stream.LeftJoin(id, s1, s2, f1, f2)
             case None                               =>
               for {
                 s1 <- typeCheckStream(stream1, None)
                 s2 <- typeCheckStream(stream2, None)
-              } yield Out.Stream.LeftJoin(id, s1, s2)
+                t1 <- f1.extract(s1.elementType)
+                        .fold[Run[Type]](fail("Extractor not compatible with left stream type"))(pure(_))
+                t2 <- f2.extract(s2.elementType)
+                        .fold[Run[Type]](fail("Extractor not compatible with right stream type"))(pure(_))
+                _  <- if (t1 == t2) pass else fail("Extractor types do not match")
+              } yield Out.Stream.LeftJoin(id, s1, s2, f1, f2)
             case Some(t)                            =>
               fail(
                 s"Found incompatible type. Expected tuple type with right side being optional, got $t"
               )
           }
-        case Merge(stream1, stream2)                          =>
+
+        case Merge(stream1, stream2) =>
           for {
             s1 <- typeCheckStream(stream1, hint)
             s2 <- typeCheckStream(stream2, hint)
-            _  <- fail(s"Found mismatched types for union: [${s1.elementType}, ${s2.elementType}]")
+            _  <- fail(s"Found mismatched types for merge: [${s1.elementType}, ${s2.elementType}]")
                     .whenA(s1.elementType != s2.elementType)
           } yield Out.Stream.Merge(id, s1, s2)
-        case MergeEither(stream1, stream2)                    =>
+
+        case MergeEither(stream1, stream2) =>
           hint match {
             case Some(TEither(left, right)) =>
               for {
@@ -195,11 +252,12 @@ private[inbound] object semantic {
             case Some(t)                    =>
               fail(s"Found incompatible type. Expected either type, got $t")
           }
-        case FormOutput(formId, elementType)                  =>
+
+        case FormOutput(formId, elementType)  =>
           pure(Out.Stream.FormOutput(id, formId, elementType))
-        case JFormOutput(formId, elementType)                 =>
+        case JFormOutput(formId, elementType) =>
           pure(Out.Stream.JFormOutput(id, formId, elementType))
-        case Void(_, _)                                       =>
+        case Void(_, _)                       =>
           fail("Sink not expected here")
       }
     }

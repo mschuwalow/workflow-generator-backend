@@ -16,6 +16,7 @@ object Router {
     with FormsEndpoint.Env
     with JFormsEndpoint.Env
     with SwaggerEndpoint.Env
+    with ErrorHandlingMiddleware.Env
     with Has[JWTAuth]
 
   def makeApp[R <: Env]: URIO[R, HttpApp[RIO[R, *]]] = {

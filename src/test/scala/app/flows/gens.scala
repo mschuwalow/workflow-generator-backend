@@ -49,21 +49,22 @@ object gens {
         ns <- Gen.listOf(Gen.anyLong)
       } yield Numbers(id, ns)
 
-      val innerJoin = Gen.suspend {
-        for {
-          id <- componentId
-          s1 <- stream
-          s2 <- stream
-        } yield InnerJoin(id, s1, s2)
-      }
+      // todo
+      // val innerJoin = Gen.suspend {
+      //   for {
+      //     id <- componentId
+      //     s1 <- stream
+      //     s2 <- stream
+      //   } yield InnerJoin(id, s1, s2)
+      // }
 
-      val leftJoin = Gen.suspend {
-        for {
-          id <- componentId
-          s1 <- stream
-          s2 <- stream
-        } yield LeftJoin(id, s1, s2)
-      }
+      // val leftJoin = Gen.suspend {
+      //   for {
+      //     id <- componentId
+      //     s1 <- stream
+      //     s2 <- stream
+      //   } yield LeftJoin(id, s1, s2)
+      // }
 
       val merge = Gen.suspend {
         for {
@@ -91,7 +92,7 @@ object gens {
         } yield UDF(id, code, s, t)
       }
 
-      Gen.oneOf(never, numbers, innerJoin, leftJoin, merge, mergeEither, udf)
+      Gen.oneOf(never, numbers, merge, mergeEither, udf)
     }
 
     val sink: Gen[Random with Sized, Sink] = {

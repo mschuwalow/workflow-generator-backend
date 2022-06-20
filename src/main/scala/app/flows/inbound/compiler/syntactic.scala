@@ -28,26 +28,26 @@ private[inbound] object syntactic {
     result.left.map(Error.GraphValidationFailed(_))
   }
 
-  private[syntactic] type Run[A] = Check[Context, String, A]
+  private type Run[A] = Check[Context, String, A]
 
-  private[syntactic] final case class Context(
+  private final case class Context(
     nodes: Map[ComponentId, Component],
     position: List[ComponentId]
   )
 
-  private[syntactic] object Context {
+  private object Context {
 
     def initial(nodes: Map[ComponentId, Component]): Context =
       Context(nodes, Nil)
 
   }
 
-  private[syntactic] def failWithMessage(msg: String): Run[Nothing] =
+  private def failWithMessage(msg: String): Run[Nothing] =
     Check.getState[Context].flatMap { ctx =>
       Check.fail(s"Failed while checking ${ctx.position.reverse.map(_.value).mkString("->")}: $msg")
     }
 
-  private[syntactic] def getComponent(id: ComponentId): Run[Component] =
+  private def getComponent(id: ComponentId): Run[Component] =
     Check.getState.flatMap { ctx =>
       ctx.nodes
         .get(id)
@@ -58,7 +58,7 @@ private[inbound] object syntactic {
         )
     }
 
-  private[syntactic] def nest[A](id: ComponentId)(nested: Run[A]): Run[A] =
+  private def nest[A](id: ComponentId)(nested: Run[A]): Run[A] =
     for {
       s <- Check.getState[Context]
       _ <- if (s.position.contains(id)) failWithMessage(s"Cycle detected: ${id.value}") else Check.unit[Context]
@@ -67,20 +67,21 @@ private[inbound] object syntactic {
       _ <- Check.updateState[Context](old => old.copy(position = old.position.tail))
     } yield a
 
-  private[syntactic] def checkComponent(id: ComponentId): Run[Unit] = {
+  private def checkComponent(id: ComponentId): Run[Unit] = {
     import Component._
     nest(id) {
       getComponent(id).flatMap {
-        case Never(_)                      => Check.unit
-        case Numbers(_)                    => Check.unit
-        case UDF(stream, _, _, _)          => checkComponent(stream)
-        case InnerJoin(stream1, stream2)   => checkComponent(stream1) *> checkComponent(stream2)
-        case LeftJoin(stream1, stream2)    => checkComponent(stream1) *> checkComponent(stream2)
-        case Merge(stream1, stream2)       => checkComponent(stream1) *> checkComponent(stream2)
-        case MergeEither(stream1, stream2) => checkComponent(stream1) *> checkComponent(stream2)
-        case Void(stream, _)               => checkComponent(stream)
-        case FormOutput(_)                 => Check.unit
-        case JFormOutput(_)                => Check.unit
+        case Never(_)                          => Check.unit
+        case Numbers(_)                        => Check.unit
+        case UDF(stream, _, _, _)              => checkComponent(stream)
+        case Zip(stream1, stream2, _, _)       => checkComponent(stream1) *> checkComponent(stream2)
+        case InnerJoin(stream1, stream2, _, _) => checkComponent(stream1) *> checkComponent(stream2)
+        case LeftJoin(stream1, stream2, _, _)  => checkComponent(stream1) *> checkComponent(stream2)
+        case Merge(stream1, stream2)           => checkComponent(stream1) *> checkComponent(stream2)
+        case MergeEither(stream1, stream2)     => checkComponent(stream1) *> checkComponent(stream2)
+        case Void(stream, _)                   => checkComponent(stream)
+        case FormOutput(_)                     => Check.unit
+        case JFormOutput(_)                    => Check.unit
       }
     }
   }

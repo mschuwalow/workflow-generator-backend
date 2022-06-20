@@ -1,5 +1,6 @@
 package app
 
+import app.Getter._
 import cats.instances.either._
 import cats.instances.list._
 import cats.syntax.traverse._
@@ -12,13 +13,14 @@ import scala.util.parsing.combinator.PackratParsers
 import scala.util.parsing.combinator.syntactical._
 
 sealed abstract class Type { self =>
+  import Type._
+
   type Scala
 
   val deriveEncoder: Encoder[Scala]
   val deriveDecoder: Decoder[Scala]
 
-  def show: String = {
-    import Type._
+  def show: String =
     self match {
       case TDate                => "Date"
       case TBool                => "Bool"
@@ -32,7 +34,8 @@ sealed abstract class Type { self =>
       case TTuple(left, right)  => s"(${left.show}, ${right.show})"
       case TEither(left, right) => s"(${left.show} | ${right.show})"
     }
-  }
+
+  def get(getter: Getter, value: Scala): Option[Any]
 }
 
 object Type {
@@ -44,6 +47,8 @@ object Type {
     val deriveEncoder = Encoder[LocalDate]
 
     val deriveDecoder = Decoder[LocalDate]
+
+    def get(getter: Getter, value: Scala): Option[Any] = None
   }
 
   type TBool = TBool.type
@@ -54,6 +59,8 @@ object Type {
     val deriveEncoder = Encoder[Boolean]
 
     val deriveDecoder = Decoder[Boolean]
+
+    def get(getter: Getter, value: Scala): Option[Any] = None
   }
 
   type TString = TString.type
@@ -64,6 +71,8 @@ object Type {
     val deriveEncoder = Encoder[String]
 
     val deriveDecoder = Decoder[String]
+
+    def get(getter: Getter, value: Scala): Option[Any] = None
   }
 
   type TNumber = TNumber.type
@@ -74,6 +83,8 @@ object Type {
     val deriveEncoder = Encoder[Long]
 
     val deriveDecoder = Decoder[Long]
+
+    def get(getter: Getter, value: Scala): Option[Any] = None
   }
 
   final case class TArray(elementType: Type) extends Type {
@@ -88,6 +99,13 @@ object Type {
       implicit val elementDecoder = elementType.deriveDecoder
       Decoder[List[elementType.Scala]].map(Chunk.fromIterable)
     }
+
+    def get(getter: Getter, value: Scala): Option[Any] =
+      getter match {
+        case AndThen(GetArrayElem(index), second) => value.lift(index).flatMap(elementType.get(second, _))
+        case GetArrayElem(index)                  => value.lift(index)
+        case _                                    => None
+      }
   }
 
   final case class TObject(fields: Map[String, Type]) extends Type {
@@ -110,6 +128,16 @@ object Type {
           cursor.get[fieldType.Scala](field).map((field, _))
         }.map(_.toMap)
       }
+
+    def get(getter: Getter, value: Map[String, Any]): Option[Any] =
+      getter match {
+        case AndThen(GetObjectField(field), second) =>
+          fields.get(field).flatMap { fieldType =>
+            fieldType.get(second, value(field).asInstanceOf[fieldType.Scala])
+          }
+        case GetObjectField(field)                  => value.get(field)
+        case _                                      => None
+      }
   }
 
   final case class TOption(value: Type) extends Type {
@@ -124,6 +152,8 @@ object Type {
       implicit val valueDecoder = value.deriveDecoder
       Decoder[Option[value.Scala]]
     }
+
+    def get(getter: Getter, value: Scala): Option[Any] = None
   }
 
   final case class TTuple(left: Type, right: Type) extends Type {
@@ -141,6 +171,12 @@ object Type {
       Decoder[(left.Scala, right.Scala)]
     }
 
+    def get(getter: Getter, value: Scala): Option[Any] =
+      getter match {
+        case GetTupleFirst  => Some(value._1)
+        case GetTupleSecond => Some(value._2)
+        case _              => None
+      }
   }
 
   final case class TEither(left: Type, right: Type) extends Type {
@@ -157,6 +193,8 @@ object Type {
       implicit val rightDecoder = right.deriveDecoder
       Decoder.decodeEither("left", "right")
     }
+
+    def get(getter: Getter, value: Scala): Option[Any] = None
   }
 
   def fromString(s: String): Either[String, Type] = parsing.parse(s)
@@ -231,7 +269,7 @@ object Type {
       val tokens = new PackratReader(new lexical.Scanner(in))
       phrase(fullType)(tokens) match {
         case Success(result, _) => Right(result)
-        case e                  => Left(e.map(_.show).toString())
+        case e: NoSuccess       => Left(e.msg)
       }
     }
   }

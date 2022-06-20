@@ -46,11 +46,11 @@ private final class LiveKafkaClient(
     } yield ()
   }.provide(env).orDie
 
-  def consumeStream(topicName: String, elementType: Type, consumerId: Option[String]) = {
+  def consumeStream(topicName: String, elementType: Type, consumerId: Option[String], groupId: Option[String]) = {
     implicit val decoder = elementType.deriveDecoder
 
     ZStream
-      .managed(makeConsumer(consumerId))
+      .managed(makeConsumer(consumerId, groupId))
       .flatMap { consumer =>
         consumer
           .subscribeAnd(Subscription.topics(topicName))
@@ -69,13 +69,14 @@ private final class LiveKafkaClient(
       ZIO.succeed(true)
     }
 
-  def makeConsumer(groupId: Option[String]) =
+  def makeConsumer(consumerId: Option[String], groupId: Option[String]) =
     for {
-      config   <- KafkaConfig.get.toManaged_
-      settings  =
+      config     <- KafkaConfig.get.toManaged_
+      settings    =
         ConsumerSettings(config.bootstrapServers).withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-      groupId  <- groupId.fold(generateId.toManaged_)(ZManaged.succeed(_))
-      consumer <- Consumer.make(settings.withGroupId(groupId))
+      consumerId <- consumerId.fold(generateId.toManaged_)(ZManaged.succeed(_))
+      groupId    <- groupId.fold(generateId.toManaged_)(ZManaged.succeed(_))
+      consumer   <- Consumer.make(settings.withClientId(consumerId).withGroupId(groupId))
     } yield consumer
 
   private def generateId =

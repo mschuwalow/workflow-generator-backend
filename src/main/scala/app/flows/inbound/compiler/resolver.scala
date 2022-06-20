@@ -17,29 +17,31 @@ private[inbound] object resolver {
     import unresolved.Component._
     import resolved.{Component => Out}
     component match {
-      case FormOutput(formId)                               =>
+      case FormOutput(formId)                                            =>
         for {
           form <- FormsService.getById(formId)
         } yield Out.FormOutput(form.id, form.outputType)
-      case JFormOutput(formId)                              =>
+      case JFormOutput(formId)                                           =>
         for {
           form <- JFormsService.getById(formId)
         } yield Out.JFormOutput(form.id, form.outputType)
-      case Never(elementType)                               =>
+      case Never(elementType)                                            =>
         ZIO.succeed(Out.Never(elementType))
-      case Numbers(values)                                  =>
+      case Numbers(values)                                               =>
         ZIO.succeed(Out.Numbers(values))
-      case Void(stream, elementType)                        =>
+      case Void(stream, elementType)                                     =>
         ZIO.succeed(Out.Void(stream, elementType))
-      case UDF(stream, code, inputTypeHint, outputTypeHint) =>
+      case UDF(stream, code, inputTypeHint, outputTypeHint)              =>
         ZIO.succeed(Out.UDF(stream, code, inputTypeHint, outputTypeHint))
-      case LeftJoin(stream1, stream2)                       =>
-        ZIO.succeed(Out.LeftJoin(stream1, stream2))
-      case InnerJoin(stream1, stream2)                      =>
-        ZIO.succeed(Out.InnerJoin(stream1, stream2))
-      case Merge(stream1, stream2)                          =>
+      case Zip(leftStream, rightStream, onLeftField, onRightField)       =>
+        ZIO.succeed(Out.Zip(leftStream, rightStream, onLeftField, onRightField))
+      case LeftJoin(leftStream, rightStream, leftField, rightField)      =>
+        ZIO.succeed(Out.LeftJoin(leftStream, rightStream, leftField, rightField))
+      case InnerJoin(leftStream, rightStream, onLeftField, onRightField) =>
+        ZIO.succeed(Out.InnerJoin(leftStream, rightStream, onLeftField, onRightField))
+      case Merge(stream1, stream2)                                       =>
         ZIO.succeed(Out.Merge(stream1, stream2))
-      case MergeEither(stream1, stream2)                    =>
+      case MergeEither(stream1, stream2)                                 =>
         ZIO.succeed(Out.MergeEither(stream1, stream2))
     }
   }
