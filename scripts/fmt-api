@@ -1,0 +1,6 @@
+#!/bin/sh
+
+BASEDIR=$(dirname "$0")
+API_FILE="$BASEDIR/../src/main/resources/api.yaml"
+
+yq -y -S . $API_FILE | sponge $API_FILE
