@@ -1,9 +1,7 @@
 self: super:
 with super;
 with lib; {
-
   workflow-generator-backend = rec {
-
     jar = sbt.mkDerivation rec {
       pname = "workflow-generator-backend-jar";
       version = "latest";
@@ -11,7 +9,7 @@ with lib; {
       # depsSha256 = "0000000000000000000000000000000000000000000000000000";
       depsSha256 = "sha256-Q7rOfPJmL8nMc1AElO0XwiT0fimWxNEdpO55UXndj7U=";
 
-      src = sources.sourceByRegex ../. [ "^build.sbt$" "^project.*" "^src.*" ];
+      src = sources.sourceByRegex ../. ["^build.sbt$" "^project.*" "^src.*"];
 
       buildPhase = ''
         sbt 'set test in assembly := {}' assembly
@@ -28,7 +26,7 @@ with lib; {
 
     runtimeDeps = [
       (python38.buildEnv.override {
-        extraLibs = with python38Packages; [ py4j click ];
+        extraLibs = with python38Packages; [py4j click];
       })
     ];
 
@@ -36,7 +34,7 @@ with lib; {
       pname = "workflow-generator-backend";
       version = "latest";
 
-      nativeBuildInputs = [ makeWrapper ];
+      nativeBuildInputs = [makeWrapper];
 
       unpackPhase = "true";
 
@@ -45,14 +43,13 @@ with lib; {
         makeWrapper ${launcher}/bin/launch-app "$out/bin/workflow-generator-backend" \
           --prefix PATH : ${lib.makeBinPath runtimeDeps}
       '';
-
     };
 
     docker = dockerTools.buildImage {
       name = "workflow-generator-backend";
       tag = "latest";
-      contents = [ app ];
-      config = { Cmd = [ "/bin/workflow-generator-backend" ]; };
+      contents = [app];
+      config = {Cmd = ["/bin/workflow-generator-backend"];};
     };
   };
 }
