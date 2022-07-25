@@ -9,7 +9,7 @@ with lib; {
       version = "latest";
 
       # depsSha256 = "0000000000000000000000000000000000000000000000000000";
-      depsSha256 = "0o7F1STAQY59iETsrMCWLJMHoIzSJbF+aIEXDdkijYg=";
+      depsSha256 = "sha256-Q7rOfPJmL8nMc1AElO0XwiT0fimWxNEdpO55UXndj7U=";
 
       src = sources.sourceByRegex ../. [ "^build.sbt$" "^project.*" "^src.*" ];
 
