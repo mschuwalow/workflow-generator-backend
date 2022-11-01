@@ -24,7 +24,7 @@ object TSecRouter {
               routes.local(translate(prefix)) <+> acc
             else
               acc
-          )(req)
+          ) (req)
         }
     }
 
