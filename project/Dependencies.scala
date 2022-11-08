@@ -14,7 +14,7 @@ object Dependencies {
     val korolev                = "1.5.0"
     val log4j                  = "2.19.0"
     val organizeImports        = "0.6.0"
-    val pureConfig             = "0.17.1"
+    val pureConfig             = "0.17.2"
     val py4j                   = "0.10.9.7"
     val scalaParserCombinators = "2.1.1"
     val silencer               = "1.7.0"
