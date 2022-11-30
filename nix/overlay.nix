@@ -2,12 +2,12 @@ self: super:
 with super;
 with lib; {
   workflow-generator-backend = rec {
-    jar = sbt.mkDerivation rec {
+    jar = sbt.mkDerivation {
       pname = "workflow-generator-backend-jar";
       version = "latest";
 
       # depsSha256 = "0000000000000000000000000000000000000000000000000000";
-      depsSha256 = "sha256-Q7rOfPJmL8nMc1AElO0XwiT0fimWxNEdpO55UXndj7U=";
+      depsSha256 = "sha256-J7L+KjFkgC5LZlzMKjPba/LVPGJG7+Q/wvEv0jva+XE=";
 
       src = sources.sourceByRegex ../. ["^build.sbt$" "^project.*" "^src.*"];
 
