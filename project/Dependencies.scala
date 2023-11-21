@@ -12,7 +12,7 @@ object Dependencies {
     val jawn                   = "1.4.0"
     val kindProjector          = "0.13.2"
     val korolev                = "1.2.0"
-    val log4j                  = "2.19.0"
+    val log4j                  = "2.22.0"
     val organizeImports        = "0.6.0"
     val pureConfig             = "0.17.2"
     val py4j                   = "0.10.9.7"
