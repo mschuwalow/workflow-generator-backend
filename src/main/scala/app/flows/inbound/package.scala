@@ -18,6 +18,8 @@ package object inbound {
     Has[FlowService]
   ] =
     (ZLayer.identity[
-      Has[FlowRepository] with Has[FormsService] with Has[JFormsService]
+      Has[FlowRepository]
+        with Has[FormsService]
+        with Has[JFormsService]
     ] ++ LiveFlowRunner.layer) >>> LiveFlowService.layer
 }
